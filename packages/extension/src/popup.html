@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Detour</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body data-page="popup">
+    <header data-role="header">
+      <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
+      <span data-role="wordmark">Detour</span>
+      <span data-role="state"></span>
+      <input data-role="enabled" type="checkbox" role="switch" />
+    </header>
+    <main>
+      <section data-role="tab-allowance" hidden>
+        <span data-role="tab-allowance-label"></span>
+        <span data-role="tab-allowance-detail"></span>
+        <button data-role="tab-allowance-remove" type="button"></button>
+      </section>
+      <section data-role="pause">
+        <span data-role="pause-label"></span>
+        <span data-role="pause-detail"></span>
+        <button data-role="pause-button" type="button"></button>
+      </section>
+      <section data-role="allowances">
+        <span data-role="allowances-label"></span>
+        <span data-role="allowance-count"></span>
+        <button data-role="manage" type="button"></button>
+      </section>
+      <section data-role="list">
+        <span data-role="list-label"></span>
+        <span data-role="list-detail"></span>
+      </section>
+    </main>
+    <footer>
+      <a data-role="how-it-works" target="_blank" rel="noreferrer noopener"></a>
+      <a data-role="report" target="_blank" rel="noreferrer noopener"></a>
+      <a data-role="privacy" target="_blank" rel="noreferrer noopener"></a>
+    </footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

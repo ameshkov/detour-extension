@@ -1,0 +1,23 @@
+{
+  "name": "@detour/extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -w run list:build && tsx scripts/build.ts",
+    "build:dev": "tsx scripts/build.ts --dev",
+    "watch:dev": "tsx scripts/build.ts --dev --watch",
+    "test": "pnpm -w run list:build && vitest run",
+    "typecheck": "pnpm -w run list:build && tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@detour/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.3.7",
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15",
+    "vitest": "5.1.0"
+  }
+}

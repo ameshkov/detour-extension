@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Detour",
+  "version": "0.1.0",
+  "description": "Stops a visit to a publisher that walls readers who use an ad blocker, and shows the same story elsewhere.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA21UKiihcYqn56HKmId4CA1y8RxPZ7bCAi6kqBUuwlyJnFvrkLeBTFwWoGo3UXFjc9/kp1JtedM2d5zHz4jUqMVJCeGsBRiMhbAYAm6fVhh3lS2X9x9WcYjX8e4lYnGOuZULHWauU3hzvtmPWYZL6D1C4DaM7uX1S+ZkyzbUXtd1VncRPAYm1zAuHms0WNLWYy3QBZt9/fsceIu3+jNGb/LAr9OrtIBgX6efjYJ1bflCgrXrYDV+bnQH/Uv1AKBlBe9MZ6CqGQtqorQo+wOmO/YOKefAJpACyLWhF8EHXSe8F6EHqqqQ58E+UbSqJQg9lPtpSXWVmTgKT/swBDMK0hQIDAQAB",
+  "permissions": ["alarms", "storage"],
+  "host_permissions": ["*://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Detour"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["guard.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["block.html"],
+      "matches": ["*://*/*"]
+    }
+  ]
+}

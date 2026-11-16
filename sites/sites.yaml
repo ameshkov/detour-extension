@@ -1,0 +1,35 @@
+version: 1
+updated: 2026-11-12
+disabled: false
+avoid: []
+prefer: []
+
+sites:
+  - domain: cnet.com
+    name: CNET
+    wall: soft
+    paths: []
+    note: Prototype seed. The page carries an ad-blocker wall script; the wall itself was not observed.
+    verified: 2026-11-12
+    evidence: sites/evidence/cnet.com.md
+  - domain: newsweek.com
+    name: Newsweek
+    wall: soft
+    paths: []
+    note: Prototype seed. The page carries ad-blocker wall markers; the wall itself was not observed.
+    verified: 2026-11-12
+    evidence: sites/evidence/newsweek.com.md
+  - domain: express.co.uk
+    name: Daily Express
+    wall: soft
+    paths: []
+    note: Prototype seed. The page carries ad-blocker wall markers; the wall itself was not observed.
+    verified: 2026-11-12
+    evidence: sites/evidence/express.co.uk.md
+  - domain: dailymail.co.uk
+    name: Daily Mail
+    wall: soft
+    paths: []
+    note: Prototype seed. The page carries ad-blocker wall markers; the site refused the probe.
+    verified: 2026-11-12
+    evidence: sites/evidence/dailymail.co.uk.md

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Detour</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body data-page="options">
+    <header data-role="header">
+      <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
+      <span data-role="wordmark">Detour</span>
+    </header>
+    <main>
+      <h1 data-role="options-heading"></h1>
+      <h2 data-role="allowed-heading"></h2>
+      <p data-role="allowed-intro"></p>
+      <p data-role="allowed-empty" hidden></p>
+      <table data-role="allowance-table">
+        <thead>
+          <tr>
+            <th data-role="th-site" scope="col"></th>
+            <th data-role="th-scope" scope="col"></th>
+            <th data-role="th-added" scope="col"></th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody data-role="allowance-rows"></tbody>
+      </table>
+      <h2 data-role="reading-heading"></h2>
+      <label data-role="auto-open-row">
+        <input data-role="auto-open" type="checkbox" />
+        <span data-role="auto-open-label"></span>
+        <span data-role="auto-open-detail"></span>
+      </label>
+      <label data-role="images-row">
+        <input data-role="images" type="checkbox" />
+        <span data-role="images-label"></span>
+        <span data-role="images-detail"></span>
+      </label>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

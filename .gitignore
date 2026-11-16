@@ -1,0 +1,10 @@
+node_modules/
+packages/*/dist/
+packages/*/src/sites.json
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+
+# Local specification notes. Not part of the product.
+.sdd/

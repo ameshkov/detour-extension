@@ -1,0 +1,8 @@
+sites:
+  - domain: 127.0.0.1
+    name: Local fixture
+    wall: hard
+    paths: ['/walled/*']
+    note: Local fixture page for development; it is not a publisher.
+    verified: 2026-11-14
+    evidence: sites/evidence/127.0.0.1.md

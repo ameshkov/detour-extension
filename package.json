@@ -1,0 +1,41 @@
+{
+  "name": "detour-extension",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter @detour/extension build",
+    "build:dev": "pnpm list:build:dev && pnpm --filter @detour/extension build:dev",
+    "list:build": "tsx sites/build.ts",
+    "list:build:dev": "tsx sites/build.ts --dev",
+    "dev": "tsx dev/run-dev.ts",
+    "dummy-server": "tsx dev/dummy-server.ts",
+    "test": "pnpm list:build && vitest run",
+    "test:e2e": "pnpm build:dev && playwright test",
+    "typecheck": "pnpm list:build && tsc --noEmit && pnpm --filter @detour/extension typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "docs:generate": "tsx scripts/docs/generate-list-format.ts",
+    "docs:check": "tsx scripts/check-docs.ts",
+    "check": "pnpm list:build && pnpm typecheck && pnpm lint && pnpm format:check && pnpm docs:check && pnpm test"
+  },
+  "devDependencies": {
+    "@detour/shared": "workspace:*",
+    "@playwright/test": "1.65.1",
+    "@types/node": "22.20.5",
+    "eslint": "10.14.0",
+    "happy-dom": "21.0.4",
+    "prettier": "3.10.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0",
+    "yaml": "2.9.1"
+  }
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Detour</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <header data-role="header">
+      <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
+      <span data-role="wordmark">Detour</span>
+    </header>
+    <main>
+      <span data-role="chip" hidden>
+        <span data-role="chip-dot" aria-hidden="true"></span>
+        <span data-role="chip-host"></span>
+      </span>
+      <h1 data-role="headline"></h1>
+      <p data-role="practice"></p>
+      <p data-role="explanation"></p>
+      <section data-role="source">
+        <p data-role="source-label"></p>
+        <p data-role="source-title"></p>
+        <a data-role="source-link" target="_blank" rel="noreferrer noopener"></a>
+        <p data-role="source-description"></p>
+      </section>
+      <section data-role="alternatives" data-state="loading">
+        <div data-role="list-head">
+          <h2 data-role="alternatives-heading"></h2>
+          <span data-role="count"></span>
+        </div>
+        <div data-role="countdown" hidden>
+          <span data-role="countdown-number"></span>
+          <span data-role="countdown-text"></span>
+          <button data-role="countdown-cancel" type="button"></button>
+        </div>
+        <p data-role="status"></p>
+        <p data-role="detail"></p>
+        <ul data-role="list"></ul>
+        <div data-role="fallback" hidden>
+          <h2 data-role="fallback-heading"></h2>
+          <label data-role="query-label" for="query"></label>
+          <input data-role="query" id="query" type="text" autocomplete="off" spellcheck="false" />
+          <div data-role="engines"></div>
+          <p data-role="fallback-note"></p>
+        </div>
+        <aside data-role="slow-note" hidden>
+          <p data-role="slow-text"></p>
+          <button data-role="open-instead" type="button"></button>
+          <button data-role="keep-waiting" type="button"></button>
+        </aside>
+        <div data-role="retry-row" hidden>
+          <button data-role="retry" type="button"></button>
+        </div>
+      </section>
+      <div data-role="actions" hidden>
+        <button data-role="open-site" type="button"></button>
+        <button
+          data-role="open-menu"
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded="false"
+        ></button>
+        <div data-role="scope-menu" role="menu" hidden>
+          <button data-role="scope-tab" type="button" role="menuitem"></button>
+          <button data-role="scope-session" type="button" role="menuitem"></button>
+          <button data-role="scope-always" type="button" role="menuitem"></button>
+        </div>
+        <p data-role="action-error" role="alert" hidden></p>
+        <a data-role="report" target="_blank" rel="noreferrer noopener"></a>
+      </div>
+      <p data-role="footnote"></p>
+    </main>
+    <script src="block.js"></script>
+  </body>
+</html>

@@ -1,0 +1,60 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # The pnpm version comes from `packageManager` in package.json.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install the dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the gates
+        run: pnpm check
+
+  # The browser lives outside the package store, so its own cache restores
+  # before the browser install, which then reads the restored build.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install the dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore the Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install the Chromium browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run the end-to-end tests
+        run: pnpm test:e2e
