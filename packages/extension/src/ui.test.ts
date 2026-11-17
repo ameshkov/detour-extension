@@ -69,7 +69,41 @@ function rules(): CSSRule[] {
   return [...document.styleSheets[0]!.cssRules];
 }
 
+/** A rule that names this selector, alone or as one of a group. */
 function styleRule(selector: string): CSSStyleRule | null {
+  const exact = exactRule(selector);
+
+  if (exact !== null) {
+    return exact;
+  }
+
+  const wanted = normalize(selector);
+  const group = rules().find(
+    (candidate) =>
+      'selectorText' in candidate &&
+      (candidate as CSSStyleRule).selectorText
+        .split(',')
+        .some((part) => normalize(part) === wanted),
+  );
+
+  return group === undefined ? null : (group as CSSStyleRule);
+}
+
+/** The rule that declares this selector beside others, whatever an exact rule says. */
+function groupRule(selector: string): CSSStyleRule | null {
+  const wanted = normalize(selector);
+  const found = rules().find(
+    (candidate) =>
+      'selectorText' in candidate &&
+      (candidate as CSSStyleRule).selectorText
+        .split(',')
+        .some((part) => normalize(part) === wanted),
+  );
+
+  return found === undefined ? null : (found as CSSStyleRule);
+}
+
+function exactRule(selector: string): CSSStyleRule | null {
   const found = rules().find(
     (candidate) =>
       'selectorText' in candidate &&
@@ -265,7 +299,7 @@ describe('the stylesheet', () => {
       styleRule('body[data-page="options"] [data-role="allowed-heading"]')?.style.getPropertyValue(
         'margin-top',
       ),
-    ).toBe('22px');
+    ).toBe('26px');
     expect(
       styleRule('body[data-page="options"] [data-role="cache-heading"]')?.style.getPropertyValue(
         'margin-top',
@@ -275,7 +309,66 @@ describe('the stylesheet', () => {
       styleRule('body[data-page="options"] [data-role="clear-cache"]')?.style.getPropertyValue(
         'border-color',
       ),
-    ).toBe('var(--ink)');
+    ).toBe('var(--control-line)');
+  });
+
+  it('sets the page title above the labels of its sections', () => {
+    const title = styleRule('body[data-page="options"] [data-role="options-heading"]');
+
+    expect(title?.style.getPropertyValue('font-family')).toBe('var(--serif)');
+    expect(title?.style.getPropertyValue('font-size')).toBe('27px');
+
+    for (const role of ['allowed-heading', 'reading-heading', 'cache-heading']) {
+      const label = styleRule(`body[data-page="options"] [data-role="${role}"]`);
+
+      expect(label?.style.getPropertyValue('font-size'), role).toBe('11px');
+      expect(label?.style.getPropertyValue('text-transform'), role).toBe('uppercase');
+      expect(label?.style.getPropertyValue('letter-spacing'), role).toBe('0.1em');
+    }
+  });
+
+  it('draws the reading checkbox in the sheet, not the platform one', () => {
+    const box = styleRule('body[data-page="options"] [data-role="auto-open"]');
+
+    expect(box?.style.getPropertyValue('appearance')).toBe('none');
+    expect(box?.style.getPropertyValue('width')).toBe('16px');
+    expect(box?.style.getPropertyValue('height')).toBe('16px');
+    expect(box?.style.getPropertyValue('border-radius')).toBe('5px');
+    expect(box?.style.getPropertyValue('border-color')).toBe('var(--control-line)');
+    expect(box?.style.getPropertyValue('background')).toBe('var(--surface)');
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="auto-open"]:checked',
+      )?.style.getPropertyValue('background'),
+    ).toBe('var(--accent)');
+    expect(
+      styleRule('body[data-page="options"] [data-role="auto-open"]::after')?.style.getPropertyValue(
+        'transform',
+      ),
+    ).toBe('translateX(-0.5px) rotate(45deg)');
+  });
+
+  it('answers the pointer on the page controls', () => {
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="clear-cache"]:hover',
+      )?.style.getPropertyValue('background'),
+    ).toBe('var(--hover)');
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="allowance-rows"] button:hover',
+      )?.style.getPropertyValue('color'),
+    ).toBe('var(--blocked)');
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="auto-open-row"]:hover [data-role="auto-open"]',
+      )?.style.getPropertyValue('border-color'),
+    ).toBe('var(--accent)');
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="auto-open"]:checked:hover',
+      )?.style.getPropertyValue('background'),
+    ).toBe('var(--accent-deep)');
   });
 
   it('joins the two halves of the open control', () => {
@@ -290,6 +383,39 @@ describe('the stylesheet', () => {
 
     expect(report?.style.getPropertyValue('margin-left')).toBe('auto');
     expect(report?.style.getPropertyValue('padding-left')).toBe('20px');
+  });
+
+  it('draws the menu caret from a path the button centres', () => {
+    const button = styleRule('[data-role="open-menu"]');
+
+    expect(button?.style.getPropertyValue('display')).toBe('inline-flex');
+    expect(button?.style.getPropertyValue('align-items')).toBe('center');
+    expect(button?.style.getPropertyValue('justify-content')).toBe('center');
+
+    const svg = styleRule('[data-role="open-menu-caret"] svg');
+
+    expect(svg?.style.getPropertyValue('fill')).toBe('none');
+    expect(svg?.style.getPropertyValue('stroke')).toBe('currentColor');
+    expect(svg?.style.getPropertyValue('stroke-width')).toBe('1.5');
+    expect(
+      styleRule(
+        '[data-role="open-menu"][aria-expanded="true"] [data-role="open-menu-caret"]',
+      )?.style.getPropertyValue('transform'),
+    ).toBe('rotate(180deg)');
+  });
+
+  it('opens the menu above a row that has no room below', () => {
+    const top = styleRule('[data-role="scope-menu"][data-side="top"]');
+
+    expect(top?.style.getPropertyValue('top')).toBe('auto');
+    expect(top?.style.getPropertyValue('bottom')).toBe('calc(100% + 6px)');
+  });
+
+  it('sets the list heading above the titles it introduces', () => {
+    const heading = styleRule('[data-role="alternatives-heading"]');
+
+    expect(heading?.style.getPropertyValue('font-size')).toBe('20px');
+    expect(heading?.style.getPropertyValue('font-family')).toBe('var(--serif)');
   });
 
   it('shows a focus ring for the keyboard', () => {
@@ -333,10 +459,10 @@ describe('the stylesheet', () => {
       'var(--line-soft)',
     );
     expect(
-      styleRule('body[data-page="popup"] [data-role="list"]')?.style.getPropertyValue(
-        'border-bottom',
+      styleRule('body[data-page="popup"] [data-role="settings"]')?.style.getPropertyValue(
+        'border-top-color',
       ),
-    ).toBe('0px');
+    ).toBe('var(--line-soft)');
     expect(
       styleRule('body[data-page="options"] td')?.style.getPropertyValue('border-top-color'),
     ).toBe('var(--line-soft)');
@@ -378,27 +504,122 @@ describe('the stylesheet', () => {
     expect(dot?.style.getPropertyValue('border-radius')).toBe('50%');
   });
 
-  it('gives the allowance of this tab its own edge', () => {
-    const row = styleRule('body[data-page="popup"] [data-role="tab-allowance"]');
+  it('tones the verdict as text and draws no dot', () => {
+    expect(
+      styleRule('body[data-page="popup"] [data-role="site-text"]')?.style.getPropertyValue('color'),
+    ).toBe('var(--accent)');
+    expect(
+      styleRule(
+        'body[data-page="popup"] [data-role="site-row"][data-listed="false"] [data-role="site-text"]',
+      )?.style.getPropertyValue('color'),
+    ).toBe('var(--muted)');
+    expect(styleRule('body[data-page="popup"] [data-role="site-mark"]')).toBeNull();
+  });
 
-    // The sheet writes `3px solid var(--accent)`, and this environment keeps the
-    // colour out of a shorthand it cannot parse.
-    expect(row?.style.getPropertyValue('border-left-width')).toBe('3px');
-    expect(row?.style.getPropertyValue('border-left-style')).toBe('solid');
-    expect(row?.style.getPropertyValue('border-left-color')).toBe('var(--accent)');
-    expect(row?.style.getPropertyValue('background')).toBe('var(--surface)');
-    expect(row?.style.getPropertyValue('padding-left')).toBe('12px');
+  it('carries the report as a sentence link, not as a row', () => {
+    const link = styleRule('body[data-page="popup"] [data-role="site-report"]');
+
+    expect(link?.style.getPropertyValue('color')).toBe('var(--accent)');
+    expect(link?.style.getPropertyValue('font-size')).toBe('11.5px');
+    expect(link?.style.getPropertyValue('text-decoration')).toBe('underline');
+    expect(
+      styleRule('body[data-page="popup"] [data-role="site-report"]:hover')?.style.getPropertyValue(
+        'color',
+      ),
+    ).toBe('var(--accent-deep)');
+  });
+
+  it('answers the pointer on every row and on the switch', () => {
+    for (const role of ['site-alternatives', 'pause', 'settings']) {
+      expect(
+        styleRule(`body[data-page="popup"] [data-role="${role}"]:hover`)?.style.getPropertyValue(
+          'background',
+        ),
+        role,
+      ).toBe('var(--hover)');
+    }
+
+    expect(
+      styleRule(
+        'body[data-page="popup"] [data-role="durations"] button:hover',
+      )?.style.getPropertyValue('background'),
+    ).toBe('var(--hover)');
+    expect(
+      styleRule('body[data-page="popup"] [data-role="enabled"]:hover')?.style.getPropertyValue(
+        'box-shadow',
+      ),
+    ).toBe('0 0 0 3px var(--accent-ring)');
+    expect(
+      styleRule(
+        'body[data-page="popup"] [data-role="site-alternatives"]:hover .chevron',
+      )?.style.getPropertyValue('color'),
+    ).toBe('var(--ink)');
+    expect(
+      styleRule(
+        'body[data-page="popup"] [data-role="enabled"]:not(:checked):hover',
+      )?.style.getPropertyValue('background'),
+    ).toBe('var(--control-line)');
+    expect(
+      styleRule(
+        'body[data-page="popup"] [data-role="enabled"]:checked:hover',
+      )?.style.getPropertyValue('background'),
+    ).toBe('var(--accent-deep)');
   });
 
   it('borders the quiet controls at the control tone', () => {
     expect(styleRule('[data-role="query"]')?.style.getPropertyValue('border-color')).toBe(
       'var(--control-line)',
     );
+    expect(styleRule('[data-role="engines"] a')?.style.getPropertyValue('border-color')).toBe(
+      'var(--control-line)',
+    );
+  });
+
+  it('sets a popup row at one height, with hairlines and no box', () => {
+    for (const role of ['settings', 'site-alternatives']) {
+      const row = groupRule(`body[data-page="popup"] [data-role="${role}"]`);
+
+      // The environment keeps a `var()` colour out of the width it reads back,
+      // so the colour and the height are what this contract can hold.
+      expect(row?.style.getPropertyValue('min-height'), role).toBe('36px');
+      expect(row?.style.getPropertyValue('border-top-color'), role).toBe('var(--line-soft)');
+      expect(row?.style.getPropertyValue('border-radius'), role).toBe('');
+      expect(row?.style.getPropertyValue('background'), role).toBe('var(--paper)');
+    }
+  });
+
+  it('turns the one chevron down for the pause row and back up when it opens', () => {
+    const closed = styleRule('body[data-page="popup"] [data-role="pause-chevron"]');
+
+    expect(closed?.style.getPropertyValue('transform')).toBe('rotate(90deg)');
     expect(
-      styleRule('body[data-page="popup"] [data-role="pause-button"]')?.style.getPropertyValue(
-        'border-radius',
+      styleRule(
+        'body[data-page="popup"] [data-role="pause"][aria-expanded="true"] [data-role="pause-chevron"]',
+      )?.style.getPropertyValue('transform'),
+    ).toBe('rotate(-90deg)');
+  });
+
+  it('hands the pause hairline to the wrapper that carries the resume', () => {
+    expect(
+      styleRule('body[data-page="popup"] [data-role="pause-row"]')?.style.getPropertyValue(
+        'border-top-color',
       ),
-    ).toBe('9px');
+    ).toBe('var(--line-soft)');
+    expect(
+      styleRule('body[data-page="popup"] [data-role="pause"]')?.style.getPropertyValue(
+        'border-top-color',
+      ),
+      'the pause row drops the hairline its group declares',
+    ).toBe('initial');
+  });
+
+  it('marks the wall type small and uppercase, as the source label is', () => {
+    const label = styleRule('body[data-page="popup"] [data-role="site-wall"]');
+
+    expect(label?.style.getPropertyValue('text-transform')).toBe('uppercase');
+    expect(label?.style.getPropertyValue('font-size')).toBe('9.5px');
+    expect(label?.style.getPropertyValue('letter-spacing')).toBe('0.12em');
+    expect(label?.style.getPropertyValue('color')).toBe('var(--muted)');
   });
 
   it('leads a failure with a mark and an engine link with an arrow', () => {

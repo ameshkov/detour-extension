@@ -5,8 +5,11 @@
   --muted: #6e6c67;
   --line: #e8e4dd;
   --line-soft: #f0ece5;
+  --hover: #f4f0e9;
   --control-line: #ded9d0;
   --accent: #0b6b57;
+  --accent-deep: #0a5f4e;
+  --accent-ring: rgba(11, 107, 87, 0.16);
   --blocked: #c0513f;
   --chip-ink: #96382e;
   --chip-surface: #fcf0ed;
@@ -175,14 +178,15 @@ main {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin: 34px 0 14px;
+  margin: 36px 0 16px;
 }
 
 [data-role='alternatives-heading'] {
   margin: 0;
-  font-size: 14px;
-  font-weight: 650;
-  letter-spacing: -0.008em;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 [data-role='count'] {
@@ -538,13 +542,43 @@ main {
 }
 
 [data-role='open-menu'] {
+  display: inline-flex;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
   margin-left: -1px;
-  padding: 10px;
+  padding: 0;
   border: 1px solid var(--ink);
   border-radius: 0 9px 9px 0;
   color: var(--ink);
   font-size: 13px;
   transition: background-color 120ms ease;
+}
+
+/* A typed arrowhead carries the side bearings of its font, which leave it off
+   centre by a pixel or two at this size. The caret is drawn instead, from a
+   path that is symmetric about the centre of its box. */
+[data-role='open-menu-caret'] {
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  transition: transform 120ms ease;
+}
+
+[data-role='open-menu-caret'] svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='open-menu'][aria-expanded='true'] [data-role='open-menu-caret'] {
+  transform: rotate(180deg);
 }
 
 [data-role='open-site']:hover,
@@ -564,6 +598,13 @@ main {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
+}
+
+/* The action row sits at the foot of the page, so a menu that would leave the
+   viewport opens above the row instead of past its bottom edge. */
+[data-role='scope-menu'][data-side='top'] {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 [data-role='scope-menu'] button {
@@ -664,6 +705,21 @@ body[data-page='popup'] [data-role='enabled'] {
   border-radius: 99px;
   background: var(--line);
   cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+/* The switch answers the pointer the way a row does: a soft ring around the
+   track, and a track that deepens under it. */
+body[data-page='popup'] [data-role='enabled']:hover {
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+body[data-page='popup'] [data-role='enabled']:not(:checked):hover {
+  background: var(--control-line);
+}
+
+body[data-page='popup'] [data-role='enabled']:checked:hover {
+  background: var(--accent-deep);
 }
 
 body[data-page='popup'] [data-role='enabled']::after {
@@ -686,72 +742,183 @@ body[data-page='popup'] [data-role='enabled']:checked::after {
   transform: translateX(14px);
 }
 
-body[data-page='popup'] [data-role='tab-allowance'],
-body[data-page='popup'] [data-role='pause'],
-body[data-page='popup'] [data-role='allowances'],
-body[data-page='popup'] [data-role='list'] {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 10px;
+/* The site block answers for the page in front of the reader, so it leads the
+   body in both states, and each state carries exactly one action. */
+body[data-page='popup'] [data-role='site-row'] {
+  display: flex;
   align-items: center;
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--line-soft);
-  background: var(--paper);
-}
-
-/* The List row closes the popup, so its own divider would double the frame's. */
-body[data-page='popup'] [data-role='list'] {
-  border-bottom: 0;
-}
-
-/* The allowance of this tab is the one row that is not ordinary state, so it
-   carries the accent edge and the surface of a card. */
-body[data-page='popup'] [data-role='tab-allowance'] {
-  padding-left: 12px;
-  border-left-width: 3px;
-  border-left-style: solid;
-  border-left-color: var(--accent);
-  background: var(--surface);
-}
-
-body[data-page='popup'] [data-role$='-label'] {
-  grid-column: 1;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 15px 0;
   font-size: 12.5px;
   font-weight: 600;
 }
 
-body[data-page='popup'] [data-role$='-detail'],
-body[data-page='popup'] [data-role='allowance-count'] {
-  grid-column: 1;
+/* The verdict is the one thing the eye needs here, so the site the list carries
+   takes the accent and the site it does not takes the muted tone. The words say
+   the same thing, so the colour never carries the answer alone. */
+body[data-page='popup'] [data-role='site-text'] {
+  color: var(--accent);
+}
+
+body[data-page='popup'] [data-role='site-row'][data-listed='false'] [data-role='site-text'] {
+  color: var(--muted);
+}
+
+body[data-page='popup'] [data-role='site-wall'] {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body[data-page='popup'] [data-role='site-detail'] {
+  margin: 3px 0 0;
+  padding: 0 15px;
   color: var(--muted);
   font-size: 11.5px;
   line-height: 1.5;
 }
 
-body[data-page='popup'] [data-role$='-remove'] {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--muted);
+/* The report is the sentence the block already says, so it reads as a line that
+   happens to be a link and not as one more row. */
+body[data-page='popup'] [data-role='site-report'] {
+  display: block;
+  margin: 2px 0 0;
+  padding: 0 15px 12px;
+  color: var(--accent);
   font-size: 11.5px;
+  line-height: 1.5;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-body[data-page='popup'] [data-role='manage'] {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--accent);
-  font-size: 11.5px;
-  font-weight: 550;
+body[data-page='popup'] [data-role='site-report']:hover {
+  color: var(--accent-deep);
 }
 
-body[data-page='popup'] [data-role='pause-button'] {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  padding: 5px 10px;
-  border: 1px solid var(--control-line);
-  border-radius: 9px;
+/* One row per action: the alternatives, the pause, the settings. A row that
+   leaves the popup ends with `›`, and the pause row ends with `⌄`. */
+body[data-page='popup'] [data-role='site-alternatives'],
+body[data-page='popup'] [data-role='pause'],
+body[data-page='popup'] [data-role='settings'],
+body[data-page='popup'] [data-role='durations'] button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 15px;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  background: var(--paper);
   color: var(--ink);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+/* Every row is a button, so every row answers the pointer: the surface lifts it
+   off the paper and the chevron takes the ink. */
+body[data-page='popup'] [data-role='site-alternatives']:hover,
+body[data-page='popup'] [data-role='pause']:hover,
+body[data-page='popup'] [data-role='settings']:hover,
+body[data-page='popup'] [data-role='durations'] button:hover {
+  background: var(--hover);
+}
+
+body[data-page='popup'] [data-role='site-alternatives']:hover .chevron,
+body[data-page='popup'] [data-role='pause']:hover .chevron,
+body[data-page='popup'] [data-role='settings']:hover .chevron {
+  color: var(--ink);
+}
+
+/* The action of the site block sits close to the sentence it belongs to. */
+body[data-page='popup'] [data-role='site-alternatives'] {
+  margin-top: 8px;
+}
+
+/* The settings row closes the body, so the footer needs the hairline above it. */
+body[data-page='popup'] main > [data-role='settings'] {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+body[data-page='popup'] [data-role='pause-row'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-top: 1px solid var(--line-soft);
+}
+
+body[data-page='popup'] [data-role='pause'] {
+  border-top: 0;
+}
+
+body[data-page='popup'] [data-role='resume'] {
+  padding: 0 15px 0 6px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+/* The resume is words and not a row, so it answers the pointer with its own
+   underline rather than with a block of surface. */
+body[data-page='popup'] [data-role='resume']:hover {
+  color: var(--accent-deep);
+  text-decoration: underline;
+}
+
+body[data-page='popup'] .chevron {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* The pause row carries the same chevron as every other row, and a quarter turn
+   points it down while the row is closed and up while the durations are open.
+   The glyph is the sheet's one chevron, so its weight matches the rows beside
+   it, which a typed arrowhead does not. */
+body[data-page='popup'] [data-role='pause-chevron'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  transform: rotate(90deg);
+  transition: transform 120ms ease;
+}
+
+body[data-page='popup'] [data-role='pause'][aria-expanded='true'] [data-role='pause-chevron'] {
+  transform: rotate(-90deg);
+}
+
+body[data-page='popup'] [data-role='pause-label'] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-page='popup'] [data-role='durations'] button {
+  padding-left: 15px;
+  font-weight: 400;
+}
+
+body[data-page='popup'] [data-role='duration-today'] {
+  justify-content: space-between;
+}
+
+body[data-page='popup'] [data-role='duration-today-note'] {
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -767,6 +934,10 @@ body[data-page='popup'] footer a {
   font-size: 11px;
 }
 
+body[data-page='popup'] footer a:hover {
+  color: var(--ink);
+}
+
 body[data-page='options'] main {
   max-width: 640px;
   padding: 22px 22px 24px;
@@ -776,28 +947,27 @@ body[data-page='options'] [data-role='header'] {
   padding: 0 22px;
 }
 
-body[data-page='options'] [data-role='options-heading'],
+body[data-page='options'] [data-role='options-heading'] {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* A section is a label over its contents, so it takes the small caps of the
+   table's column labels and leaves the serif to the page title alone. The gap
+   in size is what says which of the two is the page. */
 body[data-page='options'] [data-role='allowed-heading'],
 body[data-page='options'] [data-role='reading-heading'],
 body[data-page='options'] [data-role='cache-heading'] {
-  margin: 0 0 4px;
-  font-family: var(--serif);
-  font-size: 19px;
+  margin: 26px 0 12px;
+  color: var(--ink);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: -0.012em;
-}
-
-body[data-page='options'] [data-role='reading-heading'] {
-  margin-top: 26px;
-}
-
-body[data-page='options'] [data-role='cache-heading'] {
-  margin-top: 26px;
-}
-
-/* The page title and the allowances heading are both top-level, so they need air between them. */
-body[data-page='options'] [data-role='allowed-heading'] {
-  margin-top: 22px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 body[data-page='options'] [data-role='allowed-intro'],
@@ -849,6 +1019,13 @@ body[data-page='options'] [data-role='allowance-rows'] button {
   font-size: 12.5px;
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: color 120ms ease;
+}
+
+/* A removal is the one destructive press on the page, so it takes the red the
+   site chip already uses and nothing louder than that. */
+body[data-page='options'] [data-role='allowance-rows'] button:hover {
+  color: var(--blocked);
 }
 
 body[data-page='options'] [data-role='auto-open-row'],
@@ -859,12 +1036,75 @@ body[data-page='options'] [data-role='images-row'] {
   align-items: start;
   padding: 13px 0;
   border-top: 1px solid var(--line-soft);
+  cursor: pointer;
 }
 
+/* The platform draws a blue box of its own size. The sheet draws the one the
+   product uses: 16 px, a quiet edge, and the accent with a white check when on. */
 body[data-page='options'] [data-role='auto-open'],
 body[data-page='options'] [data-role='images'] {
+  position: relative;
   grid-row: 1 / span 2;
-  margin: 3px 0 0;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  appearance: none;
+  border: 1px solid var(--control-line);
+  border-radius: 5px;
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+body[data-page='options'] [data-role='auto-open']::after,
+body[data-page='options'] [data-role='images']::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--surface);
+  border-width: 0 1.5px 1.5px 0;
+
+  /* The two strokes that make the check sit half a pixel right of their box, and
+     a half pixel is what centring them needs. A translate keeps that half pixel,
+     where `left` rounds to the next whole one. */
+  transform: translateX(-0.5px) rotate(45deg);
+}
+
+body[data-page='options'] [data-role='auto-open']:not(:checked)::after,
+body[data-page='options'] [data-role='images']:not(:checked)::after {
+  display: none;
+}
+
+body[data-page='options'] [data-role='auto-open']:checked,
+body[data-page='options'] [data-role='images']:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* The whole row is the label, so a pointer anywhere on it lights the box. */
+body[data-page='options'] [data-role='auto-open-row']:hover [data-role='auto-open'],
+body[data-page='options'] [data-role='images-row']:hover [data-role='images'] {
+  border-color: var(--accent);
+}
+
+body[data-page='options'] [data-role='auto-open']:checked:hover,
+body[data-page='options'] [data-role='images']:checked:hover,
+body[data-page='options'] [data-role='auto-open-row']:hover [data-role='auto-open']:checked,
+body[data-page='options'] [data-role='images-row']:hover [data-role='images']:checked {
+  border-color: var(--accent-deep);
+  background: var(--accent-deep);
+}
+
+/* The first setting opens its section, and the label above it already divides
+   it from what came before, so the hairline belongs to the second row alone. */
+body[data-page='options'] [data-role='auto-open-row'] {
+  border-top: 0;
 }
 
 body[data-page='options'] [data-role='auto-open-label'],
@@ -893,12 +1133,25 @@ body[data-page='options'] [data-role='cache-detail'] {
 }
 
 body[data-page='options'] [data-role='clear-cache'] {
-  padding: 8px 13px;
-  border: 1px solid var(--ink);
+  padding: 8px 14px;
+  border: 1px solid var(--control-line);
   border-radius: 9px;
+  background: var(--surface);
   color: var(--ink);
   font-size: 12.5px;
   font-weight: 550;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+body[data-page='options'] [data-role='clear-cache']:hover {
+  border-color: var(--muted);
+  background: var(--hover);
+}
+
+body[data-page='options'] [data-role='clear-cache']:active {
+  background: var(--line-soft);
 }
 
 body[data-page='options'] [data-role='cache-status'] {

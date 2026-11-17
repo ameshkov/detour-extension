@@ -129,6 +129,9 @@ export class FakeChrome {
   /** The page the active tab holds: the bundled list's CNET article. */
   activeTabUrl = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
 
+  /** The page each other tab holds, read by a worker that re-checks a tab. */
+  readonly tabPages = new Map<number, string>();
+
   /** The version the extension reports for a prefilled issue. */
   extensionVersion = '0.1.0';
 
@@ -177,7 +180,12 @@ export class FakeChrome {
 
       return { id: this.nextTabId, url: props.url };
     },
-    get: async (tabId: number): Promise<{ id: number }> => ({ id: tabId }),
+    get: async (tabId: number): Promise<{ id: number; url?: string }> => {
+      const known = this.tabPages.get(tabId);
+      const url = known ?? (tabId === this.currentTabId ? this.activeTabUrl : undefined);
+
+      return { id: tabId, url };
+    },
     getCurrent: async (): Promise<{ id: number }> => ({ id: this.currentTabId }),
     query: async (): Promise<Array<{ id: number; url: string }>> => [
       { id: this.currentTabId, url: this.activeTabUrl },

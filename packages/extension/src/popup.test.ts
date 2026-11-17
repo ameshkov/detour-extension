@@ -1,33 +1,25 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AllowanceScope } from './allowances';
 import { LIST_STORAGE_VERSION, PAUSE_DURATION_MS, STORAGE } from './constants';
 import {
-  ALLOWED_SITES,
   ENABLED_SWITCH_LABEL,
   HOW_IT_WORKS_LABEL,
-  LIST_LABEL,
-  MANAGE_LABEL,
-  PAUSE_ACTIVE_DETAIL,
-  PAUSE_BUTTON_LABEL,
-  PAUSE_IDLE_DETAIL,
-  PAUSE_LABEL,
+  PAUSE_DURATION_LABELS,
+  PAUSE_ROW_LABEL,
   POPUP_OFF,
   POPUP_ON,
   POPUP_PAUSED,
   PRIVACY_LABEL,
-  REMOVE_LABEL,
-  REPORT_FALSE_POSITIVE_LABEL,
   RESUME_LABEL,
-  SCOPE_DETAIL,
-  allowanceCount,
-  listDetail,
-  removeAllowanceLabel,
-  tabAllowanceLabel,
+  SETTINGS_LABEL,
+  SHOW_ALTERNATIVES_LABEL,
+  SITE_REPORT_HINT,
+  WALL_LABEL,
+  WALL_PRACTICE,
 } from './copy';
+import { nextMidnight } from './pause';
 import { startPopup } from './popup';
-import { reportUrl } from './report';
 import type { Settings } from './storage';
 import { BUNDLED_LIST } from './storage';
 import type { FakeChrome } from './testing/fake-chrome';
@@ -38,19 +30,10 @@ const SHELL = readShell('popup.html');
 
 const API_BASE = 'https://detour-api.invalid';
 const NOW = Date.UTC(2026, 10, 13, 12, 0);
-const ACTIVE_HOST = 'cnet.com';
+const LISTED_URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
+const UNLISTED_URL = 'https://example.com/a-story';
 
 let fake: FakeChrome;
-
-function link(name: string): HTMLAnchorElement {
-  const element = role(name);
-
-  if (!(element instanceof HTMLAnchorElement)) {
-    throw new Error(`the shell has no ${name} link`);
-  }
-
-  return element;
-}
 
 function switchElement(): HTMLInputElement {
   const element = role('enabled');
@@ -77,64 +60,32 @@ function messagesOfType(type: string): unknown[] {
   return fake.calls.messages.filter((message) => (message as { type?: string }).type === type);
 }
 
-type StoredEntry = { host: string; tabId?: number; addedAt: number };
-
-/** The store a scope writes, and the key inside it. */
-const STORE_OF: Record<AllowanceScope, { area: 'local' | 'session'; key: string }> = {
-  tab: { area: 'session', key: STORAGE.allowTabs },
-  session: { area: 'session', key: STORAGE.allowSession },
-  always: { area: 'local', key: STORAGE.allowAlways },
-};
-
-function storeEntries(scope: AllowanceScope, entries: StoredEntry[]): void {
-  const { area, key } = STORE_OF[scope];
-
-  fake.storage[area].values[key] = entries;
-}
-
 function storeSettings(settings: Settings): void {
   fake.storage.local.values[STORAGE.settings] = settings;
 }
 
-function storeList(): { version: number; sites: number; updated: string } {
-  const list = {
-    ...BUNDLED_LIST,
-    version: 9,
-    updated: '2026-11-05',
-    sites: BUNDLED_LIST.sites.slice(0, 1),
-  };
-
+function storeList(): void {
   fake.storage.local.values[STORAGE.list] = {
     storageVersion: LIST_STORAGE_VERSION,
     fetchedAt: NOW,
-    list,
+    list: { ...BUNDLED_LIST, version: 9, updated: '2026-11-05' },
   };
+}
 
-  return { version: 9, sites: 1, updated: '2026-11-05' };
+function storeTimedPause(until: number): void {
+  fake.storage.local.values[STORAGE.pauseUntil] = until;
+}
+
+function storeSessionPause(): void {
+  fake.storage.session.values[STORAGE.pauseSession] = true;
 }
 
 /**
- * The service worker's three writes, against the fake store: a removal drops the
- * entry it names, a save stores the settings, and a pause stores its time. The
- * popup renders from the store afterwards, so a control that only reflects the
- * press fails the tests.
+ * The service worker's writes, against the fake store: a save stores the
+ * settings and a pause stores both of its keys. The popup renders from the store
+ * afterwards, so a control that only reflects the press fails the tests.
  */
 function answerWrites(): void {
-  fake.respond('revoke', (message) => {
-    const { scope, host, tabId } = message as {
-      scope: AllowanceScope;
-      host: string;
-      tabId?: number;
-    };
-    const { area, key } = STORE_OF[scope];
-    const entries = (fake.storage[area].values[key] as StoredEntry[] | undefined) ?? [];
-
-    fake.storage[area].values[key] = entries.filter(
-      (entry) => !(entry.host === host && entry.tabId === tabId),
-    );
-
-    return { ok: true, allowances: message };
-  });
   fake.respond('setSettings', (message) => {
     const { settings } = message as { settings: Settings };
 
@@ -143,11 +94,12 @@ function answerWrites(): void {
     return { ok: true, settings };
   });
   fake.respond('pause', (message) => {
-    const { until } = message as { until: number };
+    const { until, session } = message as { until: number; session: boolean };
 
-    fake.storage.local.values[STORAGE.pauseUntil] = until;
+    fake.storage.local.values[STORAGE.pauseUntil] = session ? 0 : until;
+    fake.storage.session.values[STORAGE.pauseSession] = session;
 
-    return { ok: true, pauseUntil: until };
+    return { ok: true, pauseUntil: session ? 0 : until, session };
   });
 }
 
@@ -162,176 +114,243 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   document.body.innerHTML = '';
   resetFakeChrome();
   vi.restoreAllMocks();
 });
 
-describe('the state of the list', () => {
-  it('shows the allowance of the active tab and its scope', async () => {
-    storeEntries('always', [{ host: ACTIVE_HOST, addedAt: NOW }]);
-
+describe('the site block', () => {
+  it('says that a listed site is on the list and names the wall', async () => {
     await start();
 
-    expect(role('state').textContent).toBe(POPUP_ON);
-    expect(role('state').dataset.state).toBe('on');
-    expect(role('tab-allowance').hidden).toBe(false);
-    expect(role('tab-allowance-label').textContent).toBe(tabAllowanceLabel(ACTIVE_HOST));
-    expect(role('tab-allowance-detail').textContent).toBe(SCOPE_DETAIL.always);
+    expect(role('site').hidden).toBe(false);
+    expect(role('site-text').textContent).toBe('cnet.com is on the list');
+    expect(role('site-row').dataset.listed).toBe('true');
+    expect(role('site-wall').hidden).toBe(false);
+    expect(role('site-wall').textContent).toBe(WALL_LABEL.soft);
+    expect(role('site-detail').textContent).toBe(WALL_PRACTICE.soft);
+    expect(role('site-alternatives').hidden).toBe(false);
+    expect(role('site-alternatives-label').textContent).toBe(SHOW_ALTERNATIVES_LABEL);
+    expect(role('site-report').hidden).toBe(true);
   });
 
-  it('prefers the permanent entry over a tab entry', async () => {
-    storeEntries('tab', [{ host: ACTIVE_HOST, tabId: 11, addedAt: NOW }]);
-    storeEntries('always', [{ host: ACTIVE_HOST, addedAt: NOW }]);
+  it('names the wall of every type of entry', async () => {
+    for (const [wall, label] of Object.entries(WALL_LABEL)) {
+      storeList();
 
-    await start();
+      const entry = BUNDLED_LIST.sites[0]!;
+      const list = fake.storage.local.values[STORAGE.list] as {
+        list: { sites: Array<Record<string, unknown>> };
+      };
 
-    expect(role('tab-allowance-detail').textContent).toBe(SCOPE_DETAIL.always);
+      list.list.sites = [{ ...entry, wall }];
+
+      await start();
+
+      expect(role('site-wall').textContent).toBe(label);
+      expect(role('site-detail').textContent).toBe(WALL_PRACTICE[wall as 'hard']);
+    }
   });
 
-  it('shows no allowance row without one', async () => {
+  it('says that an unlisted site is not on the list and offers a report', async () => {
+    fake.activeTabUrl = UNLISTED_URL;
+
     await start();
 
-    expect(role('tab-allowance').hidden).toBe(true);
-    expect(role('tab-allowance-label').textContent).toBe('');
+    expect(role('site').hidden).toBe(false);
+    expect(role('site-text').textContent).toBe('example.com is not on the list');
+    expect(role('site-row').dataset.listed).toBe('false');
+    expect(role('site-wall').hidden).toBe(true);
+    expect(role('site-detail').textContent).toBe('');
+    expect(role('site-alternatives').hidden).toBe(true);
+    expect(role('site-report').hidden).toBe(false);
+    expect(role('site-report').textContent).toBe(SITE_REPORT_HINT);
+    expect(role('site-report').getAttribute('href')).toContain('example.com');
+    expect(document.querySelector('[data-role="site-report-label"]')).toBeNull();
   });
 
-  it('counts the allowances of every store and offers manage', async () => {
-    storeEntries('tab', [{ host: ACTIVE_HOST, tabId: 11, addedAt: NOW }]);
-    storeEntries('session', [{ host: 'forbes.com', addedAt: NOW }]);
-    storeEntries('always', [{ host: 'businessinsider.com', addedAt: NOW }]);
+  it('draws the verdict without a dot', async () => {
+    expect(document.querySelector('[data-role="site-mark"]')).toBeNull();
 
     await start();
 
-    expect(role('allowances-label').textContent).toBe(ALLOWED_SITES);
-    expect(role('allowance-count').textContent).toBe(allowanceCount(3));
-    expect(role('allowance-count').textContent).toBe('3 sites');
-    expect(role('manage').textContent).toBe(MANAGE_LABEL);
-    expect(role('manage')).toBeInstanceOf(HTMLButtonElement);
-    expect((role('manage') as HTMLButtonElement).disabled).toBe(false);
+    expect(document.querySelector('[data-role="site-mark"]')).toBeNull();
   });
 
-  it('opens the options page from manage', async () => {
-    await start();
-    press('manage');
+  it('hides the block on a page that names no site', async () => {
+    fake.activeTabUrl = 'chrome://extensions/';
 
-    expect(fake.calls.openedOptionsPage).toBe(1);
+    await start();
+
+    expect(role('site').hidden).toBe(true);
   });
 
-  /**
-   * An invalidated context throws from `openOptionsPage`, and a runtime that
-   * answers later can reject. Neither reaches the reader as an unhandled
-   * rejection.
-   */
-  it('holds a manage press the runtime cannot answer', async () => {
+  it('asks the worker for the alternatives of this page', async () => {
     await start();
+    press('site-alternatives');
 
-    const rejected = vi.fn((): Promise<void> => Promise.reject(new Error('invalidated')));
-    const thrown = vi.fn((): Promise<void> => {
-      throw new Error('no runtime');
-    });
-
-    fake.runtime.openOptionsPage = rejected;
-    expect(() => press('manage')).not.toThrow();
-    expect(rejected).toHaveBeenCalledTimes(1);
-
-    fake.runtime.openOptionsPage = thrown;
-    expect(() => press('manage')).not.toThrow();
-    expect(thrown).toHaveBeenCalledTimes(1);
-  });
-
-  it('removes the allowance of the tab', async () => {
-    storeEntries('tab', [{ host: ACTIVE_HOST, tabId: 11, addedAt: NOW }]);
-
-    await start();
-
-    const remove = role('tab-allowance-remove');
-
-    expect(remove.textContent).toBe(REMOVE_LABEL);
-    expect(remove.getAttribute('aria-label')).toBe(removeAllowanceLabel(ACTIVE_HOST));
-
-    press('tab-allowance-remove');
-
-    expect(messagesOfType('revoke')).toEqual([
-      { type: 'revoke', scope: 'tab', host: ACTIVE_HOST, tabId: 11 },
+    expect(messagesOfType('showAlternatives')).toEqual([
+      { type: 'showAlternatives', tabId: fake.currentTabId, url: LISTED_URL },
     ]);
-
-    await vi.waitFor(() => {
-      expect(role('tab-allowance').hidden).toBe(true);
-    });
   });
 
-  it('shows the list version, the site count, and the date', async () => {
-    const list = storeList();
-
-    await start();
-
-    expect(role('list-label').textContent).toBe(LIST_LABEL);
-    expect(role('list-detail').textContent).toBe(listDetail(list));
-  });
-
-  it('holds no table', () => {
+  it('holds no list version and no site count', () => {
+    expect(SHELL).not.toContain('data-role="list"');
     expect(SHELL).not.toContain('<table');
   });
 });
 
-describe('the pause', () => {
-  it('pauses the list for one hour', async () => {
+describe('the pause row', () => {
+  it('starts closed and does nothing until a duration is chosen', async () => {
     await start();
 
-    expect(role('pause-label').textContent).toBe(PAUSE_LABEL);
-    expect(role('pause-detail').textContent).toBe(PAUSE_IDLE_DETAIL);
-    expect(role('pause-button').textContent).toBe(PAUSE_BUTTON_LABEL);
+    expect(role('pause-label').textContent).toBe(PAUSE_ROW_LABEL);
+    expect(role('durations').hidden).toBe(true);
+    expect(role('pause').getAttribute('aria-expanded')).toBe('false');
+    expect(role('resume').hidden).toBe(true);
 
-    press('pause-button');
+    press('pause');
 
-    expect(PAUSE_DURATION_MS).toBe(3600000);
-    expect(messagesOfType('pause')).toEqual([{ type: 'pause', until: NOW + PAUSE_DURATION_MS }]);
+    expect(role('durations').hidden).toBe(false);
+    expect(role('pause').getAttribute('aria-expanded')).toBe('true');
+    expect(messagesOfType('pause')).toEqual([]);
+  });
+
+  it('draws its indicator with the chevron the other rows carry', async () => {
+    await start();
+
+    const other = role('settings').querySelector('.chevron');
+
+    expect(role('pause-chevron').textContent).toBe('›');
+    expect(role('pause-chevron').textContent).toBe(other?.textContent);
+  });
+
+  it('names all five durations', async () => {
+    await start();
+    press('pause');
+
+    expect(role('duration-5m').textContent).toBe(PAUSE_DURATION_LABELS['5m']);
+    expect(role('duration-30m').textContent).toBe(PAUSE_DURATION_LABELS['30m']);
+    expect(role('duration-1h').textContent).toBe(PAUSE_DURATION_LABELS['1h']);
+    expect(role('duration-today-label').textContent).toBe(PAUSE_DURATION_LABELS.today);
+    expect(role('duration-today-note').textContent).toBe('Until midnight');
+    expect(role('duration-session').textContent).toBe(PAUSE_DURATION_LABELS.session);
+  });
+
+  it('pauses for the duration the reader picks', async () => {
+    await start();
+    press('pause');
+    press('duration-5m');
+
+    expect(messagesOfType('pause')).toEqual([
+      { type: 'pause', until: NOW + 5 * 60 * 1000, session: false },
+    ]);
+    expect(role('durations').hidden).toBe(true);
 
     await vi.waitFor(() => {
       expect(role('state').textContent).toBe(POPUP_PAUSED);
     });
   });
 
-  it('resumes a paused list', async () => {
-    fake.storage.local.values[STORAGE.pauseUntil] = NOW + 60000;
-
+  it('pauses for an hour from the row it names', async () => {
     await start();
+    press('pause');
+    press('duration-1h');
 
-    expect(role('state').textContent).toBe(POPUP_PAUSED);
-    expect(role('state').dataset.state).toBe('paused');
-    expect(role('pause-detail').textContent).toBe(PAUSE_ACTIVE_DETAIL);
-    expect(role('pause-button').textContent).toBe(RESUME_LABEL);
+    expect(PAUSE_DURATION_MS).toBe(3_600_000);
+    expect(messagesOfType('pause')).toEqual([
+      { type: 'pause', until: NOW + PAUSE_DURATION_MS, session: false },
+    ]);
+  });
 
-    press('pause-button');
+  it('reads Today as the end of the day, not as an hour', async () => {
+    await start();
+    press('pause');
+    press('duration-today');
 
-    expect(messagesOfType('pause')).toEqual([{ type: 'pause', until: 0 }]);
+    expect(messagesOfType('pause')).toEqual([
+      { type: 'pause', until: nextMidnight(NOW), session: false },
+    ]);
+    expect(nextMidnight(NOW)).toBeGreaterThan(NOW);
+  });
+
+  it('pauses until the browser restarts in the session store', async () => {
+    await start();
+    press('pause');
+    press('duration-session');
+
+    expect(messagesOfType('pause')).toEqual([{ type: 'pause', until: 0, session: true }]);
 
     await vi.waitFor(() => {
-      expect(role('pause-button').textContent).toBe(PAUSE_BUTTON_LABEL);
+      expect(role('pause-label').textContent).toBe('Paused · until Chrome restarts');
     });
   });
 
-  it('shows off when the extension is disabled', async () => {
-    storeSettings({ enabled: false, autoOpenBest: false, imagesEnabled: true });
+  it('reports a session pause without a clock', async () => {
+    storeSessionPause();
 
     await start();
 
-    expect(role('state').textContent).toBe(POPUP_OFF);
-    expect(role('state').dataset.state).toBe('off');
-    expect(switchElement().checked).toBe(false);
-    expect(role('pause-label').textContent).toBe(PAUSE_LABEL);
-    expect(role('pause-detail').textContent).toBe(PAUSE_IDLE_DETAIL);
+    expect(role('pause-label').textContent).toBe('Paused · until Chrome restarts');
+    expect(role('resume').hidden).toBe(false);
+    expect(role('state').dataset.state).toBe('paused');
   });
 
-  it('keeps the switch out of the pause', async () => {
-    storeSettings({ enabled: true, autoOpenBest: false, imagesEnabled: true });
-    fake.storage.local.values[STORAGE.pauseUntil] = NOW + 60000;
+  it('reports a timed pause with the time it has left', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    storeTimedPause(NOW + 90 * 1000);
 
     await start();
 
     expect(role('state').textContent).toBe(POPUP_PAUSED);
-    expect(role('state').dataset.state).toBe('paused');
+    expect(role('pause-label').textContent).toBe('Paused · 01:30 left');
+    expect(role('resume').hidden).toBe(false);
+    expect(role('resume').textContent).toBe(RESUME_LABEL);
+    expect(role('pause').getAttribute('aria-label')).toContain('Paused · 01:30 left');
+  });
+
+  it('resumes from the row', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    storeTimedPause(NOW + 90 * 1000);
+
+    await start();
+    press('resume');
+
+    expect(messagesOfType('pause')).toEqual([{ type: 'pause', until: 0, session: false }]);
+
+    await vi.waitFor(() => {
+      expect(role('pause-label').textContent).toBe(PAUSE_ROW_LABEL);
+    });
+  });
+
+  it('leaves the row alone once the pause it counted has ended', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    storeTimedPause(NOW + 90 * 1000);
+
+    await start();
+
+    expect(role('pause-label').textContent).toBe('Paused · 01:30 left');
+
+    press('resume');
+
+    await vi.waitFor(() => {
+      expect(role('pause-label').textContent).toBe(PAUSE_ROW_LABEL);
+    });
+
+    // The interval that counted the old pause must not write over the new row.
+    await vi.advanceTimersByTimeAsync(3_000);
+
+    expect(role('pause-label').textContent).toBe(PAUSE_ROW_LABEL);
+  });
+
+  it('keeps the pause out of the switch', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    storeTimedPause(NOW + 60 * 1000);
+
+    await start();
+
+    expect(role('state').textContent).toBe(POPUP_PAUSED);
     expect(switchElement().checked).toBe(true);
   });
 });
@@ -342,7 +361,6 @@ describe('the switch of the list', () => {
 
     await start();
 
-    expect(switchElement().checked).toBe(true);
     expect(switchElement().getAttribute('aria-label')).toBe(ENABLED_SWITCH_LABEL);
     expect(switchElement().getAttribute('role')).toBe('switch');
 
@@ -360,46 +378,101 @@ describe('the switch of the list', () => {
     });
   });
 
-  it('turns the list on from the header', async () => {
-    storeSettings({ enabled: false, autoOpenBest: true, imagesEnabled: true });
+  it('shows off when the list is off', async () => {
+    storeSettings({ enabled: false, autoOpenBest: false, imagesEnabled: true });
 
     await start();
 
-    expect(switchElement().checked).toBe(false);
     expect(role('state').textContent).toBe(POPUP_OFF);
+    expect(role('state').dataset.state).toBe('off');
+    expect(switchElement().checked).toBe(false);
+  });
 
-    pressSwitch(true);
+  it('shows on when the list is on', async () => {
+    await start();
 
-    expect(messagesOfType('setSettings')).toEqual([
-      { type: 'setSettings', settings: { enabled: true, autoOpenBest: true, imagesEnabled: true } },
-    ]);
-
-    await vi.waitFor(() => {
-      expect(role('state').textContent).toBe(POPUP_ON);
-    });
+    expect(role('state').textContent).toBe(POPUP_ON);
+    expect(role('state').dataset.state).toBe('on');
+    expect(switchElement().checked).toBe(true);
   });
 });
 
-describe('the popup links', () => {
-  it('links how it works, the report, and the privacy page', async () => {
+describe('the settings row', () => {
+  it('opens the options page', async () => {
     await start();
 
-    expect(link('how-it-works').textContent).toBe(HOW_IT_WORKS_LABEL);
-    expect(link('how-it-works').getAttribute('href')).toBe(`${API_BASE}/`);
-    expect(link('report').textContent).toBe(REPORT_FALSE_POSITIVE_LABEL);
-    expect(link('report').getAttribute('href')).toBe(
-      reportUrl({ url: null, listVersion: BUNDLED_LIST.version, extensionVersion: '0.1.0' }),
-    );
-    expect(link('privacy').textContent).toBe(PRIVACY_LABEL);
-    expect(link('privacy').getAttribute('href')).toBe(`${API_BASE}/privacy`);
+    expect(role('settings-label').textContent).toBe(SETTINGS_LABEL);
 
-    for (const name of ['how-it-works', 'report', 'privacy']) {
-      expect(link(name).getAttribute('target')).toBe('_blank');
-      expect(link(name).getAttribute('rel')).toBe('noreferrer noopener');
+    press('settings');
+
+    expect(fake.calls.openedOptionsPage).toBe(1);
+  });
+
+  /**
+   * An invalidated context throws from `openOptionsPage`, and a runtime that
+   * answers later can reject. Neither reaches the reader as an unhandled
+   * rejection.
+   */
+  it('holds a press that the runtime cannot answer', async () => {
+    await start();
+
+    const rejected = vi.fn((): Promise<void> => Promise.reject(new Error('invalidated')));
+    const thrown = vi.fn((): Promise<void> => {
+      throw new Error('no runtime');
+    });
+
+    fake.runtime.openOptionsPage = rejected;
+    expect(() => press('settings')).not.toThrow();
+    expect(rejected).toHaveBeenCalledTimes(1);
+
+    fake.runtime.openOptionsPage = thrown;
+    expect(() => press('settings')).not.toThrow();
+    expect(thrown).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the popup footer', () => {
+  it('links how it works and the privacy page', async () => {
+    await start();
+
+    const how = role('how-it-works');
+    const privacy = role('privacy');
+
+    expect(how.textContent).toBe(HOW_IT_WORKS_LABEL);
+    expect(how.getAttribute('href')).toBe(`${API_BASE}/`);
+    expect(privacy.textContent).toBe(PRIVACY_LABEL);
+    expect(privacy.getAttribute('href')).toBe(`${API_BASE}/privacy`);
+
+    for (const element of [how, privacy]) {
+      expect(element.getAttribute('target')).toBe('_blank');
+      expect(element.getAttribute('rel')).toBe('noreferrer noopener');
     }
+  });
+});
 
-    expect(decodeURIComponent(link('report').getAttribute('href') ?? '')).not.toContain(
-      'The page Detour stopped',
-    );
+describe('the popup shell', () => {
+  it('carries no allowance row and no list row', () => {
+    for (const gone of ['tab-allowance', 'allowances', 'list']) {
+      expect(document.querySelector(`[data-role="${gone}"]`)).toBeNull();
+    }
+  });
+
+  it('carries one role for everything the script fills', () => {
+    for (const name of [
+      'site',
+      'site-row',
+      'site-text',
+      'site-wall',
+      'site-detail',
+      'site-report',
+      'site-alternatives',
+      'pause',
+      'pause-label',
+      'resume',
+      'durations',
+      'settings',
+    ]) {
+      expect(role(name), name).not.toBeNull();
+    }
   });
 });

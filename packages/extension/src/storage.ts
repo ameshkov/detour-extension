@@ -87,18 +87,29 @@ export async function writeSettings(settings: Settings): Promise<void> {
   });
 }
 
-export async function readPauseUntil(): Promise<number> {
-  const stored = await readValue('local', STORAGE.pauseUntil);
+/**
+ * The pause is two keys: a timestamp that the worker writes for a timed pause,
+ * and a flag in the session store that empties itself when the browser closes.
+ */
+export type PauseState = { until: number; session: boolean };
 
-  return typeof stored === 'number' ? stored : 0;
+export async function readPause(): Promise<PauseState> {
+  const [until, session] = await Promise.all([
+    readValue('local', STORAGE.pauseUntil),
+    readValue('session', STORAGE.pauseSession),
+  ]);
+
+  return { until: typeof until === 'number' ? until : 0, session: session === true };
 }
 
-export async function writePauseUntil(until: number): Promise<void> {
-  await writeValue('local', STORAGE.pauseUntil, until);
+/** Both keys are written together, so a new pause never inherits the old shape. */
+export async function writePause(state: PauseState): Promise<void> {
+  await writeValue('local', STORAGE.pauseUntil, state.session ? 0 : state.until);
+  await writeValue('session', STORAGE.pauseSession, state.session);
 }
 
-export function isPaused(pauseUntil: number, now: number): boolean {
-  return pauseUntil > now;
+export function isPaused(state: PauseState, now: number): boolean {
+  return state.session || state.until > now;
 }
 
 function isAllowanceEntry(value: unknown): value is AllowanceEntry {

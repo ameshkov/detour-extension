@@ -7,7 +7,7 @@ import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 
 const NOW = Date.UTC(2026, 10, 13, 12, 0);
-const PAUSE: PauseMessage = { type: MESSAGE.pause, until: NOW };
+const PAUSE: PauseMessage = { type: MESSAGE.pause, until: NOW, session: false };
 
 let fake: FakeChrome;
 

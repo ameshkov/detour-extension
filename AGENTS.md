@@ -206,8 +206,8 @@ guard (guard-entry.ts)  →  service worker (background.ts)  →  block page (bl
   the list, the settings, and its `alt:` entry from storage directly. It runs
   only in a top-level document. Its four states, `loading`, `results`,
   `empty`, and `error`, are the whole state set.
-- The popup renders the state, the allowance of the active tab, the count,
-  the pause, and the list.
+- The popup renders the state, the verdict on the page of the active tab with
+  the action that fits it, the pause, and the settings.
 - The options page lists every allowance, holds the two reading settings, and
   clears the cache after a confirmation.
 - The popup and the options page read storage directly and write only through

@@ -14,6 +14,7 @@ import type {
   PauseResponse,
   SetSettingsMessage,
   SettingsResponse,
+  ShowAlternativesMessage,
 } from './messages';
 import { metadataFor } from './metadata-fetch';
 import type { ServiceWorkerDeps } from './service-worker';
@@ -21,19 +22,55 @@ import {
   isPaused,
   readAllowances,
   readList,
-  readPauseUntil,
+  readPause,
   readSettings,
-  writePauseUntil,
+  writePause,
   writeSettings,
 } from './storage';
 
-/** The one place a sender's tab is read: its id and the tab that opened it. */
+/** The one place a sender's tab is read: its id, the tab that opened it, and its page. */
 type TabSender = {
   tab?: { id?: number; openerTabId?: number };
+  url?: string;
 };
 
 function blockPageUrlFor(url: string): string {
   return `${chrome.runtime.getURL('block.html')}?u=${encodeURIComponent(url)}`;
+}
+
+/**
+ * Two addresses name the same page when they differ only after the `#`, because
+ * a fragment never reaches the server that answers the alternatives.
+ */
+function samePage(left: string, right: string): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  try {
+    const first = new URL(left);
+    const second = new URL(right);
+
+    first.hash = '';
+    second.hash = '';
+
+    return first.href === second.href;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The popup and the options page are the only anonymous callers of the contract.
+ * A content script always carries its page as the sender, so a page cannot ask
+ * the worker to navigate another tab.
+ */
+function fromExtensionPage(sender: TabSender): boolean {
+  try {
+    return sender.url?.startsWith(chrome.runtime.getURL('')) === true;
+  } catch {
+    return false;
+  }
 }
 
 /** The answer that lets the page load: nothing blocked, nothing named. */
@@ -63,7 +100,7 @@ export async function handleIsBlocked(
     return passThrough();
   }
 
-  if (isPaused(await readPauseUntil(), deps.now())) {
+  if (isPaused(await readPause(), deps.now())) {
     return passThrough();
   }
 
@@ -149,6 +186,55 @@ export async function handleBlocked(
 }
 
 /**
+ * The reader asked for the alternatives of the page in front of them, from the
+ * popup. The worker takes the same three steps as a block: record the tab, warm
+ * the metadata, and move the tab to the block page, which owns the answer.
+ */
+export async function handleShowAlternatives(
+  message: ShowAlternativesMessage,
+  sender: TabSender,
+  deps: ServiceWorkerDeps,
+): Promise<BlockedResponse> {
+  if (!fromExtensionPage(sender)) {
+    return { ok: false, error: 'bad_message' };
+  }
+
+  let tabUrl: string | undefined;
+
+  try {
+    tabUrl = (await chrome.tabs.get(message.tabId)).url;
+  } catch {
+    return { ok: false, error: 'missing_tab' };
+  }
+
+  // The popup reads the tab it was opened from, so a tab that has moved on
+  // would show the alternatives of a page the reader is no longer reading.
+  if (tabUrl === undefined || !samePage(tabUrl, message.url)) {
+    return { ok: false, error: 'missing_tab' };
+  }
+
+  const blockPageUrl = blockPageUrlFor(message.url);
+
+  try {
+    await recordCapability(message.tabId, message.url);
+  } catch {
+    // A lost record costs the metadata and the alternatives, never the page.
+  }
+
+  if (await isListedUrl(message.url)) {
+    void metadataFor(message.url, deps);
+  }
+
+  try {
+    await chrome.tabs.update(message.tabId, { url: blockPageUrl });
+  } catch {
+    return { ok: false, error: 'navigation_failed', blockPageUrl };
+  }
+
+  return { ok: true, blockPageUrl };
+}
+
+/**
  * Metadata belongs to the tab that the guard stopped on that URL. A caller
  * without the record, on another tab, or for another URL gets no answer and
  * causes no fetch.
@@ -169,10 +255,17 @@ export async function handleGetMeta(
   return { ok: true, meta: await metadataFor(message.url, deps) };
 }
 
+/**
+ * One pause, two shapes. A timed pause stores the moment it ends, and the pause
+ * that the browser ends clears that moment and sets the flag the session store
+ * drops on its own.
+ */
 export async function handlePause(message: PauseMessage): Promise<PauseResponse> {
-  await writePauseUntil(message.until);
+  const until = message.session ? 0 : message.until;
 
-  return { ok: true, pauseUntil: message.until };
+  await writePause({ until, session: message.session });
+
+  return { ok: true, pauseUntil: until, session: message.session };
 }
 
 /**

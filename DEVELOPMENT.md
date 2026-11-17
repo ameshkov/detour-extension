@@ -82,7 +82,7 @@ A press of Reload on the extension card runs the new bundle.
 
 The extension keeps three things between visits: the list, the answers that the
 block page found, and the reads of the stopped pages. The options page holds one
-section that drops all three. Open it from the popup's `manage` link, press
+section that drops all three. Open it from the popup's `Settings` row, press
 `Clear cache`, and confirm. The page reports how many entries the worker
 removed.
 

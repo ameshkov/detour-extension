@@ -1,6 +1,7 @@
 import type { WallType } from '@detour/shared';
 
 import type { AllowanceScope } from './allowances';
+import type { PauseKind } from './pause';
 import type { SearchEngineKey } from './search-fallback';
 
 export const NO_URL_HEADLINE = 'This site blocks readers who use an ad blocker';
@@ -109,34 +110,64 @@ export const POPUP_OFF = 'Off';
 export const POPUP_PAUSED = 'Paused';
 export const ENABLED_SWITCH_LABEL = 'Turn the list on or off';
 
-export function tabAllowanceLabel(host: string): string {
-  return `${host} is open in this tab`;
-}
+export const SITE_LISTED = 'is on the list';
+export const SITE_UNLISTED = 'is not on the list';
+/** The report is the sentence the block says, so the link carries the whole line. */
+export const SITE_REPORT_HINT = 'If you see a wall here, report it.';
 
-export const PAUSE_LABEL = 'Pause the list';
-export const PAUSE_IDLE_DETAIL = 'Off. Nothing is blocked and no page is changed.';
-export const PAUSE_ACTIVE_DETAIL = 'Paused. Nothing is blocked until the hour ends.';
-export const PAUSE_BUTTON_LABEL = 'Pause for 1 hour';
+/** The type of wall, named as the list names it and never softened. */
+export const WALL_LABEL: Record<WallType, string> = {
+  hard: 'Hard wall',
+  soft: 'Soft wall',
+  metered: 'Metered wall',
+};
+
+export const SHOW_ALTERNATIVES_LABEL = 'Show alternatives';
+export const SETTINGS_LABEL = 'Settings';
+
+/** The row unfolds the durations, so it names the act and never a period it does not apply. */
+export const PAUSE_ROW_LABEL = 'Pause the list';
+export const PAUSE_MENU_LABEL = 'Choose how long to pause';
+export const PAUSE_DURATION_LABELS: Record<PauseKind, string> = {
+  '5m': '5 minutes',
+  '30m': '30 minutes',
+  '1h': '1 hour',
+  today: 'Today',
+  session: 'Until the browser restarts',
+};
+export const PAUSE_TODAY_NOTE = 'Until midnight';
 export const RESUME_LABEL = 'Resume';
-export const ALLOWED_SITES = 'Allowed sites';
 
-export function allowanceCount(n: number): string {
-  return n === 1 ? '1 site' : `${n} sites`;
+/**
+ * The countdown under an hour reads minutes and seconds, and a pause that ends
+ * after midnight keeps its hours, so the row never says 1380 minutes.
+ */
+export function pauseCountdown(remaining: number): string {
+  const total = Math.max(0, Math.ceil(remaining / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const clock =
+    hours === 0
+      ? `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      : `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+  return `${clock} left`;
 }
 
-export const MANAGE_LABEL = 'manage';
-export const LIST_LABEL = 'List';
-
-export function listDetail(input: { version: number; sites: number; updated: string }): string {
-  return `Version ${input.version} · ${input.sites} sites · updated ${input.updated}`;
+/** The paused row reports the remainder, or names the pause that has no clock. */
+export function pausedRowLabel(remaining: number | null): string {
+  return remaining === null
+    ? `${POPUP_PAUSED} · until Chrome restarts`
+    : `${POPUP_PAUSED} · ${pauseCountdown(remaining)}`;
 }
 
 export const HOW_IT_WORKS_LABEL = 'How it works';
-export const REPORT_FALSE_POSITIVE_LABEL = 'Report a false positive';
 export const PRIVACY_LABEL = 'Privacy';
 
 // The options page
 export const OPTIONS_HEADING = 'Settings';
+export const ALLOWED_SITES = 'Allowed sites';
 export const ALLOWED_SITES_INTRO =
   'Sites that you opened even though the list blocks them. The extension does not change these pages.';
 export const NO_ALLOWANCES = 'No site is allowed.';

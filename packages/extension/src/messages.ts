@@ -16,6 +16,8 @@ export type IsBlockedMessage = { type: 'isBlocked'; url: string };
 export type BlockedMessage = { type: 'blocked'; url: string };
 export type GetMetaMessage = { type: 'getMeta'; url: string };
 export type GetAlternativesMessage = { type: 'getAlternatives'; url: string; title: string };
+/** The popup asks the worker to move the tab it was opened from to the alternatives. */
+export type ShowAlternativesMessage = { type: 'showAlternatives'; tabId: number; url: string };
 export type AllowMessage = {
   type: 'allow';
   scope: AllowanceScope;
@@ -28,7 +30,8 @@ export type RevokeMessage = {
   tabId?: number;
 };
 export type SetSettingsMessage = { type: 'setSettings'; settings: Settings };
-export type PauseMessage = { type: 'pause'; until: number };
+/** `session` names the pause that the browser ends, and it carries no timestamp. */
+export type PauseMessage = { type: 'pause'; until: number; session: boolean };
 export type ClearCacheMessage = { type: 'clearCache' };
 
 export type Message =
@@ -36,6 +39,7 @@ export type Message =
   | BlockedMessage
   | GetMetaMessage
   | GetAlternativesMessage
+  | ShowAlternativesMessage
   | AllowMessage
   | RevokeMessage
   | SetSettingsMessage
@@ -49,7 +53,7 @@ export type AlternativesResponse =
   { ok: true; answer: AlternativesAnswer | null } | { ok: false; error: MessageError };
 export type AllowanceResponse = { ok: true; allowances: AllowanceState };
 export type SettingsResponse = { ok: true; settings: Settings };
-export type PauseResponse = { ok: true; pauseUntil: number };
+export type PauseResponse = { ok: true; pauseUntil: number; session: boolean };
 export type ClearCacheResponse = { ok: true; cleared: number };
 
 export type MessageResponse =
@@ -108,6 +112,10 @@ export function parseMessage(value: unknown): Message | null {
       return typeof value.url === 'string' && typeof value.title === 'string'
         ? { type: MESSAGE.getAlternatives, url: value.url, title: value.title }
         : null;
+    case MESSAGE.showAlternatives:
+      return typeof value.url === 'string' && typeof value.tabId === 'number'
+        ? { type: MESSAGE.showAlternatives, url: value.url, tabId: value.tabId }
+        : null;
     case MESSAGE.allow:
       return typeof value.url === 'string' && isAllowanceScope(value.scope)
         ? { type: MESSAGE.allow, scope: value.scope, url: value.url }
@@ -130,7 +138,9 @@ export function parseMessage(value: unknown): Message | null {
         ? { type: MESSAGE.setSettings, settings: value.settings }
         : null;
     case MESSAGE.pause:
-      return typeof value.until === 'number' ? { type: MESSAGE.pause, until: value.until } : null;
+      return typeof value.until === 'number' && typeof value.session === 'boolean'
+        ? { type: MESSAGE.pause, until: value.until, session: value.session }
+        : null;
     case MESSAGE.clearCache:
       return { type: MESSAGE.clearCache };
     default:

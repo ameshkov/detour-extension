@@ -8,6 +8,7 @@ import {
   handleIsBlocked,
   handlePause,
   handleSetSettings,
+  handleShowAlternatives,
 } from './handlers';
 import type { MessageResponse } from './messages';
 import { parseMessage } from './messages';
@@ -49,7 +50,7 @@ function messageType(value: unknown): string | null {
  */
 export async function handleMessage(
   message: unknown,
-  sender: { tab?: { id?: number; openerTabId?: number } },
+  sender: { tab?: { id?: number; openerTabId?: number }; url?: string },
   deps: ServiceWorkerDeps,
 ): Promise<MessageResponse> {
   const type = messageType(message);
@@ -78,6 +79,8 @@ export async function handleMessage(
         return await handleGetMeta(parsed, sender, deps);
       case MESSAGE.getAlternatives:
         return await handleGetAlternatives(parsed, sender, deps);
+      case MESSAGE.showAlternatives:
+        return await handleShowAlternatives(parsed, sender, deps);
       case MESSAGE.allow:
         return await handleAllow(parsed, sender, deps);
       case MESSAGE.revoke:

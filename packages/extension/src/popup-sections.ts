@@ -1,31 +1,30 @@
-import { MESSAGE, PAUSE_DURATION_MS } from './constants';
+import { MESSAGE } from './constants';
 import {
-  ALLOWED_SITES,
   ENABLED_SWITCH_LABEL,
   HOW_IT_WORKS_LABEL,
-  LIST_LABEL,
-  MANAGE_LABEL,
-  PAUSE_ACTIVE_DETAIL,
-  PAUSE_BUTTON_LABEL,
-  PAUSE_IDLE_DETAIL,
-  PAUSE_LABEL,
+  PAUSE_DURATION_LABELS,
+  PAUSE_MENU_LABEL,
+  PAUSE_ROW_LABEL,
+  PAUSE_TODAY_NOTE,
   POPUP_OFF,
   POPUP_ON,
   POPUP_PAUSED,
   PRIVACY_LABEL,
-  REMOVE_LABEL,
-  REPORT_FALSE_POSITIVE_LABEL,
   RESUME_LABEL,
-  SCOPE_DETAIL,
-  allowanceCount,
-  listDetail,
-  removeAllowanceLabel,
-  tabAllowanceLabel,
+  SETTINGS_LABEL,
+  SHOW_ALTERNATIVES_LABEL,
+  SITE_LISTED,
+  SITE_REPORT_HINT,
+  SITE_UNLISTED,
+  WALL_LABEL,
+  WALL_PRACTICE,
+  pausedRowLabel,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
-import type { RevokeMessage } from './messages';
+import type { PauseKind } from './pause';
+import { PAUSE_KINDS, pauseUntilFor } from './pause';
 import { createPageSender } from './page-send';
-import type { PopupAllowance, PopupView } from './popup';
+import type { PopupView } from './popup';
 import { reportUrl } from './report';
 import type { Settings } from './storage';
 import { currentVersion } from './version';
@@ -33,13 +32,6 @@ import { currentVersion } from './version';
 type Tone = 'on' | 'off' | 'paused';
 
 const sender = createPageSender('popup');
-
-/** A tab removal names its tab, so it never drops another tab's entry. */
-function revokeMessage(allowance: PopupAllowance): RevokeMessage {
-  const message = { type: MESSAGE.revoke, scope: allowance.scope, host: allowance.host };
-
-  return allowance.tabId === undefined ? message : { ...message, tabId: allowance.tabId };
-}
 
 /** The header state: the list is off, or paused, or on. The sheet tones each one. */
 export function renderState(view: PopupView): void {
@@ -78,62 +70,153 @@ export function renderSwitch(view: PopupView): void {
 }
 
 /**
- * The one allowance the popup shows. The visible label repeats in every popup,
- * so the accessible name of the removal names the site.
+ * The block answers for the page in front of the reader, so both states say
+ * something and each carries one action: the alternatives when the list knows
+ * the site, and the report sentence when it does not.
  */
-export function renderTabAllowance(view: PopupView): void {
-  const allowance = view.allowance;
+export function renderSite(view: PopupView): void {
+  const site = view.site;
 
-  setHidden('tab-allowance', allowance === null);
+  setHidden('site', site === null);
 
-  if (allowance === null) {
+  if (site === null) {
     return;
   }
 
-  setText('tab-allowance-label', tabAllowanceLabel(allowance.host));
-  setText('tab-allowance-detail', SCOPE_DETAIL[allowance.scope]);
-  setText('tab-allowance-remove', REMOVE_LABEL);
+  setText('site-text', `${site.host} ${site.listed ? SITE_LISTED : SITE_UNLISTED}`);
+  setText('site-wall', site.wall === null ? '' : WALL_LABEL[site.wall]);
+  setText('site-detail', site.wall === null ? '' : WALL_PRACTICE[site.wall]);
+  setHidden('site-wall', !site.listed);
 
-  const remove = roleElement('tab-allowance-remove');
+  const row = roleElement('site-row');
 
-  if (remove === null) {
-    return;
+  if (row !== null) {
+    row.dataset.listed = String(site.listed);
   }
 
-  remove.setAttribute('aria-label', removeAllowanceLabel(allowance.host));
-  remove.onclick = (): void => {
-    sender.send(revokeMessage(allowance), view.reload);
-  };
+  setHidden('site-alternatives', !site.listed);
+  setText('site-alternatives-label', SHOW_ALTERNATIVES_LABEL);
+
+  const alternatives = roleElement('site-alternatives');
+
+  if (alternatives !== null) {
+    alternatives.onclick = (): void => {
+      sender.send(
+        { type: MESSAGE.showAlternatives, tabId: site.tabId, url: site.url },
+        view.reload,
+      );
+    };
+  }
+
+  // The report names the page, the list, and the build. A context that cannot
+  // name its build hides the link rather than open a form that omits the version.
+  const version = currentVersion();
+  const report = roleElement('site-report');
+  const showReport = !site.listed && version !== null;
+
+  setHidden('site-report', !showReport);
+
+  if (report instanceof HTMLAnchorElement && version !== null) {
+    report.textContent = SITE_REPORT_HINT;
+    report.setAttribute(
+      'href',
+      reportUrl({ url: site.url, listVersion: view.listVersion, extensionVersion: version }),
+    );
+  }
 }
 
-/** The pause is one hour from now, and a second press resumes at once. */
+function setDurationsOpen(open: boolean): void {
+  setHidden('durations', !open);
+
+  const pause = roleElement('pause');
+
+  if (pause !== null) {
+    pause.setAttribute('aria-expanded', String(open));
+  }
+}
+
+/**
+ * The row is the whole control at rest, and the durations unfold under it. A
+ * paused row states the remainder, and the resume sits beside the label so the
+ * countdown never becomes a row of its own.
+ */
 export function renderPause(view: PopupView): void {
-  setText('pause-label', PAUSE_LABEL);
-  setText('pause-detail', view.paused ? PAUSE_ACTIVE_DETAIL : PAUSE_IDLE_DETAIL);
-  setText('pause-button', view.paused ? RESUME_LABEL : PAUSE_BUTTON_LABEL);
+  const label = view.paused ? pausedRowLabel(view.remaining) : PAUSE_ROW_LABEL;
+  const pause = roleElement('pause');
 
-  const button = roleElement('pause-button');
+  setText('pause-label', label);
+  setText('resume', RESUME_LABEL);
 
-  if (button === null) {
-    return;
+  const labelElement = roleElement('pause-label');
+
+  if (labelElement !== null) {
+    labelElement.dataset.until = view.paused ? String(view.until) : '';
   }
 
-  button.onclick = (): void => {
-    const until = view.paused ? 0 : view.now + PAUSE_DURATION_MS;
+  setHidden('resume', !view.paused);
+  setDurationsOpen(false);
 
-    sender.send({ type: MESSAGE.pause, until }, view.reload);
-  };
+  if (pause !== null) {
+    pause.setAttribute(
+      'aria-label',
+      view.paused ? `${label}. ${PAUSE_MENU_LABEL}` : PAUSE_ROW_LABEL,
+    );
+    pause.onclick = (): void => {
+      const list = roleElement('durations');
+
+      setDurationsOpen(list?.hidden !== false);
+    };
+  }
+
+  const resume = roleElement('resume');
+
+  if (resume !== null) {
+    resume.onclick = (): void => {
+      sender.send({ type: MESSAGE.pause, until: 0, session: false }, view.reload);
+    };
+  }
+
+  renderDurations(view);
 }
 
-export function renderAllowances(view: PopupView): void {
-  setText('allowances-label', ALLOWED_SITES);
-  setText('allowance-count', allowanceCount(view.count));
-  setText('manage', MANAGE_LABEL);
+/** One row per duration, and the chosen one replaces whatever pause was running. */
+function renderDurations(view: PopupView): void {
+  for (const kind of PAUSE_KINDS) {
+    const role = `duration-${kind}`;
+    const button = roleElement(role);
 
-  const manage = roleElement('manage');
+    if (button === null) {
+      continue;
+    }
 
-  if (manage !== null) {
-    manage.onclick = (): void => {
+    if (kind === 'today') {
+      setText('duration-today-label', PAUSE_DURATION_LABELS.today);
+      setText('duration-today-note', PAUSE_TODAY_NOTE);
+    } else {
+      button.textContent = PAUSE_DURATION_LABELS[kind as PauseKind];
+    }
+
+    button.onclick = (): void => {
+      sender.send(
+        {
+          type: MESSAGE.pause,
+          until: pauseUntilFor(kind, view.now),
+          session: kind === 'session',
+        },
+        view.reload,
+      );
+      setDurationsOpen(false);
+    };
+  }
+}
+
+export function renderSettings(): void {
+  const settings = roleElement('settings');
+
+  setText('settings-label', SETTINGS_LABEL);
+
+  if (settings !== null) {
+    settings.onclick = (): void => {
       sender.guard(() => chrome.runtime.openOptionsPage());
     };
   }
@@ -150,31 +233,8 @@ function setLink(role: string, href: string, text: string): void {
   element.setAttribute('href', href);
 }
 
-/**
- * The three links leave the extension. The report carries no URL, because the
- * popup is not a block page; a context that cannot name its build hides it
- * rather than open a form that omits the version.
- */
+/** The two links leave the extension. Reporting lives on the site block instead. */
 export function renderLinks(view: PopupView): void {
-  const version = currentVersion();
-
   setLink('how-it-works', `${view.apiBase}/`, HOW_IT_WORKS_LABEL);
   setLink('privacy', `${view.apiBase}/privacy`, PRIVACY_LABEL);
-
-  if (version === null) {
-    setHidden('report', true);
-    return;
-  }
-
-  setHidden('report', false);
-  setLink(
-    'report',
-    reportUrl({ url: null, listVersion: view.list.version, extensionVersion: version }),
-    REPORT_FALSE_POSITIVE_LABEL,
-  );
-}
-
-export function renderList(view: PopupView): void {
-  setText('list-label', LIST_LABEL);
-  setText('list-detail', listDetail(view.list));
 }

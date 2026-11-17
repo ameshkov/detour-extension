@@ -1,11 +1,12 @@
 /**
- * The nine request names of the message contract between the contexts.
+ * The ten request names of the message contract between the contexts.
  */
 export const MESSAGE = {
   isBlocked: 'isBlocked',
   blocked: 'blocked',
   getMeta: 'getMeta',
   getAlternatives: 'getAlternatives',
+  showAlternatives: 'showAlternatives',
   allow: 'allow',
   revoke: 'revoke',
   setSettings: 'setSettings',
@@ -22,6 +23,7 @@ export const STORAGE = {
   list: 'list',
   settings: 'settings',
   pauseUntil: 'pauseUntil',
+  pauseSession: 'pauseSession',
   allowAlways: 'allowAlways',
   allowSession: 'allowSession',
   allowTabs: 'allowTabs',

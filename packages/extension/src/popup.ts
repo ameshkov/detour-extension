@@ -1,30 +1,40 @@
-import type { AllowanceScope, AllowanceState } from './allowances';
+import type { SitesJson, WallType } from '@detour/shared';
+import { registrableDomain } from '@detour/shared';
+
+import { pausedRowLabel } from './copy';
 import { findSite } from './list-matching';
+import { hostOf } from './page-url';
+import { remainingOf } from './pause';
 import {
-  renderAllowances,
   renderLinks,
-  renderList,
   renderPause,
+  renderSettings,
+  renderSite,
   renderState,
   renderSwitch,
-  renderTabAllowance,
 } from './popup-sections';
 import type { Settings } from './storage';
-import { isPaused, readAllowances, readList, readPauseUntil, readSettings } from './storage';
+import { isPaused, readList, readPause, readSettings } from './storage';
 
-export type PopupAllowance = {
-  scope: AllowanceScope;
+/** The page the popup was opened from, and what the list says about it. */
+export type PopupSite = {
   host: string;
-  tabId?: number;
+  listed: boolean;
+  wall: WallType | null;
+  tabId: number;
+  url: string;
 };
 
 export type PopupView = {
   settings: Settings;
   paused: boolean;
-  allowance: PopupAllowance | null;
-  count: number;
-  list: { version: number; sites: number; updated: string };
+  /** The rest of a timed pause in milliseconds, or null when it has no clock. */
+  remaining: number | null;
+  /** The moment the timed pause ends, and 0 when nothing is counting down. */
+  until: number;
+  site: PopupSite | null;
   apiBase: string;
+  listVersion: number;
   now: number;
   reload: () => void;
 };
@@ -33,40 +43,6 @@ export type PopupOptions = {
   apiBase: string;
   now?: number;
 };
-
-/**
- * The entry the popup shows for the active tab. A permanent allowance outlives
- * every restriction, so it wins over the session one, and both over this tab's.
- */
-function allowanceFor(
-  state: AllowanceState,
-  host: string | null,
-  tabId: number | null,
-): PopupAllowance | null {
-  if (host === null) {
-    return null;
-  }
-
-  const permanent = state.allowAlways.find((entry) => entry.host === host);
-
-  if (permanent !== undefined) {
-    return { scope: 'always', host: permanent.host };
-  }
-
-  const session = state.allowSession.find((entry) => entry.host === host);
-
-  if (session !== undefined) {
-    return { scope: 'session', host: session.host };
-  }
-
-  const tab = state.allowTabs.find((entry) => entry.host === host && entry.tabId === tabId);
-
-  return tab === undefined ? null : { scope: 'tab', host: tab.host, tabId: tab.tabId };
-}
-
-function countAllowances(state: AllowanceState): number {
-  return state.allowAlways.length + state.allowSession.length + state.allowTabs.length;
-}
 
 type ActiveTab = { id: number; url: string };
 
@@ -85,44 +61,88 @@ async function activeTab(): Promise<ActiveTab | null> {
   }
 }
 
+/**
+ * The site is named whether or not the list carries it, because both answers are
+ * useful: one opens the alternatives, the other asks for a report. A page with no
+ * site — a browser page, a store page, a `file:` — names nothing.
+ */
+function siteFor(list: SitesJson, tab: ActiveTab): PopupSite | null {
+  const entry = findSite(list, tab.url);
+  const host = entry?.domain ?? (registrableDomain(tab.url) || hostOf(tab.url));
+
+  if (host === null || host === '') {
+    return null;
+  }
+
+  return {
+    host,
+    listed: entry !== null,
+    wall: entry?.wall ?? null,
+    tabId: tab.id,
+    url: tab.url,
+  };
+}
+
 export function renderPopup(view: PopupView): void {
   renderState(view);
   renderSwitch(view);
-  renderTabAllowance(view);
+  renderSite(view);
   renderPause(view);
-  renderAllowances(view);
-  renderList(view);
+  renderSettings();
   renderLinks(view);
 }
 
 /**
- * Reads the settings, the pause, the allowances, the list, and the active tab,
- * and renders once. Every write is a message, and the reload that follows reads
- * what the service worker stored.
+ * A pause keeps counting while the popup stays open, so the row is refreshed on
+ * the second. The label carries the moment it counts to: a render that pauses
+ * differently writes another one, and the old interval stops instead of writing
+ * over the row it no longer owns. A session pause has no clock to tick.
+ */
+function countdown(until: number): void {
+  const tick = (): void => {
+    const element = document.querySelector<HTMLElement>('[data-role="pause-label"]');
+
+    if (element === null || element.dataset.until !== String(until)) {
+      window.clearInterval(timer);
+      return;
+    }
+
+    element.textContent = pausedRowLabel(remainingOf(until, Date.now()));
+  };
+
+  const timer = window.setInterval(tick, 1000);
+
+  window.addEventListener('pagehide', () => window.clearInterval(timer), { once: true });
+}
+
+/**
+ * Reads the settings, the pause, the list, and the active tab, and renders once.
+ * Every write is a message, and the reload that follows reads what the service
+ * worker stored.
  */
 export async function startPopup(options: PopupOptions): Promise<void> {
   const now = options.now ?? Date.now();
 
   const load = async (): Promise<void> => {
-    const [settings, pauseUntil, allowances, list] = await Promise.all([
-      readSettings(),
-      readPauseUntil(),
-      readAllowances(),
-      readList(),
-    ]);
+    const [settings, pause, list] = await Promise.all([readSettings(), readPause(), readList()]);
     const tab = await activeTab();
-    const host = tab === null ? null : (findSite(list, tab.url)?.domain ?? null);
+    const paused = isPaused(pause, now);
 
     renderPopup({
       settings,
-      paused: isPaused(pauseUntil, now),
-      allowance: allowanceFor(allowances, host, tab?.id ?? null),
-      count: countAllowances(allowances),
-      list: { version: list.version, sites: list.sites.length, updated: list.updated },
+      paused,
+      remaining: paused ? remainingOf(pause.until, now) : null,
+      until: paused ? pause.until : 0,
+      site: tab === null ? null : siteFor(list, tab),
       apiBase: options.apiBase,
+      listVersion: list.version,
       now,
       reload: () => void load(),
     });
+
+    if (paused && pause.until > now) {
+      countdown(pause.until);
+    }
   };
 
   await load();

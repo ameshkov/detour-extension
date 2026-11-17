@@ -65,23 +65,26 @@ The sheet declares every colour once, on `:root`, and no other colour is written
 lowercases each hexadecimal value in the sheet, so `ui.css` holds `#fbfaf8` where this table
 holds `#FBFAF8`. The two spellings are one colour.
 
-| Token              | Value     | Use                                                                    |
-| ------------------ | --------- | ---------------------------------------------------------------------- |
-| `--paper`          | `#FBFAF8` | The page background                                                    |
-| `--surface`        | `#FFFFFF` | Cards and rows above the paper                                         |
-| `--ink`            | `#16161A` | Body text and the headline                                             |
-| `--muted`          | `#6E6C67` | Secondary text                                                         |
-| `--line`           | `#E8E4DD` | Card borders                                                           |
-| `--line-soft`      | `#F0ECE5` | Dividers inside a list, an action row, or a section                    |
-| `--control-line`   | `#DED9D0` | The border of a quiet control, such as a pause button or a query field |
-| `--accent`         | `#0B6B57` | The mark tile, the focus ring, and the primary tone                    |
-| `--blocked`        | `#C0513F` | The dot of the site chip                                               |
-| `--chip-ink`       | `#96382E` | The text of the site chip                                              |
-| `--chip-surface`   | `#FCF0ED` | The background of the site chip                                        |
-| `--chip-line`      | `#F0D9D3` | The border of the site chip                                            |
-| `--notice-ink`     | `#6B5322` | The text of a notice                                                   |
-| `--notice-surface` | `#FDF6E7` | The background of a notice                                             |
-| `--notice-line`    | `#EFDFBC` | The border of a notice                                                 |
+| Token              | Value                     | Use                                                                    |
+| ------------------ | ------------------------- | ---------------------------------------------------------------------- |
+| `--paper`          | `#FBFAF8`                 | The page background                                                    |
+| `--surface`        | `#FFFFFF`                 | Cards and rows above the paper                                         |
+| `--ink`            | `#16161A`                 | Body text and the headline                                             |
+| `--muted`          | `#6E6C67`                 | Secondary text                                                         |
+| `--line`           | `#E8E4DD`                 | Card borders                                                           |
+| `--line-soft`      | `#F0ECE5`                 | Dividers inside a list, an action row, or a section                    |
+| `--hover`          | `#F4F0E9`                 | The background of a hovered row                                        |
+| `--control-line`   | `#DED9D0`                 | The border of a quiet control, such as a pause button or a query field |
+| `--accent`         | `#0B6B57`                 | The mark tile, the focus ring, and the primary tone                    |
+| `--accent-deep`    | `#0A5F4E`                 | The hovered accent, on the switch and on a link                        |
+| `--accent-ring`    | `rgba(11, 107, 87, 0.16)` | The hover ring around the switch                                       |
+| `--blocked`        | `#C0513F`                 | The dot of the site chip                                               |
+| `--chip-ink`       | `#96382E`                 | The text of the site chip                                              |
+| `--chip-surface`   | `#FCF0ED`                 | The background of the site chip                                        |
+| `--chip-line`      | `#F0D9D3`                 | The border of the site chip                                            |
+| `--notice-ink`     | `#6B5322`                 | The text of a notice                                                   |
+| `--notice-surface` | `#FDF6E7`                 | The background of a notice                                             |
+| `--notice-line`    | `#EFDFBC`                 | The border of a notice                                                 |
 
 The tile of a result row takes one colour from a fixed set of nine, chosen by the domain, so the
 same domain keeps the same tile. Its letter is white on that colour:
@@ -95,19 +98,53 @@ stand-in, so a row without a favicon reads the same as before.
 
 Body text is at least 4.5:1 against its background.
 
+## States
+
+The popup has one chevron, `›`. A row that leaves the popup ends with it, and the pause row
+carries the same glyph turned a quarter turn: it points down while the durations are closed and up
+while they are open, so the disclosure never needs a second glyph.
+
+The block page's menu caret is drawn instead, as a 12 px path in a 34 px button. A typed arrowhead
+carries the side bearings of its font and sits a pixel or two off centre at this size; the path is
+symmetric about its box. The caret turns over while the menu is open.
+
+Every row and the switch answer the pointer. A hovered row takes `--hover` under its own text,
+and the chevron that closes the row takes `--ink`. The switch takes a `--accent-ring` halo, and
+its track deepens to `--control-line` when it is off and to `--accent-deep` when it is on, so the
+white knob never carries the state alone. A link is underlined, and it takes `--accent-deep` on
+hover. The focus ring stays `--accent`.
+
+The options page draws its controls the way the popup draws its switch. The reading checkbox is
+16 px with a 5 px radius, a `--control-line` edge, and the accent with a white check when it is on.
+The pointer on its row gives the box an `--accent` edge, and a checked box deepens to
+`--accent-deep`. `Clear cache` is an outlined button that takes `--hover` and a `--muted` edge
+under the pointer, and a `remove` link turns `--blocked`.
+
+The popup names the verdict of the page in colour as well as in words: the site the list carries
+takes `--accent` and the site it does not takes `--muted`. No dot stands in for either answer.
+
 ## Type
 
-The table gives the block page sizes. The popup sets the wordmark to 12.5 px.
+The table gives the block page sizes. The popup sets the wordmark to 12.5 px, its rows to
+12.5 px at 600, and the wall label to 9.5 px uppercase with 0.12em tracking. The options page
+sets its title to 27 px serif and its sections to 11 px uppercase at 0.1em, so the page and its
+parts never share a size.
 
 | Role          | Family | Size                            | Weight                 | Tracking |
 | ------------- | ------ | ------------------------------- | ---------------------- | -------- |
+| Page title    | Serif  | 27 px                           | 600                    | -0.02em  |
 | Headline      | Serif  | 33 px, and 24 px below 520 px   | 600                    | -0.02em  |
+| Section head  | Serif  | 20 px                           | 600                    | -0.015em |
 | Source title  | Serif  | 17 px                           | 600                    | -0.01em  |
 | Hero title    | Serif  | 18.5 px                         | 600                    | -0.015em |
 | Row title     | Sans   | 14.5 px                         | 600                    | -0.006em |
 | Practice line | Sans   | 15 px                           | 400                    | —        |
 | Explanation   | Sans   | 15 px, in ink                   | 550                    | —        |
 | Row meta      | Sans   | 12.5 px                         | 400, the domain at 550 | —        |
+| Popup row     | Sans   | 12.5 px                         | 600                    | —        |
+| Wall label    | Sans   | 9.5 px, uppercase               | 600                    | 0.12em   |
+| Report link   | Sans   | 11.5 px, underlined             | 400                    | —        |
+| Section label | Sans   | 11 px, uppercase                | 600                    | 0.1em    |
 | Wordmark      | Sans   | 14 px, and 12.5 px in the popup | 650                    | -0.01em  |
 
 The display family is `ui-serif, Georgia, "Iowan Old Style", serif`. The interface family is
@@ -125,8 +162,10 @@ The display family is `ui-serif, Georgia, "Iowan Old Style", serif`. The interfa
 | Hero image        | 216 by 122 px                                     |
 | Row tile          | 24 px square                                      |
 | Row thumbnail     | 96 by 60 px                                       |
-| Popup             | 340 px wide                                       |
-| Options page      | 640 px at most                                    |
+| Popup             | 340 px wide, with 36 px rows                      |
+| Options page      | 640 px at most, with 22 px of padding             |
+| Reading checkbox  | 16 px square, with a 5 px radius                  |
+| Menu caret        | a 12 px path in a 34 px button                    |
 
 Below 520 px the headline drops to 24 px, the row thumbnails drop out, and the hero image stacks
 above its text.

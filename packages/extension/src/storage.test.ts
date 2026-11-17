@@ -8,11 +8,11 @@ import {
   readAllowance,
   readAllowances,
   readList,
-  readPauseUntil,
+  readPause,
   readSettings,
   readStoredList,
   writeAllowance,
-  writePauseUntil,
+  writePause,
   writeStoredList,
 } from './storage';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
@@ -126,17 +126,39 @@ describe('the pause store', () => {
 
     fake.storage.local.values.pauseUntil = 2_000;
 
-    expect(isPaused(await readPauseUntil(), 1_000)).toBe(true);
+    expect(isPaused(await readPause(), 1_000)).toBe(true);
   });
 
   it('clears a pause at its own time and after it', async () => {
     installFakeChrome();
 
-    await writePauseUntil(2_000);
-    const pauseUntil = await readPauseUntil();
+    await writePause({ until: 2_000, session: false });
+    const pause = await readPause();
 
-    expect(isPaused(pauseUntil, 2_000)).toBe(false);
-    expect(isPaused(pauseUntil, 2_001)).toBe(false);
+    expect(isPaused(pause, 2_000)).toBe(false);
+    expect(isPaused(pause, 2_001)).toBe(false);
+  });
+
+  it('keeps a session pause until the browser drops the store', async () => {
+    const fake = installFakeChrome();
+
+    await writePause({ until: 0, session: true });
+
+    expect(fake.storage.session.values.pauseSession).toBe(true);
+    expect(fake.storage.local.values.pauseUntil).toBe(0);
+    expect(isPaused(await readPause(), 2_000_000)).toBe(true);
+  });
+
+  it('drops the session flag when a timed pause replaces it', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.session.values.pauseSession = true;
+
+    await writePause({ until: 3_000, session: false });
+
+    expect(fake.storage.session.values.pauseSession).toBe(false);
+    expect(fake.storage.local.values.pauseUntil).toBe(3_000);
+    expect(isPaused(await readPause(), 1_000)).toBe(true);
   });
 });
 
@@ -193,6 +215,6 @@ describe('the allowance stores', () => {
       allowTabs: [],
     });
     await expect(readStoredList()).resolves.toBeNull();
-    await expect(readPauseUntil()).resolves.toBe(0);
+    await expect(readPause()).resolves.toEqual({ until: 0, session: false });
   });
 });

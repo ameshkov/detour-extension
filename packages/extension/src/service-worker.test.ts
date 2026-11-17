@@ -788,13 +788,18 @@ describe('the message boundary', () => {
       { type: MESSAGE.blocked, url: CNET_URL },
       { type: MESSAGE.getMeta, url: CNET_URL },
       { type: MESSAGE.getAlternatives, url: CNET_URL, title: '' },
+      {
+        type: MESSAGE.showAlternatives,
+        tabId: 7,
+        url: CNET_URL,
+      },
       { type: MESSAGE.allow, scope: 'always', url: CNET_URL },
       { type: MESSAGE.revoke, scope: 'always', host: 'cnet.com' },
       {
         type: MESSAGE.setSettings,
         settings: { enabled: true, autoOpenBest: false, imagesEnabled: true },
       },
-      { type: MESSAGE.pause, until: NOW + 1 },
+      { type: MESSAGE.pause, until: NOW + 1, session: false },
       { type: MESSAGE.clearCache },
     ];
     const types = messages.map((message) => (message as { type: string }).type);
@@ -1056,17 +1061,116 @@ describe('the settings handler', () => {
   });
 });
 
+describe('the showAlternatives handler', () => {
+  const POPUP_SENDER = { url: `chrome-extension://${FAKE_EXTENSION_ID}/popup.html` };
+
+  it('moves the tab to the block page for the page it holds', async () => {
+    const fake = installFakeChrome();
+    const { fetchImpl } = recordingFetch(() => pageResponse(METADATA_HTML));
+
+    fake.tabPages.set(7, NAVIGATED_URL);
+
+    await expect(
+      handleMessage(
+        { type: 'showAlternatives', tabId: 7, url: NAVIGATED_URL },
+        POPUP_SENDER,
+        deps({ fetchImpl }),
+      ),
+    ).resolves.toEqual({ ok: true, blockPageUrl: blockPageUrlFor(NAVIGATED_URL) });
+
+    expect(fake.calls.updates).toEqual([{ tabId: 7, url: blockPageUrlFor(NAVIGATED_URL) }]);
+    await expect(hasCapability(7, NAVIGATED_URL)).resolves.toBe(true);
+  });
+
+  it('accepts a tab that differs only after the fragment', async () => {
+    const fake = installFakeChrome();
+
+    fake.tabPages.set(7, `${ENCODED_URL}`);
+
+    await expect(
+      handleMessage(
+        {
+          type: 'showAlternatives',
+          tabId: 7,
+          url: 'https://www.cnet.com/news/a-story?x=1&y=2#top',
+        },
+        POPUP_SENDER,
+        deps(),
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      blockPageUrl: blockPageUrlFor('https://www.cnet.com/news/a-story?x=1&y=2#top'),
+    });
+  });
+
+  it('refuses a tab that has moved on', async () => {
+    const fake = installFakeChrome();
+
+    fake.tabPages.set(7, NAVIGATED_URL);
+
+    await expect(
+      handleMessage({ type: 'showAlternatives', tabId: 7, url: CNET_URL }, POPUP_SENDER, deps()),
+    ).resolves.toEqual({ ok: false, error: 'missing_tab' });
+
+    expect(fake.calls.updates).toEqual([]);
+  });
+
+  it('refuses a caller that is a page and not one of ours', async () => {
+    const fake = installFakeChrome();
+
+    fake.tabPages.set(7, NAVIGATED_URL);
+
+    await expect(
+      handleMessage(
+        { type: 'showAlternatives', tabId: 7, url: NAVIGATED_URL },
+        { url: 'https://www.cnet.com/news/navigated-story/', tab: { id: 7 } },
+        deps(),
+      ),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+
+    expect(fake.calls.updates).toEqual([]);
+  });
+
+  it('refuses a tab that the runtime no longer holds', async () => {
+    const fake = installFakeChrome();
+
+    await expect(
+      handleMessage(
+        { type: 'showAlternatives', tabId: 99, url: NAVIGATED_URL },
+        POPUP_SENDER,
+        deps(),
+      ),
+    ).resolves.toEqual({ ok: false, error: 'missing_tab' });
+
+    expect(fake.calls.updates).toEqual([]);
+  });
+});
+
 describe('the pause handler', () => {
   it('pauses the list', async () => {
     const fake = installFakeChrome();
     const until = NOW + 3_600_000;
 
-    await expect(handleMessage({ type: 'pause', until }, {}, deps())).resolves.toEqual({
-      ok: true,
-      pauseUntil: until,
-    });
+    await expect(
+      handleMessage({ type: 'pause', until, session: false }, {}, deps()),
+    ).resolves.toEqual({ ok: true, pauseUntil: until, session: false });
 
     expect(fake.storage.local.values.pauseUntil).toBe(until);
+    await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
+      ok: true,
+      blocked: false,
+      site: null,
+    });
+  });
+
+  it('pauses until the browser restarts with no timestamp', async () => {
+    const fake = installFakeChrome();
+
+    await expect(
+      handleMessage({ type: 'pause', until: 0, session: true }, {}, deps()),
+    ).resolves.toEqual({ ok: true, pauseUntil: 0, session: true });
+
+    expect(fake.storage.session.values.pauseSession).toBe(true);
     await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
       ok: true,
       blocked: false,
@@ -1077,7 +1181,7 @@ describe('the pause handler', () => {
   it('clears the pause with a time that has passed', async () => {
     installFakeChrome();
 
-    await handleMessage({ type: 'pause', until: NOW - 1 }, {}, deps());
+    await handleMessage({ type: 'pause', until: NOW - 1, session: false }, {}, deps());
 
     await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
       ok: true,

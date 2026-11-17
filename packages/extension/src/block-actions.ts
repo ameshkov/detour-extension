@@ -74,6 +74,31 @@ function renderReport(view: ActionsView, link: HTMLElement | null): void {
 }
 
 /**
+ * A row that sits near the bottom of the viewport opens its menu upward, so the
+ * scopes it offers are never hidden past the edge of the window. The menu drops
+ * its side first, so the measurement is the one it would take below the row.
+ */
+function placeMenu(menu: HTMLElement | null, caret: HTMLElement | null): void {
+  if (menu === null) {
+    return;
+  }
+
+  delete menu.dataset.side;
+
+  if (caret === null) {
+    return;
+  }
+
+  const below = menu.getBoundingClientRect();
+  const room = window.innerHeight - 8;
+  const above = caret.getBoundingClientRect().top - below.height - 12;
+
+  if (below.bottom > room && above > 8) {
+    menu.dataset.side = 'top';
+  }
+}
+
+/**
  * The action row: one outline button that opens the site in this tab, a caret
  * that offers the other two scopes, and the report link. The row belongs to the
  * page, not to the list: any web URL can be opened, and the matched host only
@@ -94,7 +119,6 @@ export function renderActions(view: ActionsView): void {
   renderReport(view, roleElement('report'));
 
   if (caret !== null) {
-    caret.textContent = '⌄';
     caret.setAttribute('aria-label', SCOPE_MENU_LABEL);
     caret.setAttribute('aria-haspopup', 'menu');
     caret.setAttribute('aria-expanded', 'false');
@@ -129,6 +153,7 @@ export function renderActions(view: ActionsView): void {
 
   const open = (): void => {
     setOpen(true);
+    placeMenu(menu, caret);
     stopEscapeListener();
     escapeListener = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {

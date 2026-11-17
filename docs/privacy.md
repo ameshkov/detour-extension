@@ -30,14 +30,14 @@ policy. Detour sends nothing to the engine itself, and it sets no referrer.
 
 ## Reporting a problem
 
-The block page carries a `Report a problem` link, and the popup carries a
-`Report a false positive` link. Each one opens a new issue form on the
-project's GitHub page, with the list version and the extension version already
-in the body. The block page's link adds the address of the page that Detour
-stopped. GitHub receives that text when the form opens. You can read and edit
-it before you post, and no issue exists until you press the button that
-creates it. The popup link carries no address, because the popup is not a page
-that Detour stopped.
+The block page carries a `Report a problem` link, and the popup carries the
+sentence `If you see a wall here, report it.` as a link, which it shows for a
+site the list does not carry. Each one opens a new issue form on the project's
+GitHub page, with the list version and the extension version already in the
+body. The block page's link adds the address of the page that Detour stopped,
+and the popup's link adds the address of the page in front of the reader. GitHub receives that text when the form opens.
+You can read and edit it before you post, and no issue exists until you press
+the button that creates it.
 
 ## What the backend keeps
 

@@ -99,7 +99,11 @@ describe('the allowance menu', () => {
 
     renderActions(view());
 
-    expect(caret.textContent).toBe('⌄');
+    const mark = role('open-menu-caret');
+
+    expect(mark.getAttribute('aria-hidden')).toBe('true');
+    expect(mark.querySelector('svg')).not.toBeNull();
+    expect(mark.textContent?.trim()).toBe('');
     expect(caret.getAttribute('aria-label')).toBe(SCOPE_MENU_LABEL);
     expect(caret.getAttribute('aria-haspopup')).toBe('menu');
     expect(caret.getAttribute('aria-expanded')).toBe('false');
@@ -109,6 +113,61 @@ describe('the allowance menu', () => {
 
     expect(menu.hidden).toBe(false);
     expect(caret.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  /**
+   * happy-dom lays every box out at zero, so a case that exercises the placement
+   * gives the caret and the menu the boxes a browser would give them.
+   */
+  function place(
+    element: HTMLElement,
+    rect: { top: number; bottom: number; height: number },
+  ): void {
+    element.getBoundingClientRect = (): DOMRect =>
+      ({
+        ...rect,
+        x: 0,
+        y: rect.top,
+        left: 0,
+        right: 0,
+        width: 0,
+        toJSON: () => rect,
+      }) as DOMRect;
+  }
+
+  function viewportHeight(height: number): void {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+  }
+
+  it('opens the menu above a row that sits at the foot of the window', () => {
+    renderActions(view());
+
+    const caret = role('open-menu');
+    const menu = role('scope-menu');
+
+    place(caret, { top: 690, bottom: 728, height: 38 });
+    place(menu, { top: 734, bottom: 847, height: 113 });
+    viewportHeight(800);
+
+    press('open-menu');
+
+    expect(menu.hidden).toBe(false);
+    expect(menu.dataset.side).toBe('top');
+  });
+
+  it('keeps the menu below a row that has room under it', () => {
+    renderActions(view());
+
+    const caret = role('open-menu');
+    const menu = role('scope-menu');
+
+    place(caret, { top: 200, bottom: 238, height: 38 });
+    place(menu, { top: 244, bottom: 357, height: 113 });
+    viewportHeight(800);
+
+    press('open-menu');
+
+    expect(menu.dataset.side).toBeUndefined();
   });
 
   it('closes the menu on escape from the caret', () => {

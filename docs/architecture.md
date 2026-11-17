@@ -32,7 +32,7 @@ options page show what the service worker stored.
 | Guard          | Decide fast, stop the load, report the URL.                             | `guard.ts`, `guard-entry.ts`                                                                                                                                  | Service worker          |
 | Service worker | Own the list, the allowances, the metadata, and the navigation.         | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts` | Storage, backend API    |
 | Block page     | Explain the wall, show the source, load the alternatives.               | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                               | Storage, service worker |
-| Popup          | Show the state, the tab's allowance, the pause, and the list.           | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
+| Popup          | Show the state, the page's verdict, the pause, and the settings.        | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
 | Options page   | List the allowances, remove one, set the two settings, clear the cache. | `options.html`, `options-entry.ts`, `options.ts`                                                                                                              | Storage, service worker |
 
 The source files sit in `packages/extension/src`. The guard keeps one
@@ -92,23 +92,33 @@ is `{ ok: true, … }` or `{ ok: false, error }`. The error is `bad_message`,
 `missing_tab`, `navigation_failed`, or `unknown_message`, and no handler
 throws across the boundary.
 
-| Message           | Request                   | Answer                                                               |
-| ----------------- | ------------------------- | -------------------------------------------------------------------- |
-| `isBlocked`       | `{ url }`                 | `{ ok: true, blocked, site }`                                        |
-| `blocked`         | `{ url }`                 | `{ ok: true, blockPageUrl }` or `{ ok: false, error, blockPageUrl }` |
-| `getMeta`         | `{ url }`                 | `{ ok: true, meta }`                                                 |
-| `getAlternatives` | `{ url, title }`          | `{ ok: true, answer }` or `{ ok: false, error }`                     |
-| `allow`           | `{ scope, url }`          | `{ ok: true, allowances }`                                           |
-| `revoke`          | `{ scope, host, tabId? }` | `{ ok: true, allowances }`                                           |
-| `setSettings`     | `{ settings }`            | `{ ok: true, settings }`                                             |
-| `pause`           | `{ until }`               | `{ ok: true, pauseUntil }`                                           |
-| `clearCache`      | none                      | `{ ok: true, cleared }`                                              |
+| Message            | Request                   | Answer                                                               |
+| ------------------ | ------------------------- | -------------------------------------------------------------------- |
+| `isBlocked`        | `{ url }`                 | `{ ok: true, blocked, site }`                                        |
+| `blocked`          | `{ url }`                 | `{ ok: true, blockPageUrl }` or `{ ok: false, error, blockPageUrl }` |
+| `getMeta`          | `{ url }`                 | `{ ok: true, meta }`                                                 |
+| `getAlternatives`  | `{ url, title }`          | `{ ok: true, answer }` or `{ ok: false, error }`                     |
+| `showAlternatives` | `{ tabId, url }`          | `{ ok: true, blockPageUrl }` or `{ ok: false, error }`               |
+| `allow`            | `{ scope, url }`          | `{ ok: true, allowances }`                                           |
+| `revoke`           | `{ scope, host, tabId? }` | `{ ok: true, allowances }`                                           |
+| `setSettings`      | `{ settings }`            | `{ ok: true, settings }`                                             |
+| `pause`            | `{ until, session }`      | `{ ok: true, pauseUntil, session }`                                  |
+| `clearCache`       | none                      | `{ ok: true, cleared }`                                              |
 
 `site` is `{ domain, name, wall }` from the list, or `null`. `meta` is `null`
 or `{ title, description }`, and each field is a string or `null`. `answer`
 is `null` or the backend's alternatives answer. `scope` is `tab`, `session`,
 or `always`. `cleared` is the number of storage keys that `clearCache`
-removed.
+removed. `session` is `true` for the pause that the browser ends, and that
+pause carries `until: 0`.
+
+`showAlternatives` is the popup's own request. It takes the tab the popup was
+opened from and the page it holds, and the worker refuses both a caller that is
+not one of the extension's pages and a tab that has since moved to another
+page. It records `capability:<tabId>`, warms the metadata, and moves the tab to
+`block.html?u=<url>`, so the reader lands on the page the guard would have
+shown. The popup sends it instead of navigating itself, because only the worker
+holds the tab and the capability record.
 
 ### Guard
 
@@ -143,6 +153,7 @@ stay.
 | `list`               | local   | service worker | Until the next refresh    |
 | `settings`           | local   | service worker | Until the user changes it |
 | `pauseUntil`         | local   | service worker | Until the time passes     |
+| `pauseSession`       | session | service worker | Browser restart           |
 | `allowAlways`        | local   | service worker | Until the user removes it |
 | `allowSession`       | session | service worker | Browser restart           |
 | `allowTabs`          | session | service worker | Tab close                 |
@@ -226,7 +237,8 @@ shows the note, the `Open <site> instead` action, and `Keep waiting`.
 
 The action row follows the page. `Open <site> anyway` grants the tab
 allowance and opens the site, and its caret opens a menu of the other two
-scopes.
+scopes. The menu opens above the row when the row sits at the foot of the
+window, so a scope is never past the edge of the viewport.
 
 The countdown starts when `autoOpenBest` is on and at least one alternative
 exists. It counts 3, 2, 1, and then navigates the tab to the first
@@ -250,11 +262,25 @@ a browser navigation: `navigate` for this tab and `openTab` for a new one.
 ### Popup and options page
 
 The popup is 340 px wide. Its header carries the mark tile, the wordmark, the
-state, and the switch of `settings.enabled`. Below the header it shows the
-allowance of the active tab, the pause control, the number of allowance
-entries with `manage`, the list row, and three links. `manage` opens the
-options page, and the popup never grants an allowance. The pause is one hour
-from the time of the press.
+state, and the switch of `settings.enabled`. Below it is a block about the page
+in the tab the popup was opened from: the site and whether the list carries it,
+the sentence for its wall type, and one action. The verdict is a word and a
+colour: the site takes the accent when the list carries it and the muted tone
+when it does not, so no dot carries the answer. When the list carries the site,
+the action is `Show alternatives` and it sends `showAlternatives`; when it does
+not, the action is the sentence `If you see a wall here, report it.`, a link
+that carries the page, the list version, and the extension version into a
+prefilled issue. A page that names no site — a browser page, a store page, a
+`file:` — hides the block.
+
+Below the block sit two rows: the pause and the settings. Every row answers the
+pointer, and so does the header switch. The pause row is a button that unfolds
+the five durations, `5 minutes`, `30 minutes`, `1 hour`, `Today`, and `Until the
+browser restarts`, and a running pause replaces its label with the time it has
+left and a `Resume`. `Today` ends at the next local midnight, and `Until the
+browser restarts` writes `pauseSession` instead of a timestamp. The settings row
+opens the options page. The footer keeps two links, `How it works` and
+`Privacy`, and the popup never grants an allowance.
 
 The options page is 640 px at most. It lists every entry of the three
 allowance stores with its scope and its `addedAt` date as a UTC `YYYY-MM-DD`,

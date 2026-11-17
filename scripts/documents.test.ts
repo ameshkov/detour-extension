@@ -37,14 +37,21 @@ describe('the architecture page', () => {
     expect(row).not.toContain('Worker API');
   });
 
-  it('lists the popup pause before the allowance count', () => {
+  it('orders the popup page as verdict, pause, settings, links', () => {
     const popup = collapse(section(architecture, 'Popup and options page'));
-    const pause = popup.indexOf('the pause control');
-    const count = popup.indexOf('the number of allowance entries');
+    const verdict = popup.indexOf('whether the list carries it');
+    const pause = popup.indexOf('the pause and the settings');
+    const links = popup.indexOf('How it works');
 
+    expect(verdict).toBeGreaterThan(-1);
     expect(pause).toBeGreaterThan(-1);
-    expect(count).toBeGreaterThan(-1);
-    expect(pause).toBeLessThan(count);
+    expect(links).toBeGreaterThan(-1);
+    expect(verdict).toBeLessThan(pause);
+    expect(pause).toBeLessThan(links);
+  });
+
+  it('names the message the popup sends for the alternatives', () => {
+    expect(collapse(architecture)).toContain('showAlternatives');
   });
 
   it('names the three backend routes the extension uses', () => {

@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ENABLED_SWITCH_LABEL,
   KEEP_WAITING_LABEL,
-  LIST_LABEL,
-  PAUSE_BUTTON_LABEL,
+  PAUSE_DURATION_LABELS,
+  PAUSE_ROW_LABEL,
   POPUP_OFF,
   POPUP_ON,
   POPUP_PAUSED,
@@ -13,17 +13,22 @@ import {
   SCOPE_DETAIL,
   SCOPE_LABEL,
   SEARCH_ENGINE_NAMES,
+  SETTINGS_LABEL,
+  SHOW_ALTERNATIVES_LABEL,
+  SITE_LISTED,
+  SITE_REPORT_HINT,
+  SITE_UNLISTED,
   SLOW_NOTE,
   STAY_LABEL,
-  allowanceCount,
+  WALL_LABEL,
   countdownText,
-  listDetail,
   openAnywayLabel,
+  pauseCountdown,
+  pausedRowLabel,
   openInsteadLabel,
   removeAllowanceLabel,
   reportIssueBody,
   resultsCount,
-  tabAllowanceLabel,
 } from './copy';
 
 const FORBES_URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-move/';
@@ -66,15 +71,26 @@ describe('the copy', () => {
     expect(REPORT_ISSUE_TITLE(null)).toBe('Block page problem');
   });
 
-  it('lists the version, the sites, and the date', () => {
-    expect(listDetail({ version: 5, sites: 128, updated: '2026-11-12' })).toBe(
-      'Version 5 · 128 sites · updated 2026-11-12',
-    );
+  it('names the five pauses', () => {
+    expect(PAUSE_DURATION_LABELS).toEqual({
+      '5m': '5 minutes',
+      '30m': '30 minutes',
+      '1h': '1 hour',
+      today: 'Today',
+      session: 'Until the browser restarts',
+    });
   });
 
-  it('counts one site and many', () => {
-    expect(allowanceCount(1)).toBe('1 site');
-    expect(allowanceCount(2)).toBe('2 sites');
+  it('counts down under an hour and over one', () => {
+    expect(pauseCountdown(59 * 60 * 1000 + 42 * 1000)).toBe('59:42 left');
+    expect(pauseCountdown(4 * 60 * 1000)).toBe('04:00 left');
+    expect(pauseCountdown(3600 * 1000)).toBe('1:00:00 left');
+    expect(pauseCountdown(0)).toBe('00:00 left');
+  });
+
+  it('names the paused row with and without a clock', () => {
+    expect(pausedRowLabel(90 * 1000)).toBe('Paused · 01:30 left');
+    expect(pausedRowLabel(null)).toBe('Paused · until Chrome restarts');
   });
 
   it('explains each scope in one sentence', () => {
@@ -102,10 +118,6 @@ describe('the copy', () => {
     });
   });
 
-  it('names the site in the tab allowance', () => {
-    expect(tabAllowanceLabel('cnet.com')).toBe('cnet.com is open in this tab');
-  });
-
   it('names the site in the accessible name of a remove button', () => {
     expect(removeAllowanceLabel('forbes.com')).toBe('Remove the allowance for forbes.com');
     expect(removeAllowanceLabel('forbes.com')).not.toBe(removeAllowanceLabel('cnet.com'));
@@ -128,17 +140,17 @@ describe('the copy', () => {
     expect(openInsteadLabel('Forbes')).toBe('Open Forbes instead');
   });
 
-  it('names the popup state, the allowance, and the list', () => {
+  it('names the popup state, the two site verdicts, and the wall types', () => {
     expect(POPUP_ON).toBe('On');
     expect(POPUP_OFF).toBe('Off');
     expect(POPUP_PAUSED).toBe('Paused');
-    expect(tabAllowanceLabel('cnet.com')).toBe('cnet.com is open in this tab');
-    expect(PAUSE_BUTTON_LABEL).toBe('Pause for 1 hour');
+    expect(PAUSE_ROW_LABEL).toBe('Pause the list');
     expect(RESUME_LABEL).toBe('Resume');
-    expect(allowanceCount(1)).toBe('1 site');
-    expect(LIST_LABEL).toBe('List');
-    expect(listDetail({ version: 3, sites: 128, updated: '2026-11-12' })).toBe(
-      'Version 3 · 128 sites · updated 2026-11-12',
-    );
+    expect(SITE_LISTED).toBe('is on the list');
+    expect(SITE_UNLISTED).toBe('is not on the list');
+    expect(SITE_REPORT_HINT).toBe('If you see a wall here, report it.');
+    expect(WALL_LABEL).toEqual({ hard: 'Hard wall', soft: 'Soft wall', metered: 'Metered wall' });
+    expect(SETTINGS_LABEL).toBe('Settings');
+    expect(SHOW_ALTERNATIVES_LABEL).toBe('Show alternatives');
   });
 });

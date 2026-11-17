@@ -71,6 +71,32 @@ test('blocks the listed fixture article and shows a signed result image', async 
     .toBeGreaterThan(0);
 });
 
+test('keeps the scope menu inside a short viewport', async ({ page }) => {
+  await waitForBlockPage(page, LISTED_URL);
+
+  await page.setViewportSize({ width: 1000, height: 520 });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+
+  const caret = page.locator('[data-role="open-menu"]');
+
+  await caret.click();
+
+  const menu = page.locator('[data-role="scope-menu"]');
+
+  await expect(menu).toBeVisible();
+  // The row sits at the foot of this window, so the menu leaves the row's
+  // bottom edge alone and opens above it.
+  await expect(menu).toHaveAttribute('data-side', 'top');
+
+  const box = await menu.boundingBox();
+  const viewport = page.viewportSize();
+
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+});
+
 test('leaves a path outside the listed glob alone', async ({ page }) => {
   await page.goto(OPEN_URL);
 
@@ -168,6 +194,49 @@ test('keeps the popup inside its 340 pixel frame', async ({ context }) => {
   expect(frame.bodyWidth).toBe(340);
   expect(frame.scrollWidth).toBe(frame.bodyWidth);
   expect(frame.footerRight).toBeLessThanOrEqual(frame.bodyWidth);
+
+  await popup.close();
+});
+
+test('pauses from the popup and reports the time it has left', async ({ context }) => {
+  const popup = await context.newPage();
+
+  await popup.setViewportSize({ width: 340, height: 620 });
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+
+  const pause = popup.locator('[data-role="pause"]');
+
+  await expect(pause).toHaveAttribute('aria-expanded', 'false');
+  await pause.click();
+  await expect(pause).toHaveAttribute('aria-expanded', 'true');
+
+  await popup.locator('[data-role="duration-5m"]').click();
+
+  // The worker stores the pause, and the popup reads it back instead of trusting
+  // the press it just made.
+  await expect(popup.locator('[data-role="pause-label"]')).toHaveText(/^Paused · 0[45]:\d\d left$/);
+  await expect(popup.locator('[data-role="state"]')).toHaveAttribute('data-state', 'paused');
+
+  await popup.reload();
+
+  await expect(popup.locator('[data-role="pause-label"]')).toHaveText(/^Paused · 0[45]:\d\d left$/);
+  await expect(popup.locator('[data-role="resume"]')).toBeVisible();
+
+  await popup.locator('[data-role="resume"]').click();
+
+  await expect(popup.locator('[data-role="pause-label"]')).toHaveText('Pause the list');
+  await expect(popup.locator('[data-role="state"]')).toHaveAttribute('data-state', 'on');
+
+  await popup.close();
+});
+
+test('hides the site block on a page that names no site', async ({ context }) => {
+  const popup = await context.newPage();
+
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+
+  await expect(popup.locator('[data-role="pause"]')).toBeVisible();
+  await expect(popup.locator('[data-role="site"]')).toBeHidden();
 
   await popup.close();
 });
