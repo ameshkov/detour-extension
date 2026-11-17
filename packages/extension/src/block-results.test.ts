@@ -205,6 +205,28 @@ describe('the alternatives list', () => {
     expect(tile?.textContent).toBe('T');
   });
 
+  it('writes the domain and the description on the row line', () => {
+    renderAlternatives(view({ state: 'results', answer: ANSWER }));
+
+    const meta = rows()[1]?.querySelector('[data-role="result-meta"]');
+
+    expect(meta?.querySelector('[data-role="result-domain"]')?.textContent).toBe('theverge.com');
+    expect(meta?.textContent).toBe('theverge.com · A second look at the same tools.');
+  });
+
+  it('leaves the separator out when the answer carries no description', () => {
+    const answer: AlternativesAnswer = {
+      ...ANSWER,
+      alternatives: ANSWER.alternatives.map((row, index) =>
+        index === 1 ? { ...row, description: '' } : row,
+      ),
+    };
+
+    renderAlternatives(view({ state: 'results', answer }));
+
+    expect(rows()[1]?.querySelector('[data-role="result-meta"]')?.textContent).toBe('theverge.com');
+  });
+
   it('colours the tile of a domain the same way every time', () => {
     const colour = tileColor('arstechnica.com');
 

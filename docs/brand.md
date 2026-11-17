@@ -65,21 +65,23 @@ The sheet declares every colour once, on `:root`, and no other colour is written
 lowercases each hexadecimal value in the sheet, so `ui.css` holds `#fbfaf8` where this table
 holds `#FBFAF8`. The two spellings are one colour.
 
-| Token              | Value     | Use                                                 |
-| ------------------ | --------- | --------------------------------------------------- |
-| `--paper`          | `#FBFAF8` | The page background                                 |
-| `--surface`        | `#FFFFFF` | Cards and rows above the paper                      |
-| `--ink`            | `#16161A` | Body text and the headline                          |
-| `--muted`          | `#6E6C67` | Secondary text                                      |
-| `--line`           | `#E8E4DD` | Borders and dividers                                |
-| `--accent`         | `#0B6B57` | The mark tile, the focus ring, and the primary tone |
-| `--blocked`        | `#C0513F` | The dot of the site chip                            |
-| `--chip-ink`       | `#96382E` | The text of the site chip                           |
-| `--chip-surface`   | `#FCF0ED` | The background of the site chip                     |
-| `--chip-line`      | `#F0D9D3` | The border of the site chip                         |
-| `--notice-ink`     | `#6B5322` | The text of a notice                                |
-| `--notice-surface` | `#FDF6E7` | The background of a notice                          |
-| `--notice-line`    | `#EFDFBC` | The border of a notice                              |
+| Token              | Value     | Use                                                                    |
+| ------------------ | --------- | ---------------------------------------------------------------------- |
+| `--paper`          | `#FBFAF8` | The page background                                                    |
+| `--surface`        | `#FFFFFF` | Cards and rows above the paper                                         |
+| `--ink`            | `#16161A` | Body text and the headline                                             |
+| `--muted`          | `#6E6C67` | Secondary text                                                         |
+| `--line`           | `#E8E4DD` | Card borders                                                           |
+| `--line-soft`      | `#F0ECE5` | Dividers inside a list, an action row, or a section                    |
+| `--control-line`   | `#DED9D0` | The border of a quiet control, such as a pause button or a query field |
+| `--accent`         | `#0B6B57` | The mark tile, the focus ring, and the primary tone                    |
+| `--blocked`        | `#C0513F` | The dot of the site chip                                               |
+| `--chip-ink`       | `#96382E` | The text of the site chip                                              |
+| `--chip-surface`   | `#FCF0ED` | The background of the site chip                                        |
+| `--chip-line`      | `#F0D9D3` | The border of the site chip                                            |
+| `--notice-ink`     | `#6B5322` | The text of a notice                                                   |
+| `--notice-surface` | `#FDF6E7` | The background of a notice                                             |
+| `--notice-line`    | `#EFDFBC` | The border of a notice                                                 |
 
 The tile of a result row takes one colour from a fixed set of nine, chosen by the domain, so the
 same domain keeps the same tile. Its letter is white on that colour:
@@ -97,15 +99,16 @@ Body text is at least 4.5:1 against its background.
 
 The table gives the block page sizes. The popup sets the wordmark to 12.5 px.
 
-| Role                 | Family | Size                            | Weight | Tracking |
-| -------------------- | ------ | ------------------------------- | ------ | -------- |
-| Headline             | Serif  | 33 px, and 24 px below 520 px   | 600    | -0.02em  |
-| Source title         | Serif  | 17 px                           | 600    | -0.01em  |
-| Hero title           | Serif  | 18.5 px                         | 600    | -0.015em |
-| Row title            | Sans   | 14.5 px                         | 600    | -0.006em |
-| Practice line        | Sans   | 16 px                           | 550    | —        |
-| Body and explanation | Sans   | 15 px                           | 400    | —        |
-| Wordmark             | Sans   | 14 px, and 12.5 px in the popup | 650    | -0.01em  |
+| Role          | Family | Size                            | Weight                 | Tracking |
+| ------------- | ------ | ------------------------------- | ---------------------- | -------- |
+| Headline      | Serif  | 33 px, and 24 px below 520 px   | 600                    | -0.02em  |
+| Source title  | Serif  | 17 px                           | 600                    | -0.01em  |
+| Hero title    | Serif  | 18.5 px                         | 600                    | -0.015em |
+| Row title     | Sans   | 14.5 px                         | 600                    | -0.006em |
+| Practice line | Sans   | 15 px                           | 400                    | —        |
+| Explanation   | Sans   | 15 px, in ink                   | 550                    | —        |
+| Row meta      | Sans   | 12.5 px                         | 400, the domain at 550 | —        |
+| Wordmark      | Sans   | 14 px, and 12.5 px in the popup | 650                    | -0.01em  |
 
 The display family is `ui-serif, Georgia, "Iowan Old Style", serif`. The interface family is
 `-apple-system, "Segoe UI", system-ui, sans-serif`. The corner radius is 12 px.

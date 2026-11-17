@@ -140,16 +140,26 @@ function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean)
   }
 
   const link = document.createElement('a');
+  const meta = document.createElement('p');
   const domain = document.createElement('span');
-  const description = document.createElement('p');
 
   link.setAttribute('href', alternative.url);
   link.setAttribute('target', '_blank');
   link.setAttribute('rel', 'noreferrer noopener');
   link.textContent = alternative.title;
+
+  // The domain names the source and the description follows it, so one line
+  // carries both and the row keeps its height for the title.
+  meta.setAttribute('data-role', 'result-meta');
+  domain.setAttribute('data-role', 'result-domain');
   domain.textContent = alternative.domain;
-  description.textContent = alternative.description;
-  row.append(link, domain, description);
+  meta.append(domain);
+
+  if (alternative.description !== '') {
+    meta.append(` · ${alternative.description}`);
+  }
+
+  row.append(link, meta);
 
   if (!hero && preview !== null) {
     row.append(preview);

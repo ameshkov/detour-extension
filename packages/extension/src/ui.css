@@ -4,6 +4,8 @@
   --ink: #16161a;
   --muted: #6e6c67;
   --line: #e8e4dd;
+  --line-soft: #f0ece5;
+  --control-line: #ded9d0;
   --accent: #0b6b57;
   --blocked: #c0513f;
   --chip-ink: #96382e;
@@ -113,20 +115,20 @@ main {
   letter-spacing: -0.02em;
 }
 
-[data-role='practice'] {
-  margin: 0 0 8px;
-  color: var(--ink);
-  font-size: 16px;
-  font-weight: 550;
-  line-height: 1.6;
-}
-
-[data-role='explanation'] {
+/* One paragraph, as the wireframe reads it: the practice states the wall in the
+   reader's own grey, and the explanation is the sentence that judges it, so that
+   run alone takes the ink. */
+[data-role='lede'] {
   max-width: 610px;
   margin: 0 0 28px;
   color: var(--muted);
   font-size: 15px;
   line-height: 1.65;
+}
+
+[data-role='explanation'] {
+  color: var(--ink);
+  font-weight: 550;
 }
 
 [data-role='source'] {
@@ -205,6 +207,9 @@ main {
 }
 
 [data-role='alternatives'][data-state='error'] [data-role='status'] {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
   padding: 10px 12px;
   border: 1px solid var(--notice-line);
   border-radius: 10px;
@@ -213,6 +218,22 @@ main {
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1.55;
+}
+
+/* The notice is a failure the reader has to read, so it leads with the mark the
+   wireframe draws rather than with its first word. */
+[data-role='alternatives'][data-state='error'] [data-role='status']::before {
+  content: '!';
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  border: 1.5px solid var(--notice-ink);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 [data-role='list'] {
@@ -232,13 +253,19 @@ main {
 }
 
 [data-role='list'] > li + li {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--line-soft);
   border-radius: 0;
 }
 
 [data-role='list'] > li[data-variant='row']:hover {
   background: var(--surface);
   border-color: var(--line);
+  border-radius: var(--radius);
+}
+
+/* The raised row closes its own edge, so the next divider would cut the card. */
+[data-role='list'] > li[data-variant='row']:hover + li {
+  border-top-color: transparent;
 }
 
 [data-role='list'] > li[data-variant='hero'] {
@@ -259,15 +286,14 @@ main {
 }
 
 [data-role='list'] > li[data-variant='hero'][data-layout='text'] > a,
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a + span,
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > p {
+[data-role='list'] > li[data-variant='hero'][data-layout='text'] > [data-role='result-meta'] {
   grid-column: 1;
 }
 
 [data-role='list'] > li > [data-role='tile'] {
   display: grid;
   grid-column: 1;
-  grid-row: 1 / span 3;
+  grid-row: 1 / span 2;
   place-items: center;
   width: 24px;
   height: 24px;
@@ -304,27 +330,23 @@ main {
   letter-spacing: -0.015em;
 }
 
-[data-role='list'] > li > a + span {
+[data-role='list'] > li > [data-role='result-meta'] {
   grid-column: 2;
   grid-row: 2;
-  color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 550;
-  line-height: 1.55;
-}
-
-[data-role='list'] > li > p {
-  grid-column: 2;
-  grid-row: 3;
   margin: 0;
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
+[data-role='result-domain'] {
+  color: var(--ink);
+  font-weight: 550;
+}
+
 [data-role='list'] > li > img {
   grid-column: 3;
-  grid-row: 1 / span 3;
+  grid-row: 1 / span 2;
   width: 96px;
   height: 60px;
   border-radius: 8px;
@@ -333,7 +355,7 @@ main {
 
 [data-role='list'] > li[data-variant='hero'] > img {
   grid-column: 1;
-  grid-row: 1 / span 3;
+  grid-row: 1 / span 2;
   width: 216px;
   height: 122px;
   border-radius: 9px;
@@ -364,7 +386,7 @@ main {
   box-sizing: border-box;
   width: 100%;
   padding: 8px 11px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: 9px;
   background: var(--paper);
   color: var(--ink);
@@ -380,14 +402,24 @@ main {
 }
 
 [data-role='engines'] a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 11px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
   font-size: 12px;
   font-weight: 500;
   transition: background-color 120ms ease;
+}
+
+/* An engine link leaves the page, and the arrow says so without a second label. */
+[data-role='engines'] a::after {
+  content: '↗';
+  color: var(--muted);
+  font-size: 11px;
 }
 
 [data-role='engines'] a:hover {
@@ -489,10 +521,10 @@ main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px 0;
+  gap: 20px 0;
   margin-top: 30px;
   padding-top: 22px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--line-soft);
 }
 
 [data-role='open-site'] {
@@ -606,6 +638,22 @@ body[data-page='popup'] [data-role='state'][data-state='paused'] {
   color: var(--notice-ink);
 }
 
+/* The reader reads the state before the switch, so the on state carries the dot
+   the wireframe draws and the other two states stay words. */
+body[data-page='popup'] [data-role='state'][data-state='on'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body[data-page='popup'] [data-role='state'][data-state='on']::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 body[data-page='popup'] [data-role='enabled'] {
   position: relative;
   flex: none;
@@ -647,7 +695,22 @@ body[data-page='popup'] [data-role='list'] {
   column-gap: 10px;
   align-items: center;
   padding: 12px 15px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper);
+}
+
+/* The List row closes the popup, so its own divider would double the frame's. */
+body[data-page='popup'] [data-role='list'] {
+  border-bottom: 0;
+}
+
+/* The allowance of this tab is the one row that is not ordinary state, so it
+   carries the accent edge and the surface of a card. */
+body[data-page='popup'] [data-role='tab-allowance'] {
+  padding-left: 12px;
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: var(--accent);
   background: var(--surface);
 }
 
@@ -686,8 +749,8 @@ body[data-page='popup'] [data-role='pause-button'] {
   grid-column: 2;
   grid-row: 1 / span 2;
   padding: 5px 10px;
-  border: 1px solid var(--line);
-  border-radius: 99px;
+  border: 1px solid var(--control-line);
+  border-radius: 9px;
   color: var(--ink);
   font-size: 11px;
 }
@@ -706,7 +769,7 @@ body[data-page='popup'] footer a {
 
 body[data-page='options'] main {
   max-width: 640px;
-  padding: 22px;
+  padding: 22px 22px 24px;
 }
 
 body[data-page='options'] [data-role='header'] {
@@ -763,7 +826,7 @@ body[data-page='options'] th {
 
 body[data-page='options'] td {
   padding: 11px 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--line-soft);
   font-size: 12.5px;
 }
 
@@ -792,10 +855,10 @@ body[data-page='options'] [data-role='auto-open-row'],
 body[data-page='options'] [data-role='images-row'] {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 12px;
+  column-gap: 14px;
   align-items: start;
   padding: 13px 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--line-soft);
 }
 
 body[data-page='options'] [data-role='auto-open'],
@@ -814,6 +877,8 @@ body[data-page='options'] [data-role='images-label'] {
 body[data-page='options'] [data-role='auto-open-detail'],
 body[data-page='options'] [data-role='images-detail'] {
   grid-column: 2;
+  max-width: 400px;
+  margin-top: 3px;
   color: var(--muted);
   font-size: 11.5px;
   line-height: 1.5;
@@ -857,7 +922,16 @@ body[data-page='options'] [data-role='cache-status'] {
   }
 
   [data-role='headline'] {
+    margin: 14px 0 12px;
     font-size: 24px;
+  }
+
+  [data-role='lede'] {
+    margin-bottom: 20px;
+  }
+
+  [data-role='source'] {
+    padding: 10px;
   }
 
   [data-role='list'] > li > img {
@@ -871,8 +945,7 @@ body[data-page='options'] [data-role='cache-status'] {
   /* The image takes the first row and the text follows in the order it has. */
   [data-role='list'] > li[data-variant='hero'] > img,
   [data-role='list'] > li[data-variant='hero'] > a,
-  [data-role='list'] > li[data-variant='hero'] > a + span,
-  [data-role='list'] > li[data-variant='hero'] > p {
+  [data-role='list'] > li[data-variant='hero'] > [data-role='result-meta'] {
     grid-column: 1;
     grid-row: auto;
   }
@@ -885,6 +958,7 @@ body[data-page='options'] [data-role='cache-status'] {
   }
 
   [data-role='actions'] {
+    gap: 12px 0;
     align-items: stretch;
   }
 

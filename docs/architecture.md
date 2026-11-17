@@ -209,7 +209,12 @@ results state renders one `<li>` per alternative: the first one is the hero,
 and each later one is a row with its tile. The tile reuses the favicon the
 answer sends, in place of the letter tile, and keeps the letter when the answer
 carries none, when the favicon fails, or while `imagesEnabled` is off. A row's
-image appears only when `imagesEnabled` is on and the answer carries one.
+image appears only when `imagesEnabled` is on and the answer carries one. A row
+holds two lines of text under the tile: the title, then the domain in ink with
+the description after it, one middot apart.
+
+The headline is followed by one paragraph: the practice in `--muted`, and the
+sentence that judges it in `--ink`.
 
 The fallback box holds an editable query and four engine links, in the order
 DuckDuckGo, Brave, Google, and Bing. The query is the answer's own query when

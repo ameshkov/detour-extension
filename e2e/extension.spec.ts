@@ -55,7 +55,7 @@ test('blocks the listed fixture article and shows a signed result image', async 
 
   for (const [index, source] of sources.entries()) {
     const target = new URL(source).searchParams.get('u');
-    const domain = await rows.nth(index).locator('a + span').textContent();
+    const domain = await rows.nth(index).locator('[data-role="result-domain"]').textContent();
 
     expect(source.startsWith(`${SITE_ORIGIN}/v1/img?`), source).toBe(true);
     expect(source).toMatch(/[?&]sig=[0-9a-f]{16}$/);

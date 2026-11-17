@@ -16,6 +16,8 @@ const PALETTE: Record<string, string> = {
   '--ink': '#16161a',
   '--muted': '#6e6c67',
   '--line': '#e8e4dd',
+  '--line-soft': '#f0ece5',
+  '--control-line': '#ded9d0',
   '--accent': '#0b6b57',
   '--blocked': '#c0513f',
   '--chip-ink': '#96382e',
@@ -282,6 +284,7 @@ describe('the stylesheet', () => {
     const columnGap = gap.split(/\s+/)[1];
 
     expect(columnGap).toBe('0');
+    expect(gap.split(/\s+/)[0]).toBe('20px');
 
     const report = styleRule('[data-role="report"]');
 
@@ -320,5 +323,125 @@ describe('the stylesheet', () => {
     expect(TILE_COLORS).toContain(tile?.style.backgroundColor);
     expect(tile?.style.backgroundColor).toBe(tileColor('theverge.com'));
     expect(getComputedStyle(tile!).color).toBe(token('--surface'));
+  });
+
+  it('draws a divider softer than a card border', () => {
+    expect(
+      styleRule('[data-role="list"] > li + li')?.style.getPropertyValue('border-top-color'),
+    ).toBe('var(--line-soft)');
+    expect(styleRule('[data-role="actions"]')?.style.getPropertyValue('border-top-color')).toBe(
+      'var(--line-soft)',
+    );
+    expect(
+      styleRule('body[data-page="popup"] [data-role="list"]')?.style.getPropertyValue(
+        'border-bottom',
+      ),
+    ).toBe('0px');
+    expect(
+      styleRule('body[data-page="options"] td')?.style.getPropertyValue('border-top-color'),
+    ).toBe('var(--line-soft)');
+  });
+
+  it('lifts a hovered row into a card of its own', () => {
+    const hover = styleRule('[data-role="list"] > li[data-variant="row"]:hover');
+
+    expect(hover?.style.getPropertyValue('border-radius')).toBe('var(--radius)');
+    expect(
+      styleRule('[data-role="list"] > li[data-variant="row"]:hover + li')?.style.getPropertyValue(
+        'border-top-color',
+      ),
+    ).toBe('transparent');
+  });
+
+  it('keeps a row at two lines: the title, then the domain and the description', () => {
+    const meta = styleRule('[data-role="list"] > li > [data-role="result-meta"]');
+
+    expect(meta?.style.getPropertyValue('grid-row')).toBe('2');
+    expect(meta?.style.getPropertyValue('margin')).toBe('0px');
+    expect(styleRule('[data-role="result-domain"]')?.style.getPropertyValue('color')).toBe(
+      'var(--ink)',
+    );
+  });
+
+  it('reads the practice in the muted tone and the judgement in ink', () => {
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('610px');
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('color')).toBe('var(--muted)');
+    expect(styleRule('[data-role="explanation"]')?.style.getPropertyValue('color')).toBe(
+      'var(--ink)',
+    );
+  });
+
+  it('marks the on state of the popup with a dot', () => {
+    const dot = styleRule('body[data-page="popup"] [data-role="state"][data-state="on"]::before');
+
+    expect(dot?.style.getPropertyValue('background')).toBe('var(--accent)');
+    expect(dot?.style.getPropertyValue('border-radius')).toBe('50%');
+  });
+
+  it('gives the allowance of this tab its own edge', () => {
+    const row = styleRule('body[data-page="popup"] [data-role="tab-allowance"]');
+
+    // The sheet writes `3px solid var(--accent)`, and this environment keeps the
+    // colour out of a shorthand it cannot parse.
+    expect(row?.style.getPropertyValue('border-left-width')).toBe('3px');
+    expect(row?.style.getPropertyValue('border-left-style')).toBe('solid');
+    expect(row?.style.getPropertyValue('border-left-color')).toBe('var(--accent)');
+    expect(row?.style.getPropertyValue('background')).toBe('var(--surface)');
+    expect(row?.style.getPropertyValue('padding-left')).toBe('12px');
+  });
+
+  it('borders the quiet controls at the control tone', () => {
+    expect(styleRule('[data-role="query"]')?.style.getPropertyValue('border-color')).toBe(
+      'var(--control-line)',
+    );
+    expect(
+      styleRule('body[data-page="popup"] [data-role="pause-button"]')?.style.getPropertyValue(
+        'border-radius',
+      ),
+    ).toBe('9px');
+  });
+
+  it('leads a failure with a mark and an engine link with an arrow', () => {
+    const mark = styleRule(
+      '[data-role="alternatives"][data-state="error"] [data-role="status"]::before',
+    );
+    const arrow = styleRule('[data-role="engines"] a::after');
+
+    expect(mark?.style.getPropertyValue('content').replace(/["']/g, '')).toBe('!');
+    expect(mark?.style.getPropertyValue('border-radius')).toBe('50%');
+    expect(arrow?.style.getPropertyValue('content').replace(/["']/g, '')).toBe('↗');
+  });
+
+  it('tightens the lede and the actions below 520 pixels', () => {
+    const narrow = mediaRule('(max-width: 520px)');
+
+    expect(innerRule(narrow, '[data-role="headline"]')?.style.getPropertyValue('margin')).toBe(
+      '14px 0px 12px',
+    );
+    expect(innerRule(narrow, '[data-role="lede"]')?.style.getPropertyValue('margin-bottom')).toBe(
+      '20px',
+    );
+    expect(innerRule(narrow, '[data-role="actions"]')?.style.getPropertyValue('gap')).toBe(
+      '12px 0',
+    );
+    expect(innerRule(narrow, '[data-role="source"]')?.style.getPropertyValue('padding')).toBe(
+      '10px',
+    );
+  });
+
+  it('gives the options page room under its last control', () => {
+    const rows = styleRule(
+      'body[data-page="options"] [data-role="auto-open-row"], body[data-page="options"] [data-role="images-row"]',
+    );
+    const detail = styleRule(
+      'body[data-page="options"] [data-role="auto-open-detail"], body[data-page="options"] [data-role="images-detail"]',
+    );
+
+    expect(styleRule('body[data-page="options"] main')?.style.getPropertyValue('padding')).toBe(
+      '22px 22px 24px',
+    );
+    expect(rows?.style.getPropertyValue('column-gap')).toBe('14px');
+    expect(detail?.style.getPropertyValue('max-width')).toBe('400px');
+    expect(detail?.style.getPropertyValue('margin-top')).toBe('3px');
   });
 });
