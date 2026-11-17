@@ -14,7 +14,9 @@ const PAGES = [
   'packages/extension/src/popup.html',
 ];
 
-const MANIFESTS = ['packages/extension/manifest.json'];
+const MANIFEST = 'packages/extension/manifest.json';
+
+const MANIFESTS = [MANIFEST];
 
 const PALETTE = ['#FBFAF8', '#FFFFFF', '#16161A', '#6E6C67', '#E8E4DD', '#0B6B57', '#C0513F'];
 
@@ -68,6 +70,27 @@ describe('the brand page', () => {
 
     for (const page of PAGES) {
       expect(read(page)).toContain('src="logo-mark.png"');
+    }
+  });
+
+  it('ships the toolbar icons the manifest names at their size', () => {
+    const manifest = JSON.parse(read(MANIFEST)) as { icons?: Record<string, string> };
+    const icons = manifest.icons ?? {};
+
+    expect(
+      Object.keys(icons)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([16, 32, 48, 128]);
+
+    for (const [size, file] of Object.entries(icons)) {
+      const bytes = readFileSync(join(ROOT, 'packages/extension/src', file));
+
+      // A PNG carries the width and the height in its IHDR chunk, first.
+      expect({ width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) }, file).toEqual({
+        width: Number(size),
+        height: Number(size),
+      });
     }
   });
 

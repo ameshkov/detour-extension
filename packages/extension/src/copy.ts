@@ -154,5 +154,20 @@ export const READING_HEADING = 'Reading';
 export const AUTO_OPEN_SETTING_LABEL = 'Open the best match automatically';
 export const AUTO_OPEN_SETTING_DETAIL =
   'When the list is ready, open the first alternative after a 3-second countdown. You can stop it.';
-export const IMAGES_SETTING_LABEL = 'Show the site preview image';
-export const IMAGES_SETTING_DETAIL = 'Preview images in the list of alternatives.';
+export const IMAGES_SETTING_LABEL = 'Show the site images';
+export const IMAGES_SETTING_DETAIL = 'Preview images and favicons in the list of alternatives.';
+
+// The options page, the cache
+export const CACHE_HEADING = 'Cache';
+export const CACHE_DETAIL =
+  'The list, the page reads, and the answers the block page found. Clearing them costs one slow page and one list download.';
+export const CLEAR_CACHE_LABEL = 'Clear cache';
+export const CACHE_CONFIRM = 'Clear the cached list, the page reads, and the answers?';
+
+export function cacheCleared(count: number): string {
+  if (count === 0) {
+    return 'There was nothing cached.';
+  }
+
+  return count === 1 ? 'Cleared 1 cached entry.' : `Cleared ${count} cached entries.`;
+}

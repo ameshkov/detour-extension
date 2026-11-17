@@ -40,7 +40,17 @@ const ENTRIES = [
   { in: 'src/options-entry.ts', out: 'options' },
 ];
 
-const COPIED_FILES = ['block.html', 'logo-mark.png', 'options.html', 'popup.html', 'ui.css'];
+const COPIED_FILES = [
+  'block.html',
+  'icon-16.png',
+  'icon-32.png',
+  'icon-48.png',
+  'icon-128.png',
+  'logo-mark.png',
+  'options.html',
+  'popup.html',
+  'ui.css',
+];
 
 const MANIFEST_FILE = 'manifest.json';
 

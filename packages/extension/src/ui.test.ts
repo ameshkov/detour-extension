@@ -188,11 +188,29 @@ describe('the stylesheet', () => {
     expect(innerRule(narrow, '[data-role="open-site"]')?.style.getPropertyValue('flex-grow')).toBe(
       '1',
     );
-    expect(innerRule(narrow, '[data-role="report"]')?.style.getPropertyValue('flex-basis')).toBe(
-      '100%',
-    );
-    expect(innerRule(narrow, '[data-role="report"]')?.style.getPropertyValue('margin-left')).toBe(
-      '0px',
+    expect(
+      innerRule(narrow, '[data-role="actions"] [data-role="report"]')?.style.getPropertyValue(
+        'flex-basis',
+      ),
+    ).toBe('100%');
+    expect(
+      innerRule(narrow, '[data-role="actions"] [data-role="report"]')?.style.getPropertyValue(
+        'margin-left',
+      ),
+    ).toBe('0px');
+  });
+
+  it('keeps the popup footer inside its frame below 520 pixels', () => {
+    const narrow = mediaRule('(max-width: 520px)');
+
+    expect(narrow).not.toBeNull();
+    // The popup is 340 pixels wide, so this breakpoint always matches there. A
+    // rule that hands the bare report link the whole row would push the privacy
+    // link out of the frame, and the browser would widen the window to it.
+    expect(innerRule(narrow, '[data-role="report"]')).toBeNull();
+    expect(innerRule(narrow, '[data-role="actions"] [data-role="report"]')).not.toBeNull();
+    expect(styleRule('body[data-page="popup"] footer')?.style.getPropertyValue('flex-wrap')).toBe(
+      'wrap',
     );
   });
 
@@ -246,6 +264,16 @@ describe('the stylesheet', () => {
         'margin-top',
       ),
     ).toBe('22px');
+    expect(
+      styleRule('body[data-page="options"] [data-role="cache-heading"]')?.style.getPropertyValue(
+        'margin-top',
+      ),
+    ).toBe('26px');
+    expect(
+      styleRule('body[data-page="options"] [data-role="clear-cache"]')?.style.getPropertyValue(
+        'border-color',
+      ),
+    ).toBe('var(--ink)');
   });
 
   it('joins the two halves of the open control', () => {

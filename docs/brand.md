@@ -27,6 +27,11 @@ the header:
 The image is white on the tile, and the sheet makes it white with
 `filter: brightness(0) invert(1)`.
 
+The manifest carries the same tile as `icon-16.png`, `icon-32.png`, `icon-48.png`, and
+`icon-128.png`, so the toolbar button and the extensions page show the mark of the header. The
+icon is the whole tile and not the bare glyph, because the browser draws it on a surface the page
+does not control.
+
 The mark never appears inside the explanation. It marks the product in a header and in the
 toolbar, and it marks nothing else.
 
@@ -43,15 +48,16 @@ carries it.
 
 ## Asset set
 
-| Asset                                            | Ships   | Location                               |
-| ------------------------------------------------ | ------- | -------------------------------------- |
-| Page mark, PNG                                   | Now     | `packages/extension/src/logo-mark.png` |
-| Manifest icon set, PNG at 16, 32, 48, and 128 px | Release | The `icons` field of both manifests    |
-| Store tile, 440 by 280 px                        | Release | The store listing                      |
-| Source SVG, one colour                           | Release | `packages/extension/src/assets/logo/`  |
+| Asset                                            | Ships   | Location                                               |
+| ------------------------------------------------ | ------- | ------------------------------------------------------ |
+| Page mark, PNG                                   | Now     | `packages/extension/src/logo-mark.png`                 |
+| Manifest icon set, PNG at 16, 32, 48, and 128 px | Now     | `packages/extension/src/icon-16.png` to `icon-128.png` |
+| Store tile, 440 by 280 px                        | Release | The store listing                                      |
+| Source SVG, one colour                           | Release | `packages/extension/src/assets/logo/`                  |
 
-The page mark is the only image in the repository that the pages load. Manifest icons, the store
-tile, and the source SVG stay with the release.
+The page mark is the only image that the pages load. The manifest icon set is the tile of the
+header at four sizes, and the manifest names those four files. The store tile and the source SVG
+stay with the release.
 
 ## Palette
 
@@ -80,6 +86,10 @@ same domain keeps the same tile. Its letter is white on that colour:
 
 `#1F2937`, `#2F4A6D`, `#3B2F63`, `#0B6B57`, `#5C3B2E`, `#44403C`, `#4A2F3D`, `#1B3A5C`,
 `#2E4A2A`.
+
+The tile shows the favicon of the publisher when the answer carries one: the 16 px icon fills the
+24 px tile, and the generated colour and letter stay behind it as the fallback. The letter is the
+stand-in, so a row without a favicon reads the same as before.
 
 Body text is at least 4.5:1 against its background.
 

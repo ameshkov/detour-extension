@@ -8,6 +8,7 @@ export type Alternative = {
   description: string;
   domain: string;
   image?: string;
+  favicon?: string;
 };
 
 export type AlternativesAnswer = {
@@ -37,7 +38,7 @@ function toAlternative(value: unknown): Alternative | null {
     return null;
   }
 
-  const { url, title, description, domain, image } = value;
+  const { url, title, description, domain, image, favicon } = value;
 
   if (
     typeof url !== 'string' ||
@@ -50,8 +51,10 @@ function toAlternative(value: unknown): Alternative | null {
   }
 
   const row: Alternative = { url, title, description, domain };
+  const pictured: Alternative =
+    typeof image === 'string' && isWebUrl(image) ? { ...row, image } : row;
 
-  return typeof image === 'string' && isWebUrl(image) ? { ...row, image } : row;
+  return typeof favicon === 'string' && isWebUrl(favicon) ? { ...pictured, favicon } : pictured;
 }
 
 /**

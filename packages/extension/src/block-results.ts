@@ -65,14 +65,41 @@ const DETAIL: Record<AlternativesState, string> = {
   error: FAILED_DETAIL,
 };
 
-/** A letter tile, because a favicon request would tell the publisher who reads. */
-function tileElement(domain: string): HTMLSpanElement {
+/**
+ * The tile reuses the favicon of the answer when the service sends one: the
+ * icon is the tile, with no generated colour and no letter behind it. The
+ * backend serves that favicon, so the request tells the publisher nothing, and
+ * a favicon that fails to load falls back to the letter tile.
+ */
+function tileElement(alternative: Alternative, imagesEnabled: boolean): HTMLSpanElement {
   const tile = document.createElement('span');
+  const favicon = imagesEnabled ? alternative.favicon : undefined;
 
   tile.setAttribute('data-role', 'tile');
   tile.setAttribute('aria-hidden', 'true');
-  tile.style.backgroundColor = tileColor(domain);
-  tile.textContent = TILE_LETTER.exec(domain)?.[0]?.toUpperCase() ?? '';
+
+  const letter = (): void => {
+    tile.replaceChildren();
+    tile.dataset.tile = 'letter';
+    tile.style.backgroundColor = tileColor(alternative.domain);
+    tile.textContent = TILE_LETTER.exec(alternative.domain)?.[0]?.toUpperCase() ?? '';
+  };
+
+  if (favicon === undefined) {
+    letter();
+
+    return tile;
+  }
+
+  const image = document.createElement('img');
+
+  tile.dataset.tile = 'favicon';
+  image.alt = '';
+  image.setAttribute('referrerpolicy', 'no-referrer');
+  image.setAttribute('loading', 'lazy');
+  image.addEventListener('error', letter);
+  image.src = favicon;
+  tile.append(image);
 
   return tile;
 }
@@ -90,8 +117,9 @@ function imageElement(url: string): HTMLImageElement {
 
 /**
  * One row: the hero leads with its preview image, and a row trails with its
- * thumbnail and carries the letter tile that stands in for a favicon.
+ * thumbnail and carries the tile of the answer's favicon, or its letter.
  */
+
 function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean): HTMLLIElement {
   const row = document.createElement('li');
   const preview =
@@ -108,7 +136,7 @@ function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean)
   }
 
   if (!hero) {
-    row.append(tileElement(alternative.domain));
+    row.append(tileElement(alternative, imagesEnabled));
   }
 
   const link = document.createElement('a');

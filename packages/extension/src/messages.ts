@@ -29,6 +29,7 @@ export type RevokeMessage = {
 };
 export type SetSettingsMessage = { type: 'setSettings'; settings: Settings };
 export type PauseMessage = { type: 'pause'; until: number };
+export type ClearCacheMessage = { type: 'clearCache' };
 
 export type Message =
   | IsBlockedMessage
@@ -38,7 +39,8 @@ export type Message =
   | AllowMessage
   | RevokeMessage
   | SetSettingsMessage
-  | PauseMessage;
+  | PauseMessage
+  | ClearCacheMessage;
 
 export type IsBlockedResponse = { ok: true; blocked: boolean; site: ListedSite | null };
 export type BlockedResponse = { ok: boolean; error?: MessageError; blockPageUrl?: string };
@@ -48,6 +50,7 @@ export type AlternativesResponse =
 export type AllowanceResponse = { ok: true; allowances: AllowanceState };
 export type SettingsResponse = { ok: true; settings: Settings };
 export type PauseResponse = { ok: true; pauseUntil: number };
+export type ClearCacheResponse = { ok: true; cleared: number };
 
 export type MessageResponse =
   | { ok: false; error: MessageError }
@@ -57,7 +60,8 @@ export type MessageResponse =
   | AlternativesResponse
   | AllowanceResponse
   | SettingsResponse
-  | PauseResponse;
+  | PauseResponse
+  | ClearCacheResponse;
 
 const SCOPE_VALUES: readonly AllowanceScope[] = ['tab', 'session', 'always'];
 const WALL_VALUES: readonly WallType[] = ['hard', 'soft', 'metered'];
@@ -127,6 +131,8 @@ export function parseMessage(value: unknown): Message | null {
         : null;
     case MESSAGE.pause:
       return typeof value.until === 'number' ? { type: MESSAGE.pause, until: value.until } : null;
+    case MESSAGE.clearCache:
+      return { type: MESSAGE.clearCache };
     default:
       return null;
   }
@@ -184,4 +190,9 @@ export function isAlternativesResponse(
 /** A stored allowance is the only answer that lets a listed site open. */
 export function isAllowanceResponse(value: unknown): value is AllowanceResponse {
   return isRecord(value) && value.ok === true && isRecord(value.allowances);
+}
+
+/** The clear answer names how many keys the worker dropped. */
+export function isClearCacheResponse(value: unknown): value is ClearCacheResponse {
+  return isRecord(value) && value.ok === true && typeof value.cleared === 'number';
 }

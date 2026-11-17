@@ -78,6 +78,18 @@ change the value.
 
 A press of Reload on the extension card runs the new bundle.
 
+## The cache
+
+The extension keeps three things between visits: the list, the answers that the
+block page found, and the reads of the stopped pages. The options page holds one
+section that drops all three. Open it from the popup's `manage` link, press
+`Clear cache`, and confirm. The page reports how many entries the worker
+removed.
+
+Clearing the cache is what makes a fixture scenario run again: a second visit to
+a blocked page renders the stored answer and asks the backend for nothing. The
+settings and the allowances stay.
+
 ## Fixture pages
 
 The dummy server serves every page of a local run.
@@ -86,6 +98,8 @@ The dummy server serves every page of a local run.
 | ------------------------------------------- | ------------------------------------------------ |
 | `/walled/nvidia-custom-silicon`             | A listed article with alternatives               |
 | `/walled/empty-state`                       | A listed article with no answer                  |
+| `/walled/slow`                              | A listed article whose answer waits five seconds |
+| `/walled/fail`                              | A listed article whose answer fails with 503     |
 | `/open/article`                             | An unlisted page that loads                      |
 | `/walled/redirect-to-open`                  | A listed page that refreshes to an unlisted host |
 | `/images/preview.png`, `/images/source.png` | The two images                                   |
@@ -93,28 +107,41 @@ The dummy server serves every page of a local run.
 The dev overlay in `sites/sites.dev.yaml` lists `127.0.0.1` under `/walled/*`.
 The overlay is a development aid and it never enters the release list.
 
+A blocked page caches its answer for 24 hours, so the second visit to
+`/walled/slow` or `/walled/fail` renders at once. Clear the cache in the
+options page between runs, and the page asks again.
+
 ## The dummy server
 
-`pnpm dummy-server` starts the server without the extension watch. Use
-`--port` to select another port.
+`pnpm dummy-server` starts the server without the extension watch. Three flags
+change what it does:
 
 ```sh
-pnpm dummy-server --port 9000
+pnpm dummy-server                      # 127.0.0.1:8787, the slow page waits 5 s
+pnpm dummy-server --port 9000          # another port
+pnpm dummy-server --delay 12000        # the slow page waits twelve seconds
+pnpm dummy-server --fail               # every alternatives answer answers 503
 ```
+
+`--fail` covers the whole server, so `/walled/nvidia-custom-silicon` fails too
+and the extension shows its failure state on the page it uses for every other
+check. `--delay` and `--fail` describe the run at startup.
 
 It answers these routes:
 
-| Route                   | Answer                                 |
-| ----------------------- | -------------------------------------- |
-| `GET /v1/list`          | The generated list, with an `ETag`     |
-| `POST /v1/alternatives` | Four saved results, or an empty answer |
-| `GET /v1/img`           | A signed image proxy                   |
-| `GET /`                 | A short page about the server          |
-| `GET /privacy`          | A short local privacy page             |
+| Route                   | Answer                                            |
+| ----------------------- | ------------------------------------------------- |
+| `GET /v1/list`          | The generated list, with an `ETag`                |
+| `POST /v1/alternatives` | Four saved results, an empty answer, or a failure |
+| `GET /v1/img`           | A signed image proxy                              |
+| `GET /`                 | A short page about the server                     |
+| `GET /privacy`          | A short local privacy page                        |
 
 The alternatives answer names the provider `dummy`. A URL whose path ends with
 `/empty-state`, or a title that carries `no alternatives`, answers an empty
-list.
+list. A URL whose path ends with `/slow` waits, and one whose path ends with
+`/fail` answers 503 `{ "error": "search_failed" }`. The page URL is the whole
+switch, so one server covers every state without a restart.
 
 The image route signs a source URL with `HMAC-SHA256` and a fixed local key,
 `local-development-only-key`. The signature is the first 16 lowercase

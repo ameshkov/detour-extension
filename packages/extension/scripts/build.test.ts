@@ -24,13 +24,27 @@ const ENTRY_FILES = [
   'options-entry.ts',
 ];
 
-const PAGE_FILES = ['block.html', 'logo-mark.png', 'options.html', 'popup.html', 'ui.css'];
+const PAGE_FILES = [
+  'block.html',
+  'icon-16.png',
+  'icon-32.png',
+  'icon-48.png',
+  'icon-128.png',
+  'logo-mark.png',
+  'options.html',
+  'popup.html',
+  'ui.css',
+];
 
 const OUTPUT_FILES = [
   'background.js',
   'block.html',
   'block.js',
   'guard.js',
+  'icon-128.png',
+  'icon-16.png',
+  'icon-32.png',
+  'icon-48.png',
   'logo-mark.png',
   'manifest.json',
   'options.html',

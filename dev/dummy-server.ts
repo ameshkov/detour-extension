@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { resolve } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 import type { SitesJson } from '@detour/shared';
@@ -16,6 +17,13 @@ import { SitesJsonSchema, buildQuery, findListedSite } from '@detour/shared';
 export const DUMMY_ORIGIN = 'http://127.0.0.1:8787';
 export const DUMMY_PORT = 8787;
 export const DUMMY_SIGNING_KEY = 'local-development-only-key';
+
+/**
+ * The wait of the `/walled/slow` fixture. The block page shows its loading state
+ * at once and its slow note after three seconds, so five seconds make both
+ * visible without reaching the fifteen-second deadline of a real search.
+ */
+export const DUMMY_SLOW_DELAY_MS = 5000;
 
 const MAX_JSON_BYTES = 65536;
 const IMAGE_MAX_BYTES = 524288;
@@ -44,10 +52,36 @@ const SOURCE_PNG = Buffer.from(
   'base64',
 );
 
+/**
+ * One 16 px favicon for each saved result, so every answer carries a favicon
+ * link that the signed image route serves like any other image. The shapes tell
+ * the four apart in a local run.
+ */
+const FAVICON_PNGS: Readonly<Record<string, Buffer>> = {
+  'niemanlab.org': Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJElEQVR4AZRPK2uCURh+PWlusDAYY0HjQAZjYbCwsl8gKBaDXTCISRFERRBNYhDsBoso+AssBsEggihGDSKCQfCS/PQ5cOSc83n7Djy8l+fCeRkdn9M9TDncI8MK4DlaiaExyJbEYAXwwMvQWDHKWnj5CfJS9H9fjxTyvXD8uOxibaqmgCc7o2LknaoZB0UDrxz1nJPvwOkJpoBs8I08/8+6ju/A6YQSgK+eMwsTOJwmZlQl4Pfz8q0QA98fDygnKAGnrYVGCeiNdzetncFW0SgB7f6GGq2VIpAHcN3hlQCI4+X52RCYwUEjQ/kBiPV2T+HCjLyxCeUrCw5/Ysp34KCRYQoQJL5aqi0JwGlir1dmIyOtL++d4WWTpiuF5l6T0MED7wEAAP//iOzDHAAAAAZJREFUAwAvCHS/UK2XUQAAAABJRU5ErkJggg==',
+    'base64',
+  ),
+  'poynter.org': Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAt0lEQVR4AZyTuxGEMAxENe7gLiajhUuo4OqBBowbgD7o4Ioho49DG4iRP/JgmNmxMNq3m+CIn1/Xzax/o2a2kmMTBo+XRnl40eCJWbI8APKSnf000XsYsnt9UQVgsR9HHKZMANJhfnGDWgsboJIBsioUAUjXhlqLMkClC8hqkQHSdAFYLXJAIV0gn22T8TojgJV+bfOQ7kQA/k77ulaFHa0IsC8L3VEKCPqicQ7uexz4G59AArwnAAAA//++Va8FAAAABklEQVQDAEcdXENdhDm7AAAAAElFTkSuQmCC',
+    'base64',
+  ),
+  'digiday.com': Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAdUlEQVR4AeyTQQqAIBBFv27ylAV1EPUgBXZKd9PMws0IltKiRcJHPvjfqMNY8EqrC2mdqE8ucBRWwgB5MX0iL1m+wUi4lCLPgGLG9gow7xkt6TIVQB+48z8A+OAfnJtDS7qtbzzBRE197k20y5F5LEcgJkr2AgAA//+8dwxJAAAABklEQVQDAE97Q6O5OkogAAAAAElFTkSuQmCC',
+    'base64',
+  ),
+  'pressgazette.co.uk': Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAz0lEQVR4AZyPzQ2CQBCFxy2CErQAONEFRWi86128653YBF1w0gK0BJvAeRI2s+zsECB5ZP6+L1lH/GWHos72Rb8ozDBKDjD1dEGzKMyAdcRFCix3eWo1zJn9P2Howj/g9tRQe27CxaRTBSOM23Kbm5JIIGEIEEsSCDQYAiQl8QILhgDRJF6AgzXxgu79oup+NB3dh29u4Y0XgLQkGgwmEGCgSVIw7iMBhlJiwbhVBViMkmryZuxkHG3oKgeyhkT2Uc2s+z6eNXERLecGzID9AQAA//9eblS4AAAABklEQVQDAOn3YqlVXxLgAAAAAElFTkSuQmCC',
+    'base64',
+  ),
+};
+
 const WALLED_TITLE = "Nvidia's next move: custom silicon for its biggest customers";
 const EMPTY_TITLE = 'A local story with no alternatives';
 const NORMAL_TITLE = 'The fixture article that is not walled';
 const REDIRECT_TITLE = 'The fixture article that refreshes to the unlisted host';
+const SLOW_TITLE = 'A local story that takes a few seconds to find';
+const FAIL_TITLE = 'A local story whose search fails';
 
 export const DUMMY_PROVIDER = 'dummy';
 
@@ -97,6 +131,10 @@ export type DummyServerOptions = {
   list?: SitesJson;
   signingKey?: string;
   fetchImpl?: FetchLike;
+  /** The wait of the `/walled/slow` fixture. `--delay` sets it for a run. */
+  slowDelayMs?: number;
+  /** Every alternatives answer fails with 503, as `--fail` asks. */
+  failAlternatives?: boolean;
 };
 
 export type DummyServer = {
@@ -110,6 +148,8 @@ type Ctx = {
   list: SitesJson;
   signingKey: string;
   fetchImpl: FetchLike;
+  slowDelayMs: number;
+  failAlternatives: boolean;
 };
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
@@ -216,6 +256,13 @@ function answerFor(input: { url: string; title: string }, ctx: Ctx): Response {
       title: row.title,
       description: row.description,
       domain: row.domain,
+      // Every row carries a signed favicon, so the block page draws one per row
+      // and the route behind it is the same proxy as the preview image.
+      favicon: imageUrl(
+        ctx.origin,
+        `${ctx.origin}/images/favicon/${row.domain}.png`,
+        ctx.signingKey,
+      ),
     };
 
     // The first row carries a signed image, so the block page and the image
@@ -228,6 +275,39 @@ function answerFor(input: { url: string; title: string }, ctx: Ctx): Response {
   });
 
   return json({ query, degraded: false, provider: DUMMY_PROVIDER, alternatives });
+}
+
+/**
+ * The two local scenarios, chosen by the path of the article. The path already
+ * decides an empty answer, so a local run reaches every state of the block page
+ * through a URL and no restart.
+ */
+function scenarioOf(url: string): 'normal' | 'slow' | 'fail' {
+  const { pathname } = new URL(url);
+
+  if (pathname.endsWith('/slow')) {
+    return 'slow';
+  }
+
+  return pathname.endsWith('/fail') ? 'fail' : 'normal';
+}
+
+/** The wait of the slow scenario, and the failure of the failing one. */
+async function alternativesAnswer(
+  input: { url: string; title: string },
+  ctx: Ctx,
+): Promise<Response> {
+  const scenario = scenarioOf(input.url);
+
+  if (ctx.failAlternatives || scenario === 'fail') {
+    return errorBody(503, 'search_failed');
+  }
+
+  if (scenario === 'slow') {
+    await sleep(ctx.slowDelayMs);
+  }
+
+  return answerFor(input, ctx);
 }
 
 async function readBody(request: IncomingMessage): Promise<unknown> {
@@ -366,6 +446,28 @@ function emptyPage(): Response {
   );
 }
 
+/** The article whose search waits, so the block page shows it is still looking. */
+function slowPage(): Response {
+  return html(
+    [`<title>${SLOW_TITLE}</title>`, `<meta property="og:title" content="${SLOW_TITLE}" />`],
+    [
+      `<h1>${SLOW_TITLE}</h1>`,
+      '<p>This fixture article waits before the server answers the search for it.</p>',
+    ],
+  );
+}
+
+/** The article whose search fails, so the block page shows its failure state. */
+function failPage(): Response {
+  return html(
+    [`<title>${FAIL_TITLE}</title>`, `<meta property="og:title" content="${FAIL_TITLE}" />`],
+    [
+      `<h1>${FAIL_TITLE}</h1>`,
+      '<p>This fixture article makes the server refuse the search for it.</p>',
+    ],
+  );
+}
+
 function normalPage(): Response {
   return html(
     [`<title>${NORMAL_TITLE}</title>`],
@@ -409,6 +511,8 @@ function landingPage(): Response {
       '  <li><code>POST /v1/alternatives</code></li>',
       '  <li><code>GET /v1/img</code></li>',
       '  <li><code>GET /walled/nvidia-custom-silicon</code></li>',
+      '  <li><code>GET /walled/slow</code></li>',
+      '  <li><code>GET /walled/fail</code></li>',
       '</ul>',
     ],
   );
@@ -424,6 +528,18 @@ function privacyPage(): Response {
   );
 }
 
+const FAVICON_PATH = '/images/favicon/';
+
+/** The favicon of one saved result, at the path that its signed link names. */
+function faviconResponse(pathname: string): Response | null {
+  const domain = pathname.slice(FAVICON_PATH.length).replace(/\.png$/, '');
+  const png = FAVICON_PNGS[domain];
+
+  return png === undefined
+    ? null
+    : new Response(new Uint8Array(png), { headers: { 'Content-Type': PNG } });
+}
+
 function pageFor(pathname: string, origin: string): Response | null {
   switch (pathname) {
     case '/':
@@ -434,6 +550,10 @@ function pageFor(pathname: string, origin: string): Response | null {
       return walledPage(origin);
     case '/walled/empty-state':
       return emptyPage();
+    case '/walled/slow':
+      return slowPage();
+    case '/walled/fail':
+      return failPage();
     case '/open/article':
       return normalPage();
     case '/walled/redirect-to-open':
@@ -445,6 +565,10 @@ function pageFor(pathname: string, origin: string): Response | null {
     case '/v1/img':
       return null;
     default:
+      if (pathname.startsWith(FAVICON_PATH)) {
+        return faviconResponse(pathname);
+      }
+
       return pathname.startsWith('/v1/') ? null : resultPage(pathname);
   }
 }
@@ -492,7 +616,7 @@ async function route(request: IncomingMessage, ctx: Ctx): Promise<Response | nul
 
     const parsed = parseAlternativesBody(body);
 
-    return parsed === null ? errorBody(400, 'bad_request') : answerFor(parsed, ctx);
+    return parsed === null ? errorBody(400, 'bad_request') : alternativesAnswer(parsed, ctx);
   }
 
   if (pathname === '/v1/img') {
@@ -556,6 +680,8 @@ export async function startDummyServer(options: DummyServerOptions = {}): Promis
   const list = options.list ?? readBundledList();
   const signingKey = options.signingKey ?? DUMMY_SIGNING_KEY;
   const fetchImpl = options.fetchImpl ?? ((input, init) => fetch(input, init));
+  const slowDelayMs = options.slowDelayMs ?? DUMMY_SLOW_DELAY_MS;
+  const failAlternatives = options.failAlternatives === true;
 
   // The handler needs the real origin for the links of its pages. A request
   // that carries the Host header supplies it, and the configured origin is the
@@ -563,7 +689,14 @@ export async function startDummyServer(options: DummyServerOptions = {}): Promis
   let origin = options.origin ?? (port === 0 ? 'http://127.0.0.1' : `http://${host}:${port}`);
 
   const server = createServer((request, response) => {
-    respond(request, response, { origin, list, signingKey, fetchImpl });
+    respond(request, response, {
+      origin,
+      list,
+      signingKey,
+      fetchImpl,
+      slowDelayMs,
+      failAlternatives,
+    });
   });
 
   await new Promise<void>((resolveServer, rejectServer) => {
@@ -590,20 +723,55 @@ export async function startDummyServer(options: DummyServerOptions = {}): Promis
   };
 }
 
-async function main(): Promise<void> {
-  const portIndex = process.argv.indexOf('--port');
-  const portValue = portIndex === -1 ? undefined : process.argv[portIndex + 1];
-  const port = portValue === undefined ? DUMMY_PORT : Number.parseInt(portValue, 10);
+const USAGE = 'usage: pnpm dummy-server [--port <number>] [--delay <ms>] [--fail]\n';
 
-  if (!Number.isInteger(port) || port < 0 || port > 65535) {
-    process.stderr.write('usage: pnpm dummy-server [--port <number>]\n');
+/** The value after a flag, or undefined when the run does not carry the flag. */
+function flagValue(flag: string): string | undefined {
+  const index = process.argv.indexOf(flag);
+
+  return index === -1 ? undefined : process.argv[index + 1];
+}
+
+function portOf(value: string | undefined): number | null {
+  if (value === undefined) {
+    return DUMMY_PORT;
+  }
+
+  const port = Number.parseInt(value, 10);
+
+  return Number.isInteger(port) && port >= 0 && port <= 65535 ? port : null;
+}
+
+function delayOf(value: string | undefined): number | null {
+  if (value === undefined) {
+    return DUMMY_SLOW_DELAY_MS;
+  }
+
+  const delay = Number.parseInt(value, 10);
+
+  return Number.isInteger(delay) && delay >= 0 ? delay : null;
+}
+
+async function main(): Promise<void> {
+  const port = portOf(flagValue('--port'));
+  const slowDelayMs = delayOf(flagValue('--delay'));
+  const failAlternatives = process.argv.includes('--fail');
+
+  if (port === null || slowDelayMs === null) {
+    process.stderr.write(USAGE);
     process.exit(1);
   }
 
   try {
-    const server = await startDummyServer({ port });
+    const server = await startDummyServer({ port, slowDelayMs, failAlternatives });
 
     process.stdout.write(`the dummy server listens on ${server.origin}\n`);
+
+    if (failAlternatives) {
+      process.stdout.write('every alternatives answer fails with 503\n');
+    } else {
+      process.stdout.write(`the slow fixture waits ${slowDelayMs} ms\n`);
+    }
   } catch (error) {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(1);

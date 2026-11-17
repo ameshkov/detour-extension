@@ -68,6 +68,13 @@ alternative's row as the row renders, so the backend fetches the image from
 the publisher and sends the bytes to you then. Your browser makes no request
 to the publisher, and the link is signed but not tied to you.
 
+An alternative can carry the favicon of the publisher too. It is the same
+arrangement: the link points at the backend, which fetches the icon and sends
+it with the answer's signature. The block page reuses it as the row tile, and
+the row keeps its letter tile when the answer carries no favicon, when the
+favicon fails, or when you turned images off. The favicon says which publisher
+a row comes from, and it tells the publisher nothing.
+
 The source card loads no image. Detour separately requests the blocked page
 for metadata without cookies.
 

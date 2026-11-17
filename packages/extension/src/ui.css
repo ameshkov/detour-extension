@@ -278,6 +278,15 @@ main {
   font-weight: 700;
 }
 
+/* The favicon the backend serves is the tile: it fills the box, and the letter
+   tile takes over only when the answer carries none or the image fails. */
+[data-role='list'] > li > [data-role='tile'] img {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
 [data-role='list'] > li > a {
   grid-column: 2;
   grid-row: 1;
@@ -685,6 +694,7 @@ body[data-page='popup'] [data-role='pause-button'] {
 
 body[data-page='popup'] footer {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 10px 15px;
 }
@@ -705,7 +715,8 @@ body[data-page='options'] [data-role='header'] {
 
 body[data-page='options'] [data-role='options-heading'],
 body[data-page='options'] [data-role='allowed-heading'],
-body[data-page='options'] [data-role='reading-heading'] {
+body[data-page='options'] [data-role='reading-heading'],
+body[data-page='options'] [data-role='cache-heading'] {
   margin: 0 0 4px;
   font-family: var(--serif);
   font-size: 19px;
@@ -714,6 +725,10 @@ body[data-page='options'] [data-role='reading-heading'] {
 }
 
 body[data-page='options'] [data-role='reading-heading'] {
+  margin-top: 26px;
+}
+
+body[data-page='options'] [data-role='cache-heading'] {
   margin-top: 26px;
 }
 
@@ -804,6 +819,29 @@ body[data-page='options'] [data-role='images-detail'] {
   line-height: 1.5;
 }
 
+body[data-page='options'] [data-role='cache-detail'] {
+  max-width: 520px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+body[data-page='options'] [data-role='clear-cache'] {
+  padding: 8px 13px;
+  border: 1px solid var(--ink);
+  border-radius: 9px;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+body[data-page='options'] [data-role='cache-status'] {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -859,7 +897,10 @@ body[data-page='options'] [data-role='images-detail'] {
     flex: 0 0 auto;
   }
 
-  [data-role='report'] {
+  /* The block page's action row alone. The popup footer carries a report link
+     too, and this breakpoint always matches the 340 pixel popup, where a link
+     of the whole row would push its neighbour out of the frame. */
+  [data-role='actions'] [data-role='report'] {
     flex: 0 0 100%;
     margin-left: 0;
     padding-left: 0;

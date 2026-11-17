@@ -795,6 +795,7 @@ describe('the message boundary', () => {
         settings: { enabled: true, autoOpenBest: false, imagesEnabled: true },
       },
       { type: MESSAGE.pause, until: NOW + 1 },
+      { type: MESSAGE.clearCache },
     ];
     const types = messages.map((message) => (message as { type: string }).type);
 
@@ -1164,6 +1165,40 @@ describe('the list refresh', () => {
       ok: true,
       blocked: false,
       site: null,
+    });
+  });
+});
+
+describe('the clearCache handler', () => {
+  it('answers the number of entries it removed', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values[STORAGE.list] = { storageVersion: 1, fetchedAt: 1, list: {} };
+    fake.storage.local.values[`${STORAGE.alt}aaa`] = { answer: {}, storedAt: 1 };
+    fake.storage.local.values[`${STORAGE.meta}bbb`] = { meta: {}, storedAt: 1 };
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+
+    await expect(handleMessage({ type: 'clearCache' }, {}, deps())).resolves.toEqual({
+      ok: true,
+      cleared: 3,
+    });
+
+    expect(fake.storage.local.values[STORAGE.settings]).toBeDefined();
+    expect(fake.storage.local.values[STORAGE.list]).toBeUndefined();
+  });
+
+  it('answers an error when the store fails', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.failReads = true;
+
+    await expect(handleMessage({ type: 'clearCache' }, {}, deps())).resolves.toEqual({
+      ok: false,
+      error: 'bad_message',
     });
   });
 });

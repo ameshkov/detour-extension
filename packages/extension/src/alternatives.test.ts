@@ -69,6 +69,53 @@ describe('the alternatives answer', () => {
     expect(titlesOf(answer)).toEqual(['Three']);
   });
 
+  it('keeps the favicon and the image the service sends', () => {
+    const answer = parseAlternativesAnswer({
+      query: 'a query',
+      degraded: false,
+      provider: 'ceramic',
+      alternatives: [
+        {
+          url: 'https://a.test/one',
+          title: 'One',
+          description: 'First',
+          domain: 'a.test',
+          image: 'https://api.test/v1/img?u=x&sig=y',
+          favicon: 'https://api.test/v1/img?u=fav&sig=z',
+        },
+      ],
+    });
+
+    expect(answer?.alternatives[0]).toEqual({
+      url: 'https://a.test/one',
+      title: 'One',
+      description: 'First',
+      domain: 'a.test',
+      image: 'https://api.test/v1/img?u=x&sig=y',
+      favicon: 'https://api.test/v1/img?u=fav&sig=z',
+    });
+  });
+
+  it('drops a favicon that is not an http url and keeps the row', () => {
+    const answer = parseAlternativesAnswer({
+      query: 'a query',
+      degraded: false,
+      provider: 'ceramic',
+      alternatives: [
+        {
+          url: 'https://a.test/one',
+          title: 'One',
+          description: 'First',
+          domain: 'a.test',
+          favicon: 'javascript:alert(1)',
+        },
+      ],
+    });
+
+    expect(titlesOf(answer)).toEqual(['One']);
+    expect(answer?.alternatives[0]).not.toHaveProperty('favicon');
+  });
+
   it('posts the url, the title, and the language without the description', async () => {
     const calls: RequestInitRecord[] = [];
     const body = { query: 'q', degraded: false, provider: 'ceramic', alternatives: [] };

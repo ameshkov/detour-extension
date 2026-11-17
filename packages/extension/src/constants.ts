@@ -1,5 +1,5 @@
 /**
- * The eight request names of the message contract between the contexts.
+ * The nine request names of the message contract between the contexts.
  */
 export const MESSAGE = {
   isBlocked: 'isBlocked',
@@ -10,6 +10,7 @@ export const MESSAGE = {
   revoke: 'revoke',
   setSettings: 'setSettings',
   pause: 'pause',
+  clearCache: 'clearCache',
 } as const;
 
 /**

@@ -27,13 +27,13 @@ the load. The service worker owns the list, the allowances, the metadata, and
 the navigation. The block page owns presentation, and the popup and the
 options page show what the service worker stored.
 
-| Surface        | Responsibility                                                  | Files                                                                                                                                                         | Talks to                |
-| -------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Guard          | Decide fast, stop the load, report the URL.                     | `guard.ts`, `guard-entry.ts`                                                                                                                                  | Service worker          |
-| Service worker | Own the list, the allowances, the metadata, and the navigation. | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts` | Storage, backend API    |
-| Block page     | Explain the wall, show the source, load the alternatives.       | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                               | Storage, service worker |
-| Popup          | Show the state, the tab's allowance, the pause, and the list.   | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
-| Options page   | List the allowances, remove one, and set the two settings.      | `options.html`, `options-entry.ts`, `options.ts`                                                                                                              | Storage, service worker |
+| Surface        | Responsibility                                                          | Files                                                                                                                                                         | Talks to                |
+| -------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Guard          | Decide fast, stop the load, report the URL.                             | `guard.ts`, `guard-entry.ts`                                                                                                                                  | Service worker          |
+| Service worker | Own the list, the allowances, the metadata, and the navigation.         | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts` | Storage, backend API    |
+| Block page     | Explain the wall, show the source, load the alternatives.               | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                               | Storage, service worker |
+| Popup          | Show the state, the tab's allowance, the pause, and the list.           | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
+| Options page   | List the allowances, remove one, set the two settings, clear the cache. | `options.html`, `options-entry.ts`, `options.ts`                                                                                                              | Storage, service worker |
 
 The source files sit in `packages/extension/src`. The guard keeps one
 module-level marker for the document and draws at most one anchor, only for a
@@ -54,8 +54,9 @@ through a message. The popup's header carries the switch of
 V3, the permissions `["alarms", "storage"]`, one service worker at
 `background.js`, one content script at `guard.js` on `*://*/*` that runs at
 `document_start` in the top frame, and `block.html` as a web accessible
-resource. It carries `action` with `popup.html` and `options_ui` with
-`options.html`.
+resource. It carries `action` with `popup.html` and `default_icon`,
+`options_ui` with `options.html`, and the `icons` set `icon-16.png` to
+`icon-128.png`.
 
 The build copies the manifest and adds the backend origin to
 `host_permissions`. The manifest carries `*://*/*`, which already covers the
@@ -76,7 +77,8 @@ caller origin must allow `chrome-extension://` followed by that id.
 development build. Both write `packages/extension/dist`: the bundles
 `background.js`, `guard.js`, `block.js`, `popup.js`, and `options.js`, a copy
 of the manifest, and a copy of `block.html`, `popup.html`, `options.html`,
-`ui.css`, and `logo-mark.png`.
+`ui.css`, `logo-mark.png`, and the four toolbar icons `icon-16.png`,
+`icon-32.png`, `icon-48.png`, and `icon-128.png`.
 
 The build defines two values. `API_BASE` is the backend origin, and `DEV` is
 the development flag. `DETOUR_API_BASE` sets `API_BASE`. The release default
@@ -100,11 +102,13 @@ throws across the boundary.
 | `revoke`          | `{ scope, host, tabId? }` | `{ ok: true, allowances }`                                           |
 | `setSettings`     | `{ settings }`            | `{ ok: true, settings }`                                             |
 | `pause`           | `{ until }`               | `{ ok: true, pauseUntil }`                                           |
+| `clearCache`      | none                      | `{ ok: true, cleared }`                                              |
 
 `site` is `{ domain, name, wall }` from the list, or `null`. `meta` is `null`
 or `{ title, description }`, and each field is a string or `null`. `answer`
 is `null` or the backend's alternatives answer. `scope` is `tab`, `session`,
-or `always`.
+or `always`. `cleared` is the number of storage keys that `clearCache`
+removed.
 
 ### Guard
 
@@ -129,6 +133,10 @@ visibility and appends one anchor to the page, with that URL and the text
 
 The service worker writes every key below except `alt:<sha256(url)>`. The
 block page writes that one, and it writes only a finished backend answer.
+`clearCache` breaks the rule in one direction only: the service worker removes
+`list`, every `alt:` key, and every `meta:` key at the reader's request, and it
+never writes an `alt:` entry. The settings, the allowances, and the tab records
+stay.
 
 | Key                  | Store   | Writer         | Lifetime                  |
 | -------------------- | ------- | -------------- | ------------------------- |
@@ -198,8 +206,10 @@ the shell.
 The list area carries one of four states in `data-state`: `loading`,
 `results`, `empty`, and `error`. Those four values are the whole state set. A
 results state renders one `<li>` per alternative: the first one is the hero,
-and each later one is a row with its letter tile. A row's image appears only
-when `imagesEnabled` is on and the answer carries one.
+and each later one is a row with its tile. The tile reuses the favicon the
+answer sends, in place of the letter tile, and keeps the letter when the answer
+carries none, when the favicon fails, or while `imagesEnabled` is off. A row's
+image appears only when `imagesEnabled` is on and the answer carries one.
 
 The fallback box holds an editable query and four engine links, in the order
 DuckDuckGo, Brave, Google, and Bing. The query is the answer's own query when
@@ -244,7 +254,9 @@ from the time of the press.
 The options page is 640 px at most. It lists every entry of the three
 allowance stores with its scope and its `addedAt` date as a UTC `YYYY-MM-DD`,
 and it removes one entry at a time. It also holds the two reading settings,
-which are `autoOpenBest` and `imagesEnabled`.
+which are `autoOpenBest` and `imagesEnabled`. Its cache section clears the
+list, the cached answers, and the cached page reads after a confirmation, and
+it reports how many entries the worker removed.
 
 ## Backend contract
 
@@ -309,27 +321,39 @@ The answer is one JSON body:
       "title": "The same story elsewhere",
       "description": "One sentence",
       "domain": "other.example",
-      "image": "http://127.0.0.1:8787/v1/img?u=...&sig=..."
+      "image": "http://127.0.0.1:8787/v1/img?u=...&sig=...",
+      "favicon": "http://127.0.0.1:8787/v1/img?u=...&sig=..."
     }
   ]
 }
 ```
 
 Every row must carry an `http` or `https` `url`, a string `title`, a string
-`description`, and a string `domain`. `image` is optional, and it must be an
-`http` or `https` URL when present. A malformed row is dropped on its own. A
-malformed answer level answers `null` to the page, and the page shows its
-error state.
+`description`, and a string `domain`. `image` and `favicon` are optional, and
+each must be an `http` or `https` URL when present. A malformed row is dropped
+on its own, and a favicon that is not an `http` or `https` URL is dropped
+without the row. A malformed answer level answers `null` to the page, and the
+page shows its error state.
 
 `degraded: true` means the backend spent its search budget. The page shows the
 error state and stores nothing.
 
-### Images
+### Images and favicons
 
-An answer can carry one image for each result. The image link points at
-`GET /v1/img` and carries the source URL in `u` and a signature in `sig`. The
+An answer can carry one image and one favicon for each result. Both links point
+at `GET /v1/img` and carry the source URL in `u` and a signature in `sig`. The
 signature is the first 16 lowercase hexadecimal characters of `HMAC-SHA256` of
 the source URL, keyed by the server's signing key.
+
+The image is the page image of the result, and it is the hero picture or the
+row thumbnail. The favicon is the site's icon, and the block page reuses it as
+the tile of a row, in place of the generated colour and letter. A row without a
+favicon, and every row while `imagesEnabled` is off, keeps the letter tile. A
+favicon that fails to load falls back to the letter too, so a missing icon
+never leaves a hole.
+
+Both are links to the backend and never to the publisher, because your browser
+must not tell the publisher who is reading.
 
 The route answers 400 for a missing `u`, 403 for a missing or wrong signature
 or a source that is not `http(s)`, 415 for a body that is not a raster image,

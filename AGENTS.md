@@ -67,7 +67,8 @@ sites/fixtures/pages/  three saved publisher pages for the metadata reader
 docs/                  architecture.md, brand.md, privacy.md, list-format.md
 packages/shared/       list types, schema, matching, query cleaner, hash
 packages/extension/    manifest.json, the five bundles, the three pages, ui.css,
-                       logo-mark.png, the tests, and scripts/build.ts
+                       logo-mark.png, the four toolbar icons, the tests, and
+                       scripts/build.ts
 ```
 
 The extension sources sit flat in `packages/extension/src`, with the test
@@ -139,7 +140,10 @@ The extension runs in a sandbox with a small API surface:
 - Use message passing between contexts. Never share mutable state.
 - Two writers. The service worker writes every storage key except
   `alt:<sha256(url)>`. The block page writes that one key, and only a finished
-  backend answer.
+  backend answer. The reader's `clearCache` is the one removal: the service
+  worker drops `list`, every `alt:` key, and every `meta:` key, and it never
+  writes an `alt:` entry. The settings, the allowances, and the tab records
+  stay.
 - Fail open. A guard error, a timeout, a missing list, or a `disabled` list
   lets the page load.
 - Design for updates. The list carries a storage version, and an envelope of
@@ -153,6 +157,11 @@ The dummy server follows these rules:
 - One handler per route. The handler validates the request and returns a
   status and a body.
 - Keep the fixtures in code. A local run must need no file and no account.
+- The path of the article is the scenario switch, as `/empty-state` already is:
+  `/slow` waits, and `/fail` answers 503. A scenario is a URL, never a restart
+  of the server and never a stored mode.
+- A flag of the run changes the whole server: `--delay` moves the wait of the
+  slow scenario, and `--fail` fails every alternatives answer.
 - Never put a secret in code. The local signing key is a fixed development
   placeholder, and it is not a production secret.
 
@@ -199,7 +208,8 @@ guard (guard-entry.ts)  →  service worker (background.ts)  →  block page (bl
   `empty`, and `error`, are the whole state set.
 - The popup renders the state, the allowance of the active tab, the count,
   the pause, and the list.
-- The options page lists every allowance and holds the two reading settings.
+- The options page lists every allowance, holds the two reading settings, and
+  clears the cache after a confirmation.
 - The popup and the options page read storage directly and write only through
   a message.
 - The message contract is the only interface between the contexts. The service
@@ -287,10 +297,16 @@ Extension configuration:
   the permissions `["alarms", "storage"]`, and no `tabs`. `chrome.tabs.update`,
   `chrome.tabs.onRemoved`, and `sender.tab.openerTabId` need no permission,
   and `*://*/*` covers page access.
-- The manifest carries `action` with `popup.html` and `default_title` `Detour`,
-  and `options_ui` with `options.html` and `open_in_tab` `true`.
+- The manifest carries `action` with `popup.html`, `default_title` `Detour`,
+  and `default_icon`, `options_ui` with `options.html` and `open_in_tab`
+  `true`, and the `icons` set `icon-16.png` to `icon-128.png`.
 - The three pages share one stylesheet, `ui.css`, and one page mark,
-  `src/logo-mark.png`. The build copies both beside the bundles.
+  `src/logo-mark.png`. The build copies both beside the bundles, with the four
+  toolbar icons `src/icon-16.png` to `src/icon-128.png`.
+- The popup is a fixed 340 pixels wide, so the `max-width: 520px` block of
+  `ui.css` always matches it. A narrow-screen rule that names a shared control
+  is scoped to the block page's `[data-role='actions']`, or it widens the popup
+  window past its frame.
 - The manifest carries one fixed public key. That key gives the provisional
   development id `jcncblagncbpbamfnekhdkomffdpehpk`, and no private key is in
   the repository. If the store issues another public key, one change replaces
@@ -310,9 +326,11 @@ Extension configuration:
 Dummy server configuration:
 
 - `dev/dummy-server.ts` answers the backend contract on
-  `http://127.0.0.1:8787`. The `--port` flag selects another port.
-- It serves the fixture pages on the same origin. The local overlay lists
-  `127.0.0.1` under `/walled/*`.
+  `http://127.0.0.1:8787`. `--port` selects another port, `--delay <ms>` sets
+  the wait of the `/walled/slow` fixture, and `--fail` fails every
+  alternatives answer.
+- It serves the fixture pages on the same origin, including `/walled/slow` and
+  `/walled/fail`. The local overlay lists `127.0.0.1` under `/walled/*`.
 - The list comes from `packages/extension/src/sites.json`, which
   `pnpm list:build` writes.
 - The image signing key is the fixed development value

@@ -7,6 +7,10 @@ import {
   ALLOWED_SITES_INTRO,
   AUTO_OPEN_SETTING_DETAIL,
   AUTO_OPEN_SETTING_LABEL,
+  CACHE_CONFIRM,
+  CACHE_DETAIL,
+  CACHE_HEADING,
+  CLEAR_CACHE_LABEL,
   COLUMN_ADDED,
   COLUMN_SCOPE,
   COLUMN_SITE,
@@ -17,6 +21,7 @@ import {
   READING_HEADING,
   REMOVE_LABEL,
   SCOPE_LABEL,
+  cacheCleared,
   removeAllowanceLabel,
 } from './copy';
 import { startOptionsPage } from './options';
@@ -65,6 +70,10 @@ function press(name: string, checked: boolean): void {
 
   element.checked = checked;
   element.dispatchEvent(new Event('change'));
+}
+
+function pressClear(): void {
+  role('clear-cache')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 }
 
 function messagesOfType(type: string): unknown[] {
@@ -403,5 +412,70 @@ describe('a message that fails', () => {
       expect(checkbox('images').checked).toBe(false);
     });
     expect(rows()).toHaveLength(1);
+  });
+});
+
+describe('the cache', () => {
+  it('states what the cache holds and hides the status', async () => {
+    await startOptionsPage();
+
+    expect(role('cache-heading').textContent).toBe(CACHE_HEADING);
+    expect(role('cache-detail').textContent).toBe(CACHE_DETAIL);
+    expect(role('clear-cache').textContent).toBe(CLEAR_CACHE_LABEL);
+    expect(role('cache-status').hidden).toBe(true);
+  });
+
+  it('asks before it clears', async () => {
+    const confirm = vi.fn(() => false);
+
+    vi.stubGlobal('confirm', confirm);
+
+    await startOptionsPage();
+    pressClear();
+
+    expect(confirm).toHaveBeenCalledWith(CACHE_CONFIRM);
+    expect(messagesOfType('clearCache')).toEqual([]);
+    expect(role('cache-status').hidden).toBe(true);
+  });
+
+  it('clears the cache and counts what it dropped', async () => {
+    vi.stubGlobal('confirm', () => true);
+    fake.respond('clearCache', () => ({ ok: true, cleared: 3 }));
+
+    await startOptionsPage();
+    pressClear();
+
+    await vi.waitFor(() => {
+      expect(messagesOfType('clearCache')).toEqual([{ type: 'clearCache' }]);
+    });
+
+    await vi.waitFor(() => {
+      expect(role('cache-status').textContent).toBe(cacheCleared(3));
+    });
+    expect(role('cache-status').hidden).toBe(false);
+  });
+
+  it('says so when nothing was cached', async () => {
+    vi.stubGlobal('confirm', () => true);
+    fake.respond('clearCache', () => ({ ok: true, cleared: 0 }));
+
+    await startOptionsPage();
+    pressClear();
+
+    await vi.waitFor(() => {
+      expect(role('cache-status').textContent).toBe(cacheCleared(0));
+    });
+  });
+
+  it('shows no status when the worker did not answer', async () => {
+    vi.stubGlobal('confirm', () => true);
+
+    await startOptionsPage();
+    pressClear();
+
+    await vi.waitFor(() => {
+      expect(messagesOfType('clearCache')).toHaveLength(1);
+    });
+    expect(role('cache-status').hidden).toBe(true);
   });
 });

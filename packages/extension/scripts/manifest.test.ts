@@ -16,7 +16,12 @@ type Manifest = {
     all_frames?: boolean;
   }>;
   web_accessible_resources?: Array<{ resources?: string[]; matches?: string[] }>;
-  action?: { default_popup?: string; default_title?: string };
+  action?: {
+    default_popup?: string;
+    default_title?: string;
+    default_icon?: Record<string, string>;
+  };
+  icons?: Record<string, string>;
   options_ui?: { page?: string; open_in_tab?: boolean };
   [index: string]: unknown;
 };
@@ -112,5 +117,12 @@ describe('the extension manifest', () => {
     expect(manifest.action?.default_title).toBe('Detour');
     expect(manifest.options_ui?.page).toBe('options.html');
     expect(manifest.options_ui?.open_in_tab).toBe(true);
+  });
+
+  it('gives the toolbar and the extensions page the mark', () => {
+    const icons = { 16: 'icon-16.png', 32: 'icon-32.png', 48: 'icon-48.png', 128: 'icon-128.png' };
+
+    expect(manifest.icons).toEqual(icons);
+    expect(manifest.action?.default_icon).toEqual(icons);
   });
 });

@@ -3,6 +3,7 @@ import { handleGetAlternatives } from './alternatives-handler';
 import { MESSAGE } from './constants';
 import {
   handleBlocked,
+  handleClearCache,
   handleGetMeta,
   handleIsBlocked,
   handlePause,
@@ -85,6 +86,8 @@ export async function handleMessage(
         return await handleSetSettings(parsed);
       case MESSAGE.pause:
         return await handlePause(parsed);
+      case MESSAGE.clearCache:
+        return await handleClearCache();
       default:
         return { ok: false, error: 'unknown_message' };
     }

@@ -41,6 +41,18 @@ function rows(): NodeListOf<HTMLLIElement> {
   return role('list').querySelectorAll('li');
 }
 
+const FAVICON = 'https://detour-api.invalid/v1/img?u=fav&sig=c';
+
+/** The same answer with the favicon that the service sends for the second row. */
+function answeredWithFavicon(): AlternativesAnswer {
+  return {
+    ...ANSWER,
+    alternatives: ANSWER.alternatives.map((row, index) =>
+      index === 1 ? { ...row, favicon: FAVICON } : row,
+    ),
+  };
+}
+
 function view(overrides: Partial<AlternativesView> = {}): AlternativesView {
   return { state: 'loading', answer: null, imagesEnabled: true, query: '', ...overrides };
 }
@@ -135,6 +147,62 @@ describe('the alternatives list', () => {
 
     expect(rows()[0]?.dataset.layout).toBeUndefined();
     expect(rows()[1]?.dataset.layout).toBe('text');
+  });
+
+  it('reuses the favicon of the answer as the tile of a row', () => {
+    renderAlternatives(view({ state: 'results', answer: answeredWithFavicon() }));
+
+    const tile = rows()[1]?.querySelector<HTMLElement>('[data-role="tile"]');
+    const image = tile?.querySelector('img');
+
+    expect(tile?.dataset.tile).toBe('favicon');
+    expect(image?.getAttribute('src')).toBe(FAVICON);
+    expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
+    expect(tile?.textContent).toBe('');
+  });
+
+  it('draws no letter tile behind the favicon it reuses', () => {
+    renderAlternatives(view({ state: 'results', answer: answeredWithFavicon() }));
+
+    const tile = rows()[1]?.querySelector<HTMLElement>('[data-role="tile"]');
+
+    expect(tile?.style.backgroundColor).toBe('');
+  });
+
+  it('keeps the letter when the answer carries no favicon', () => {
+    renderAlternatives(view({ state: 'results', answer: ANSWER }));
+
+    const tile = rows()[1]?.querySelector<HTMLElement>('[data-role="tile"]');
+
+    expect(tile?.querySelector('img')).toBeNull();
+    expect(tile?.dataset.tile).toBe('letter');
+    expect(tile?.textContent).toBe('T');
+  });
+
+  it('keeps the letter when the reader turned images off', () => {
+    renderAlternatives(
+      view({ state: 'results', answer: answeredWithFavicon(), imagesEnabled: false }),
+    );
+
+    const tile = rows()[1]?.querySelector<HTMLElement>('[data-role="tile"]');
+
+    expect(tile?.querySelector('img')).toBeNull();
+    expect(tile?.dataset.tile).toBe('letter');
+    expect(tile?.textContent).toBe('T');
+  });
+
+  it('falls back to the letter tile when the favicon does not load', () => {
+    renderAlternatives(view({ state: 'results', answer: answeredWithFavicon() }));
+
+    const tile = rows()[1]?.querySelector<HTMLElement>('[data-role="tile"]');
+    const image = tile?.querySelector('img');
+
+    image?.dispatchEvent(new Event('error'));
+
+    expect(tile?.querySelector('img')).toBeNull();
+    expect(tile?.dataset.tile).toBe('letter');
+    expect(tile?.style.backgroundColor).toBe(tileColor('theverge.com'));
+    expect(tile?.textContent).toBe('T');
   });
 
   it('colours the tile of a domain the same way every time', () => {

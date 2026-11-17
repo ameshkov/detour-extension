@@ -1,9 +1,11 @@
 import { allowsHost, allowsTab } from './allowances';
+import { clearCache } from './cache';
 import { hasCapability, recordCapability } from './capabilities';
 import { findSite } from './list-matching';
 import type {
   BlockedMessage,
   BlockedResponse,
+  ClearCacheResponse,
   GetMetaMessage,
   GetMetaResponse,
   IsBlockedMessage,
@@ -181,4 +183,9 @@ export async function handleSetSettings(message: SetSettingsMessage): Promise<Se
   await writeSettings(message.settings);
 
   return { ok: true, settings: message.settings };
+}
+
+/** The reader asked for a fresh list, fresh searches, and fresh page reads. */
+export async function handleClearCache(): Promise<ClearCacheResponse> {
+  return { ok: true, cleared: await clearCache() };
 }

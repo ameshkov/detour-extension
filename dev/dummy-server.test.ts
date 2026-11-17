@@ -24,10 +24,17 @@ const LIST = SitesJsonSchema.parse({
   ],
 });
 
+/**
+ * The scenario fixtures wait this long in the test run. The default is a few
+ * seconds, which is what a reader needs to see the loading state, and a test
+ * only needs the wait to be there.
+ */
+const TEST_SLOW_MS = 60;
+
 let server: DummyServer;
 
 beforeAll(async () => {
-  server = await startDummyServer({ port: 0, list: LIST });
+  server = await startDummyServer({ port: 0, list: LIST, slowDelayMs: TEST_SLOW_MS });
 });
 
 afterAll(async () => {
@@ -93,6 +100,7 @@ describe('the dummy server alternatives route', () => {
         description: string;
         domain: string;
         image?: string;
+        favicon?: string;
       }>;
     };
 
@@ -102,6 +110,27 @@ describe('the dummy server alternatives route', () => {
     expect(answer.alternatives).toHaveLength(4);
     expect(answer.alternatives[0]?.image).toContain('/v1/img?u=');
     expect(answer.alternatives[0]?.image).toMatch(/[?&]sig=[0-9a-f]{16}$/);
+    expect(answer.alternatives[0]?.favicon).toContain('/v1/img?u=');
+    expect(answer.alternatives[0]?.favicon).toMatch(/[?&]sig=[0-9a-f]{16}$/);
+  });
+
+  it('signs a favicon link for every row it answers', async () => {
+    const answer = (await (
+      await alternativesFor({ url: walledUrl(), title: '', lang: 'en' })
+    ).json()) as { alternatives: Array<{ favicon?: string }> };
+
+    expect(answer.alternatives.map((row) => row.favicon !== undefined)).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+
+    const response = await fetch(answer.alternatives[1]?.favicon ?? '');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('image/png');
+    expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
   });
 
   it('answers an empty result for the empty fixture article', async () => {
@@ -166,6 +195,62 @@ describe('the dummy server image route', () => {
     const response = await fetch(`${server.origin}/v1/img`);
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe('the dummy server scenarios', () => {
+  it('waits before it answers the slow fixture article', async () => {
+    const started = Date.now();
+    const response = await alternativesFor({
+      url: `${server.origin}/walled/slow`,
+      title: '',
+      lang: 'en',
+    });
+    const elapsed = Date.now() - started;
+    const answer = (await response.json()) as { alternatives: unknown[] };
+
+    expect(response.status).toBe(200);
+    expect(elapsed).toBeGreaterThanOrEqual(TEST_SLOW_MS / 2);
+    expect(answer.alternatives).toHaveLength(4);
+  });
+
+  it('fails the answer of the failing fixture article', async () => {
+    const response = await alternativesFor({
+      url: `${server.origin}/walled/fail`,
+      title: '',
+      lang: 'en',
+    });
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'search_failed' });
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('fails every answer of a run that says so', async () => {
+    const failing = await startDummyServer({ port: 0, list: LIST, failAlternatives: true });
+
+    try {
+      const response = await fetch(`${failing.origin}/v1/alternatives`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: `${failing.origin}/walled/nvidia-custom-silicon`, lang: 'en' }),
+      });
+
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ error: 'search_failed' });
+    } finally {
+      await failing.close();
+    }
+  });
+
+  it('serves the two scenario pages', async () => {
+    const slow = await fetch(`${server.origin}/walled/slow`);
+    const failing = await fetch(`${server.origin}/walled/fail`);
+
+    expect(slow.status).toBe(200);
+    expect(await slow.text()).toContain('og:title');
+    expect(failing.status).toBe(200);
+    expect(await failing.text()).toContain('og:title');
   });
 });
 

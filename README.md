@@ -25,6 +25,11 @@ and no account.
 
 The block page appears in place of the article, with the alternatives for it.
 The page at http://127.0.0.1:8787/open/article loads unchanged.
+
+Two more local pages show the other states of the block page:
+http://127.0.0.1:8787/walled/slow waits five seconds for the answer, and
+http://127.0.0.1:8787/walled/fail answers with a failure. The options page
+clears the cached list, answers, and page reads, so a scenario runs again.
 [DEVELOPMENT.md](DEVELOPMENT.md) has the details and the tests.
 
 ## Backend URL
