@@ -277,8 +277,11 @@ and names the list. Both systems import it. It imports neither of them.
 - The end-to-end run is Playwright, and `pnpm check` never starts the browser.
   `pnpm test:e2e` builds the development extension and drives the unpacked
   build against the dummy server and a temporary Chromium profile. Every case
-  gets its own page and its own tab. `E2E_PORT` moves the run to a free port,
-  and the build must then name the same origin in `DETOUR_API_BASE`.
+  gets its own page and its own tab. Before a case runs, a readiness page on a
+  listed URL must reach the block page, and the run tries it again when the
+  first navigation fails open, so a case never meets a cold worker. `E2E_PORT`
+  moves the run to a free port, and the build must then name the same origin in
+  `DETOUR_API_BASE`.
 - Three behaviors the product promises are unit tests: a framed document draws
   nothing and sends nothing, an `Open <site> anyway` press stores the tab
   allowance before the tab moves, and a `Just once` press writes a pass that

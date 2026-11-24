@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { GUARD_TIMEOUT_MS } from './constants';
 import { GUARD_LINK_LABEL } from './copy';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
@@ -120,6 +121,33 @@ describe('the guard', () => {
     ]);
   });
 
+  it('stops the page for an answer that takes most of the budget', async () => {
+    const runGuard = await loadGuard();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    let answer: (value: unknown) => void = () => {};
+
+    answerIsBlocked(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+    );
+    answerBlocked(() => ({ ok: true, blockPageUrl: BLOCK_PAGE_URL }));
+
+    const run = runGuard(LISTED_URL);
+
+    // A cold worker needs more than the start of the budget, and the page must
+    // still stop when the answer arrives inside it.
+    vi.advanceTimersByTime(GUARD_TIMEOUT_MS - 100);
+    answer({ ok: true, blocked: true, site: LISTED_SITE });
+
+    await run;
+
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
   it('restores the page on an unlisted url', async () => {
     const runGuard = await loadGuard();
 
@@ -141,7 +169,7 @@ describe('the guard', () => {
 
     expect(visibility()).toBe('hidden');
 
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(GUARD_TIMEOUT_MS);
 
     await run;
 
@@ -165,7 +193,7 @@ describe('the guard', () => {
 
     const run = runGuard(LISTED_URL);
 
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(GUARD_TIMEOUT_MS);
 
     await run;
 

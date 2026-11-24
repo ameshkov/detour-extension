@@ -16,9 +16,11 @@ const DIST = resolve(import.meta.dirname, '..', 'packages', 'extension', 'dist')
 export const SITE_ORIGIN =
   process.env.E2E_ORIGIN ?? `http://127.0.0.1:${process.env.E2E_PORT ?? '8787'}`;
 
-/** The unlisted fixture page that the readiness navigation loads. */
-const READY_URL = `${SITE_ORIGIN}/open/article`;
-const READY_TIMEOUT_MS = 10_000;
+/** The listed fixture page that the readiness navigation stops. */
+const READY_LISTED_URL = `${SITE_ORIGIN}/walled/readiness`;
+
+/** The tries that a readiness navigation gets before the case fails. */
+const READY_ATTEMPTS = 3;
 
 /**
  * The block page of this extension and no other: the guard hands the tab to a
@@ -61,23 +63,33 @@ declare global {
 }
 
 /**
- * The first guarded navigation after a browser start can outrun the worker's
- * wake-up by more than `GUARD_TIMEOUT_MS`, and that first navigation is the one
- * that fails open. This throwaway page on the unlisted fixture URL takes that
- * navigation: the content script runs, the message reaches the worker, and the
- * worker reads the list, so every case meets a worker that has already answered.
- * The page is unlisted, so it writes no allowance and no cached answer, and it
- * asks no provider.
+ * The first guarded navigation after a browser start can meet a worker that is
+ * still starting, and that navigation is the one that fails open. This page
+ * loads a listed URL and waits for the block page, so the guard answered and
+ * the worker is warm, and the case that follows meets the same path.
+ *
+ * A navigation that fails open closes its page and tries again, because the
+ * worker is warmer on each try. A guard that never answers fails the case here,
+ * before its own navigation, and not as a block page that never opens.
  */
 async function warmGuard(context: BrowserContext): Promise<void> {
-  const page = await context.newPage();
+  let failure: unknown = null;
 
-  try {
-    await page.goto(READY_URL, { timeout: READY_TIMEOUT_MS });
-    await page.locator('h1').waitFor({ timeout: READY_TIMEOUT_MS });
-  } finally {
-    await page.close();
+  for (let attempt = 0; attempt < READY_ATTEMPTS; attempt += 1) {
+    const page = await context.newPage();
+
+    try {
+      await waitForBlockPage(page, READY_LISTED_URL);
+
+      return;
+    } catch (error) {
+      failure = error;
+    } finally {
+      await page.close();
+    }
   }
+
+  throw failure;
 }
 
 type Fixtures = {

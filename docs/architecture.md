@@ -127,7 +127,8 @@ holds the tab and the capability record.
 The guard hides the document before its first `await`. It sets
 `visibility: hidden` with the `important` priority on `documentElement`, so a
 publisher rule cannot override the hidden state. It sends `isBlocked` and
-waits at most 150 ms.
+waits at most 400 ms, which covers a worker that is still starting. A worker
+that never answers costs the rest of that wait, and the page loads.
 
 On `{ blocked: true }` the guard calls `window.stop()` and sends `blocked`.
 The service worker records `{ tabId → sha256(url) }` in the session store

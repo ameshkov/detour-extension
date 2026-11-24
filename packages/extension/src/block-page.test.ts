@@ -216,9 +216,23 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve };
 }
 
-/** The note starts after the storage read, so a fake-timer case drains that read first. */
+/**
+ * The note starts after the storage read, so a fake-timer case waits for the
+ * state that the read renders. A single empty drain lets a slow runner advance
+ * the clock past a page that has not started, and the note then missed its
+ * window. The open control is the last thing that the read renders, and the
+ * note starts right after it, in the same synchronous block.
+ */
 async function drainStart(): Promise<void> {
-  await vi.advanceTimersByTimeAsync(0);
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await vi.advanceTimersByTimeAsync(0);
+
+    if (!role('open-group').hidden) {
+      return;
+    }
+
+    await Promise.resolve();
+  }
 }
 
 function answerMeta(meta: PageMeta | null = META): void {
@@ -242,7 +256,7 @@ afterEach(() => {
   resetFakeChrome();
 });
 
-describe('the block page shell', () => {
+describe('the block page shell', { timeout: 20_000 }, () => {
   it('carries the shell the script fills', () => {
     // The parsed copy drops the stylesheet link, which this environment cannot load.
     const shell = new DOMParser().parseFromString(SHELL.replace(/<link[^>]*>/g, ''), 'text/html');

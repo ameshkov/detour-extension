@@ -36,7 +36,13 @@ export const STORAGE = {
   alt: 'alt:',
 } as const;
 
-export const GUARD_TIMEOUT_MS = 150;
+/**
+ * The guard hides the document and waits this long for the worker before it
+ * lets the page load. An idle worker answers in a few milliseconds, and a cold
+ * one can take longer than 150 ms, so the budget covers that start. Only a
+ * worker that never answers pays the rest of it, and the page still loads.
+ */
+export const GUARD_TIMEOUT_MS = 400;
 export const METADATA_TIMEOUT_MS = 4000;
 export const METADATA_MAX_BYTES = 524288;
 export const META_TTL_MS = 604800000;
