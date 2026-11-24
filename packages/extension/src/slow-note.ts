@@ -48,7 +48,7 @@ export function startSlowNote(input: SlowNoteInput): () => void {
   if (openInstead !== null) {
     openInstead.onclick = (): void => {
       void openSite({
-        scope: 'tab',
+        kind: 'tab',
         url: input.url,
         navigate: input.navigate,
         listed: input.listed,

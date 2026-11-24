@@ -1,7 +1,7 @@
 import { defaultWalls } from './walls';
 
 /**
- * The ten request names of the message contract between the contexts.
+ * The eleven request names of the message contract between the contexts.
  */
 export const MESSAGE = {
   isBlocked: 'isBlocked',
@@ -10,6 +10,7 @@ export const MESSAGE = {
   getAlternatives: 'getAlternatives',
   showAlternatives: 'showAlternatives',
   allow: 'allow',
+  pass: 'pass',
   revoke: 'revoke',
   setSettings: 'setSettings',
   pause: 'pause',
@@ -30,6 +31,7 @@ export const STORAGE = {
   allowSession: 'allowSession',
   allowTabs: 'allowTabs',
   capability: 'capability:',
+  pass: 'pass:',
   meta: 'meta:',
   alt: 'alt:',
 } as const;

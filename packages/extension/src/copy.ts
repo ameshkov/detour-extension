@@ -76,6 +76,9 @@ export function openAnywayLabel(site: string): string {
 }
 
 export const ACTION_ERROR = 'Detour did not save the allowance. The site did not open.';
+export const PASS_ERROR = 'Detour did not open the site. Try again.';
+/** The one scope that writes no allowance, so the page is not allowlisted. */
+export const ONCE_LABEL = 'Just once';
 
 export const SCOPE_LABEL: Record<AllowanceScope, string> = {
   tab: 'This tab',

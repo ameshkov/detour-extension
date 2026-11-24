@@ -7,6 +7,7 @@ import { LIST_STORAGE_VERSION, MESSAGE, STORAGE } from './constants';
 import { FAKE_EXTENSION_ID, installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 import type { PageMeta } from './metadata';
 import { writeMetaCache } from './metadata-cache';
+import { recordPass } from './passes';
 import type { FetchLike } from './net';
 import type { ServiceWorkerDeps } from './service-worker';
 import { handleMessage, pruneCapability, pruneTabAllowances, refreshList } from './service-worker';
@@ -876,6 +877,7 @@ describe('the message boundary', () => {
         url: CNET_URL,
       },
       { type: MESSAGE.allow, scope: 'always', url: CNET_URL },
+      { type: MESSAGE.pass, url: CNET_URL },
       { type: MESSAGE.revoke, scope: 'always', host: 'cnet.com' },
       {
         type: MESSAGE.setSettings,
@@ -1282,6 +1284,64 @@ describe('the pause handler', () => {
       blocked: true,
       site: CNET_SITE,
     });
+  });
+});
+
+describe('the one-time pass', () => {
+  it('writes a pass for the tab that the guard stopped on this url', async () => {
+    const fake = installFakeChrome();
+
+    await recordCapability(7, CNET_URL);
+
+    await expect(
+      handleMessage({ type: 'pass', url: CNET_URL }, { tab: { id: 7 } }, deps()),
+    ).resolves.toEqual({ ok: true });
+
+    expect(fake.storage.session.values[`${STORAGE.pass}7`]).toBe(await sha256Hex(CNET_URL));
+  });
+
+  it('refuses a pass for a page that this tab was not stopped on', async () => {
+    const fake = installFakeChrome();
+
+    await expect(
+      handleMessage({ type: 'pass', url: CNET_URL }, { tab: { id: 7 } }, deps()),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+
+    expect(fake.storage.session.values[`${STORAGE.pass}7`]).toBeUndefined();
+  });
+
+  it('opens the page once and stops the next visit', async () => {
+    installFakeChrome();
+
+    await recordPass(7, CNET_URL);
+
+    await expect(
+      handleMessage({ type: 'isBlocked', url: CNET_URL }, { tab: { id: 7 } }, deps()),
+    ).resolves.toEqual({ ok: true, blocked: false, site: null });
+
+    await expect(
+      handleMessage({ type: 'isBlocked', url: CNET_URL }, { tab: { id: 7 } }, deps()),
+    ).resolves.toEqual({ ok: true, blocked: true, site: CNET_SITE });
+  });
+
+  it('does not let a pass for another page open this one', async () => {
+    installFakeChrome();
+
+    await recordPass(7, 'https://www.cnet.com/another-story/');
+
+    await expect(
+      handleMessage({ type: 'isBlocked', url: CNET_URL }, { tab: { id: 7 } }, deps()),
+    ).resolves.toEqual({ ok: true, blocked: true, site: CNET_SITE });
+  });
+
+  it('does not let a pass of another tab open it', async () => {
+    installFakeChrome();
+
+    await recordPass(9, CNET_URL);
+
+    await expect(
+      handleMessage({ type: 'isBlocked', url: CNET_URL }, { tab: { id: 7 } }, deps()),
+    ).resolves.toEqual({ ok: true, blocked: true, site: CNET_SITE });
   });
 });
 

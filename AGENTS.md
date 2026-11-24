@@ -197,13 +197,14 @@ guard (guard-entry.ts)  →  service worker (background.ts)  →  block page (bl
 - The guard answers one question and stops one load. It keeps one
   module-level marker for the document, and it draws at most one anchor, only
   for a failed navigation that carries `blockPageUrl`.
-- The service worker owns the list, the allowances, the metadata cache, the
-  stopped-tab capability record, and the tab navigation. It writes every
-  storage key except `alt:<sha256(url)>`. It records `sha256(url)` under
-  `capability:<tabId>` in the session store before the block navigation and
-  prunes it on tab close. It answers metadata, alternatives, and an allowance
-  only for the sender's own tab and the URL it recorded. It stops a page only
-  when one of the entry's walls is a wall that the reader chose, so a site
+- The service worker owns the list, the allowances, the one-time passes, the
+  metadata cache, the stopped-tab capability record, and the tab navigation.
+  It writes every storage key except `alt:<sha256(url)>`. It records
+  `sha256(url)` under `capability:<tabId>` in the session store before the
+  block navigation and prunes it on tab close. It answers metadata,
+  alternatives, and an allowance only for the sender's own tab and the URL it
+  recorded, and it writes the pass that opens one page once. It stops a page
+  only when one of the entry's walls is a wall that the reader chose, so a site
   whose walls are all switched off loads.
 - The block page renders state and sends messages. It never reads a page, and
   it writes only `alt:<sha256(url)>`, from a finished backend answer. It reads
@@ -278,9 +279,10 @@ and names the list. Both systems import it. It imports neither of them.
   build against the dummy server and a temporary Chromium profile. Every case
   gets its own page and its own tab. `E2E_PORT` moves the run to a free port,
   and the build must then name the same origin in `DETOUR_API_BASE`.
-- Two behaviors the product promises are unit tests: a framed document draws
-  nothing and sends nothing, and an `Open <site> anyway` press stores the tab
-  allowance before the tab moves.
+- Three behaviors the product promises are unit tests: a framed document draws
+  nothing and sends nothing, an `Open <site> anyway` press stores the tab
+  allowance before the tab moves, and a `Just once` press writes a pass that
+  opens one navigation and no allowance.
 - Every behavior that the product promises gets a test that names the
   behavior. A bug fix starts with a test that fails for the stated reason.
 

@@ -2,7 +2,13 @@ import { LIST_REFRESH_ALARM, LIST_REFRESH_PERIOD_MINUTES } from './constants';
 import { devLog } from './log';
 import type { FetchLike } from './net';
 import type { ServiceWorkerDeps } from './service-worker';
-import { handleMessage, pruneCapability, pruneTabAllowances, refreshList } from './service-worker';
+import {
+  handleMessage,
+  pruneCapability,
+  prunePass,
+  pruneTabAllowances,
+  refreshList,
+} from './service-worker';
 
 export type BackgroundOptions = {
   apiBase: string;
@@ -52,6 +58,7 @@ export function registerBackground(options: BackgroundOptions): void {
   chrome.tabs.onRemoved.addListener((tabId) => {
     void pruneTabAllowances(tabId);
     void pruneCapability(tabId);
+    void prunePass(tabId);
   });
 
   // A true answer keeps the channel open for the asynchronous reply.

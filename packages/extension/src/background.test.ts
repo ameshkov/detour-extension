@@ -127,6 +127,23 @@ describe('the background registration', () => {
     });
   });
 
+  it('drops the pass of a closed tab', async () => {
+    const fake = installFakeChrome();
+    const { fetchImpl } = recordingFetch(() => listResponse(BUNDLED_LIST));
+
+    fake.storage.session.values[`${STORAGE.pass}7`] = 'a-digest';
+    fake.storage.session.values[`${STORAGE.pass}9`] = 'another-digest';
+
+    registerBackground({ apiBase: API_BASE, now: () => NOW, fetchImpl });
+
+    fake.tabs.onRemoved.trigger(7);
+
+    await vi.waitFor(() => {
+      expect(fake.storage.session.values[`${STORAGE.pass}7`]).toBeUndefined();
+      expect(fake.storage.session.values[`${STORAGE.pass}9`]).toBe('another-digest');
+    });
+  });
+
   it('answers a message through the send response callback', async () => {
     const fake = installFakeChrome();
     const { fetchImpl } = recordingFetch(() => listResponse(BUNDLED_LIST));

@@ -5,7 +5,15 @@ import type { AllowanceEntry } from './allowances';
 import type { ActionsView } from './block-actions';
 import { renderActions } from './block-actions';
 import { REPORT_ISSUE_URL, STORAGE } from './constants';
-import { ACTION_ERROR, REPORT_LABEL, SCOPE_LABEL, SCOPE_MENU_LABEL, openAnywayLabel } from './copy';
+import {
+  ACTION_ERROR,
+  ONCE_LABEL,
+  PASS_ERROR,
+  REPORT_LABEL,
+  SCOPE_LABEL,
+  SCOPE_MENU_LABEL,
+  openAnywayLabel,
+} from './copy';
 import { reportUrl } from './report';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
@@ -90,9 +98,10 @@ afterEach(() => {
 });
 
 describe('the allowance menu', () => {
-  it('offers the three scopes in the menu', () => {
+  it('offers the one-time open and the three scopes in the menu', () => {
     renderActions(view());
 
+    expect(role('scope-once').textContent).toBe(ONCE_LABEL);
     expect(role('scope-tab').textContent).toBe(SCOPE_LABEL.tab);
     expect(role('scope-session').textContent).toBe(SCOPE_LABEL.session);
     expect(role('scope-always').textContent).toBe(SCOPE_LABEL.always);
@@ -295,6 +304,37 @@ describe('the open action', () => {
     });
 
     expect(allowMessages()).toEqual([{ type: 'allow', scope: 'session', url: URL }]);
+  });
+
+  it('opens the site once without storing an allowance', async () => {
+    fake.respond('pass', () => ({ ok: true }));
+
+    renderActions(view());
+    press('open-menu');
+    press('scope-once');
+
+    await vi.waitFor(() => {
+      expect(navigated).toEqual([URL]);
+    });
+
+    expect(fake.calls.messages).toEqual([{ type: 'pass', url: URL }]);
+    expect(allowMessages()).toEqual([]);
+  });
+
+  it('keeps the page when the pass fails', async () => {
+    fake.respond('pass', () => ({ ok: false, error: 'bad_message' }));
+
+    renderActions(view());
+    press('open-menu');
+    press('scope-once');
+
+    await vi.waitFor(() => {
+      expect(role('action-error').hidden).toBe(false);
+    });
+
+    expect(navigated).toEqual([]);
+    expect(role('action-error').textContent).toBe(PASS_ERROR);
+    expect(allowMessages()).toEqual([]);
   });
 
   it('opens the site on this site always', async () => {

@@ -51,6 +51,10 @@ declare global {
     storage: {
       session: {
         get(key: 'allowTabs'): Promise<{ allowTabs?: Allowance[] }>;
+        get(keys: string[]): Promise<Record<string, Allowance[] | undefined>>;
+      };
+      local: {
+        get(keys: string[]): Promise<Record<string, Allowance[] | undefined>>;
       };
     };
   };

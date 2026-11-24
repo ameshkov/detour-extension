@@ -173,6 +173,30 @@ test('opens the listed article after one tab allowance', async ({ page, worker }
   expect(stored.allowTabs?.[0]?.host).toBe('127.0.0.1');
 });
 
+test('opens the listed article once without an allowance', async ({ page, worker }) => {
+  await waitForBlockPage(page, LISTED_URL);
+
+  await page.locator('[data-role="open-menu"]').click();
+  await page.locator('[data-role="scope-once"]').click();
+
+  await expect(page).toHaveURL(LISTED_URL);
+  await expect(page.locator('h1')).toHaveText(WALLED_TITLE);
+
+  const session = await worker.evaluate(() =>
+    chrome.storage.session.get(['allowTabs', 'allowSession']),
+  );
+  const local = await worker.evaluate(() => chrome.storage.local.get(['allowAlways']));
+
+  expect(session.allowTabs ?? []).toHaveLength(0);
+  expect(session.allowSession ?? []).toHaveLength(0);
+  expect(local.allowAlways ?? []).toHaveLength(0);
+
+  // The pass opens one navigation, so the next visit meets the wall again.
+  await waitForBlockPage(page, LISTED_URL);
+
+  await expect(page).toHaveURL(BLOCK_PAGE);
+});
+
 test('shows the empty state for an article without alternatives', async ({ page }) => {
   await waitForBlockPage(page, EMPTY_URL);
 

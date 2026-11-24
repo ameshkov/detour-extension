@@ -100,6 +100,7 @@ throws across the boundary.
 | `getAlternatives`  | `{ url, title }`          | `{ ok: true, answer }` or `{ ok: false, error }`                     |
 | `showAlternatives` | `{ tabId, url }`          | `{ ok: true, blockPageUrl }` or `{ ok: false, error }`               |
 | `allow`            | `{ scope, url }`          | `{ ok: true, allowances }`                                           |
+| `pass`             | `{ url }`                 | `{ ok: true }`                                                       |
 | `revoke`           | `{ scope, host, tabId? }` | `{ ok: true, allowances }`                                           |
 | `setSettings`      | `{ settings }`            | `{ ok: true, settings }`                                             |
 | `pause`            | `{ until, session }`      | `{ ok: true, pauseUntil, session }`                                  |
@@ -149,18 +150,19 @@ block page writes that one, and it writes only a finished backend answer.
 never writes an `alt:` entry. The settings, the allowances, and the tab records
 stay.
 
-| Key                  | Store   | Writer         | Lifetime                  |
-| -------------------- | ------- | -------------- | ------------------------- |
-| `list`               | local   | service worker | Until the next refresh    |
-| `settings`           | local   | service worker | Until the user changes it |
-| `pauseUntil`         | local   | service worker | Until the time passes     |
-| `pauseSession`       | session | service worker | Browser restart           |
-| `allowAlways`        | local   | service worker | Until the user removes it |
-| `allowSession`       | session | service worker | Browser restart           |
-| `allowTabs`          | session | service worker | Tab close                 |
-| `capability:<tabId>` | session | service worker | Tab close, or a new block |
-| `meta:<sha256(url)>` | local   | service worker | 7 days, 500 entries       |
-| `alt:<sha256(url)>`  | local   | block page     | 24 hours                  |
+| Key                  | Store   | Writer         | Lifetime                     |
+| -------------------- | ------- | -------------- | ---------------------------- |
+| `list`               | local   | service worker | Until the next refresh       |
+| `settings`           | local   | service worker | Until the user changes it    |
+| `pauseUntil`         | local   | service worker | Until the time passes        |
+| `pauseSession`       | session | service worker | Browser restart              |
+| `allowAlways`        | local   | service worker | Until the user removes it    |
+| `allowSession`       | session | service worker | Browser restart              |
+| `allowTabs`          | session | service worker | Tab close                    |
+| `capability:<tabId>` | session | service worker | Tab close, or a new block    |
+| `pass:<tabId>`       | session | service worker | One navigation, or tab close |
+| `meta:<sha256(url)>` | local   | service worker | 7 days, 500 entries          |
+| `alt:<sha256(url)>`  | local   | block page     | 24 hours                     |
 
 `settings` holds `enabled`, `autoOpenBest`, `imagesEnabled`, and `walls`, and
 its default is `{ enabled: true, autoOpenBest: false, imagesEnabled: true,
@@ -169,20 +171,26 @@ the categories the reader chose by the type that presents them, so one reader
 can stop an ad-blocker wall that covers the article and leave a paywall that
 replaces it alone.
 
-The allowance check runs in this order: the extension is enabled, the pause
-has passed, the list is not `disabled`, the URL is listed, one of the entry's
-walls is a wall the reader chose, and no `allowAlways`, `allowSession`, or
-`allowTabs` entry covers the host. A site whose walls are all switched off
-loads, exactly as an unlisted site does. A tab
-entry also covers a tab that the entry's tab opened. Closing a tab removes its
-entries.
+The decision runs in this order: the extension is enabled, the pause has
+passed, the list is not `disabled`, the URL is listed, the tab holds no
+one-time pass for this URL, one of the entry's walls is a wall the reader
+chose, and no `allowAlways`, `allowSession`, or `allowTabs` entry covers the
+host. A site whose walls are all switched off loads, exactly as an unlisted
+site does. A tab entry also covers a tab that the entry's tab opened. Closing a
+tab removes its entries.
+
+A pass is the one-time counterpart of an allowance. `Just once` in the open
+menu sends `pass`, the worker records `pass:<tabId>`, and the guard spends the
+record on the next navigation to that URL, so the page opens once and the next
+visit meets the wall again. A pass covers one tab and one URL, it is never
+listed on the options page, and tab close removes it.
 
 `capability:<tabId>` holds the digest of the URL that one stopped tab was on,
 written before the navigation and replaced by the next block in that tab. The
 service worker checks the sender's own tab before it answers `getMeta`,
-answers `getAlternatives`, or writes an allowance. A failed navigation keeps
-the key, so the guard's fallback link still opens a page whose requests
-answer.
+answers `getAlternatives`, or writes an allowance or a pass. A failed
+navigation keeps the key, so the guard's fallback link still opens a page whose
+requests answer.
 
 `list` holds `{ storageVersion, fetchedAt, listId, list }`. `storageVersion`
 is the extension's own storage format, and it is `2`. `listId` is the SHA-256
@@ -249,8 +257,8 @@ At three seconds without an answer the loading area gains `data-slow` and
 shows the note, the `Open <site> instead` action, and `Keep waiting`.
 
 The action row follows the page. `Open <site> anyway` grants the tab
-allowance and opens the site, and its caret opens a menu of the other two
-scopes. The menu hangs off the split control itself, so the gap above or below
+allowance and opens the site, and its caret opens a menu of the other scopes
+and `Just once`, which opens the site without an allowance. The menu hangs off the split control itself, so the gap above or below
 it is the sheet's own 6 px, and it opens above the control when there is no
 room below. It closes on Escape, on a second press of the caret, on a press of
 a scope, and on a press anywhere else on the page.

@@ -13,6 +13,7 @@ import {
 import type { MessageResponse } from './messages';
 import { parseMessage } from './messages';
 import type { FetchLike } from './net';
+import { handlePass } from './pass-handler';
 import { refreshList } from './refresh';
 
 export type ServiceWorkerDeps = {
@@ -27,6 +28,7 @@ export type ServiceWorkerDeps = {
  */
 export { pruneTabAllowances } from './allowance-handlers';
 export { pruneCapability } from './capabilities';
+export { prunePass } from './passes';
 export { metadataFor } from './metadata-fetch';
 export { refreshList };
 export type { RefreshResult } from './refresh';
@@ -83,6 +85,8 @@ export async function handleMessage(
         return await handleShowAlternatives(parsed, sender, deps);
       case MESSAGE.allow:
         return await handleAllow(parsed, sender, deps);
+      case MESSAGE.pass:
+        return await handlePass(parsed, sender);
       case MESSAGE.revoke:
         return await handleRevoke(parsed);
       case MESSAGE.setSettings:

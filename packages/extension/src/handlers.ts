@@ -18,6 +18,7 @@ import type {
   ShowAlternativesMessage,
 } from './messages';
 import { metadataFor } from './metadata-fetch';
+import { consumePass } from './passes';
 import type { ServiceWorkerDeps } from './service-worker';
 import {
   isPaused,
@@ -121,6 +122,13 @@ export async function handleIsBlocked(
 
   if (site === null) {
     return passThrough('the site is not listed');
+  }
+
+  // A pass opens the page once for the tab that asked. It is spent here, before
+  // the wall check, so a later visit meets the wall even when the reader has
+  // switched the wall off in between.
+  if (await consumePass(sender.tab?.id, message.url)) {
+    return passThrough('the reader opened it once');
   }
 
   // The reader decides which walls stop a page. A site whose walls are all

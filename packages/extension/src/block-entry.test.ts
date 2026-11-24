@@ -41,6 +41,5 @@ describe('the block page entry', () => {
     expect(read).not.toHaveBeenCalled();
     expect(role('headline').textContent).toBe('');
     expect(role('source-link').textContent).toBe('');
-    expect(role('chip').hidden).toBe(true);
   });
 });

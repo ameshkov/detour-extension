@@ -20,9 +20,6 @@ const PALETTE: Record<string, string> = {
   '--control-line': '#ded9d0',
   '--accent': '#0b6b57',
   '--blocked': '#c0513f',
-  '--chip-ink': '#96382e',
-  '--chip-surface': '#fcf0ed',
-  '--chip-line': '#f0d9d3',
   '--notice-ink': '#6b5322',
   '--notice-surface': '#fdf6e7',
   '--notice-line': '#efdfbc',
@@ -33,7 +30,6 @@ const TONES: Array<[string, string]> = [
   ['--ink', '--surface'],
   ['--muted', '--paper'],
   ['--muted', '--surface'],
-  ['--chip-ink', '--chip-surface'],
   ['--notice-ink', '--notice-surface'],
   ['--surface', '--accent'],
 ];

@@ -41,6 +41,7 @@ import { mountShell, readShell, role } from './testing/shell';
 
 const API_BASE = 'https://api.test';
 const URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
+const COMPACT_URL = 'cnet.com/tech/services-and-software/best-ai-image-generators/';
 const FORBES_URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-move/';
 const NOW = 1_700_000_000_000;
 
@@ -249,9 +250,6 @@ describe('the block page shell', () => {
       'header',
       'mark',
       'wordmark',
-      'chip',
-      'chip-dot',
-      'chip-host',
       'headline',
       'walls',
       'lede',
@@ -287,6 +285,7 @@ describe('the block page shell', () => {
       'open-site',
       'open-menu',
       'scope-menu',
+      'scope-once',
       'scope-tab',
       'scope-session',
       'scope-always',
@@ -300,7 +299,6 @@ describe('the block page shell', () => {
       'countdown',
       'retry-row',
       'actions',
-      'chip',
       'scope-menu',
       'action-error',
     ];
@@ -360,7 +358,8 @@ describe('the block page shell', () => {
     expect(role('source-label').textContent).toBe(SOURCE_LABEL);
     expect(role('alternatives-heading').textContent).toBe(ALTERNATIVES_HEADING);
     expect(role('source-link').getAttribute('href')).toBe(URL);
-    expect(role('source-link').textContent).toBe(URL);
+    expect(role('source-link').textContent).toBe(COMPACT_URL);
+    expect(role('source-link').getAttribute('title')).toBe(URL);
     expect(role('status').textContent).toBe(ALTERNATIVES_LOADING);
     expect(calls).toHaveLength(0);
     expect(fake.calls.messages).toHaveLength(0);
@@ -382,37 +381,9 @@ describe('the block page shell', () => {
     expect(role('headline').textContent).toBe('');
     expect(role('lede').textContent).toBe('');
     expect(role('walls').hidden).toBe(true);
-    expect(role('chip').hidden).toBe(true);
     expect(role('actions').hidden).toBe(true);
     expect(calls).toHaveLength(0);
     expect(fake.calls.messages).toHaveLength(0);
-  });
-
-  it('names the site in the chip', async () => {
-    await writeStoredList(NOW, HARD_LIST, STORED_ID);
-    answerMeta(null);
-
-    await start(FORBES_URL, answerFetch([], ANSWER));
-
-    expect(role('chip-host').textContent).toBe('forbes.com');
-    expect(role('chip').hidden).toBe(false);
-  });
-
-  it('names the host in the chip before the list answers', async () => {
-    const store = deferred<Record<string, unknown>>();
-    const read = fake.storage.local.get.bind(fake.storage.local);
-
-    fake.storage.local.get = () => store.promise;
-
-    const running = start(URL, answerFetch([], ANSWER));
-
-    expect(role('chip-host').textContent).toBe('cnet.com');
-    expect(role('chip').hidden).toBe(false);
-
-    fake.storage.local.get = read;
-    store.resolve({});
-
-    await running;
   });
 
   it('renders the footnote from the bundled page', async () => {
@@ -500,10 +471,9 @@ describe('the block page shell', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('hides the chip and the actions without a url', async () => {
+  it('hides the actions without a url', async () => {
     await startPage('', answerFetch([], ANSWER));
 
-    expect(role('chip').hidden).toBe(true);
     expect(role('actions').hidden).toBe(true);
     expect(role('alternatives').hidden).toBe(true);
   });
@@ -527,7 +497,7 @@ describe('the block page shell', () => {
 
     expect(role('source-title').textContent).toBe(META.title);
     expect(role('source-description').textContent).toBe(META.description);
-    expect(role('source-link').textContent).toBe(URL);
+    expect(role('source-link').textContent).toBe(COMPACT_URL);
     expect(role('source').querySelector('img')).toBeNull();
   });
 
@@ -538,7 +508,7 @@ describe('the block page shell', () => {
 
     await start(URL, answerFetch([], ANSWER));
 
-    expect(role('source-link').textContent).toBe(URL);
+    expect(role('source-link').textContent).toBe(COMPACT_URL);
     expect(role('source-title').textContent).toBe('');
     expect(role('source-description').textContent).toBe('');
   });
@@ -550,7 +520,7 @@ describe('the block page shell', () => {
 
     await start(URL, answerFetch(calls, ANSWER));
 
-    expect(role('source-link').textContent).toBe(URL);
+    expect(role('source-link').textContent).toBe(COMPACT_URL);
     expect(role('source-title').textContent).toBe('');
     expect(role('source-description').textContent).toBe('');
     expect(role('status').textContent).toBe(ALTERNATIVES_FAILED);
@@ -974,7 +944,6 @@ describe('the block page shell', () => {
     });
 
     expect(role('actions').hidden).toBe(false);
-    expect(role('chip-host').textContent).toBe('example.com');
     expect(role('open-site').textContent).toBe(openAnywayLabel('example.com'));
 
     press('open-site');

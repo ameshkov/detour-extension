@@ -1,8 +1,8 @@
 /**
- * The two questions the block page, the report link, and the popup ask of a
- * value from the query: is it a web address, and which site does it name. They
- * live apart from any renderer, so a module that only needs the answer never
- * imports one.
+ * The questions the block page, the report link, and the popup ask of a value
+ * from the query: is it a web address, which site does it name, and how does a
+ * narrow card show it. They live apart from any renderer, so a module that only
+ * needs the answer never imports one.
  */
 
 /** An `http` or `https` value, so a non-web scheme never becomes a link. */
@@ -38,4 +38,28 @@ export function hostOf(url: string | null): string | null {
   }
 
   return parsed.hostname.replace(/^www\./, '');
+}
+
+/**
+ * The address as a narrow card shows it: the host without `www.` and the path,
+ * with no scheme, query, or fragment. The full address stays in the link and in
+ * its title, and a value that is not a web address stays as it is.
+ */
+export function compactUrl(value: string): string {
+  let parsed: URL;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    return value;
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return value;
+  }
+
+  const host = parsed.host.replace(/^www\./, '');
+  const path = parsed.pathname === '/' ? '' : parsed.pathname;
+
+  return `${host}${path}`;
 }

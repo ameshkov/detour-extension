@@ -24,6 +24,8 @@ export type AllowMessage = {
   scope: AllowanceScope;
   url: string;
 };
+/** One page opens once, and the tab gets no allowance. */
+export type PassMessage = { type: 'pass'; url: string };
 export type RevokeMessage = {
   type: 'revoke';
   scope: AllowanceScope;
@@ -42,6 +44,7 @@ export type Message =
   | GetAlternativesMessage
   | ShowAlternativesMessage
   | AllowMessage
+  | PassMessage
   | RevokeMessage
   | SetSettingsMessage
   | PauseMessage
@@ -53,6 +56,7 @@ export type GetMetaResponse = { ok: true; meta: PageMeta | null };
 export type AlternativesResponse =
   { ok: true; answer: AlternativesAnswer | null } | { ok: false; error: MessageError };
 export type AllowanceResponse = { ok: true; allowances: AllowanceState };
+export type PassResponse = { ok: true };
 export type SettingsResponse = { ok: true; settings: Settings };
 export type PauseResponse = { ok: true; pauseUntil: number; session: boolean };
 export type ClearCacheResponse = { ok: true; cleared: number };
@@ -64,6 +68,7 @@ export type MessageResponse =
   | GetMetaResponse
   | AlternativesResponse
   | AllowanceResponse
+  | PassResponse
   | SettingsResponse
   | PauseResponse
   | ClearCacheResponse;
@@ -117,6 +122,8 @@ export function parseMessage(value: unknown): Message | null {
       return typeof value.url === 'string' && isAllowanceScope(value.scope)
         ? { type: MESSAGE.allow, scope: value.scope, url: value.url }
         : null;
+    case MESSAGE.pass:
+      return typeof value.url === 'string' ? { type: MESSAGE.pass, url: value.url } : null;
     case MESSAGE.revoke: {
       if (typeof value.host !== 'string' || value.host === '' || !isAllowanceScope(value.scope)) {
         return null;
@@ -206,6 +213,11 @@ export function isAlternativesResponse(
 /** A stored allowance is the only answer that lets a listed site open. */
 export function isAllowanceResponse(value: unknown): value is AllowanceResponse {
   return isRecord(value) && value.ok === true && isRecord(value.allowances);
+}
+
+/** The pass answer says only that the record is written. */
+export function isPassResponse(value: unknown): value is PassResponse {
+  return isRecord(value) && value.ok === true;
 }
 
 /** The clear answer names how many keys the worker dropped. */

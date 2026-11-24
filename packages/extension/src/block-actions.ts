@@ -1,6 +1,6 @@
-import type { AllowanceScope } from './allowances';
-import { REPORT_LABEL, SCOPE_LABEL, SCOPE_MENU_LABEL, openAnywayLabel } from './copy';
+import { ONCE_LABEL, REPORT_LABEL, SCOPE_LABEL, SCOPE_MENU_LABEL, openAnywayLabel } from './copy';
 import { roleElement, setHidden, setText } from './dom';
+import type { OpenSiteKind } from './open-site';
 import { openSite } from './open-site';
 import { isWebUrl } from './page-url';
 import { reportUrl } from './report';
@@ -23,7 +23,16 @@ export type ActionsView = {
   navigate: (url: string) => void;
 };
 
-const MENU_ITEMS: ReadonlyArray<readonly [string, AllowanceScope]> = [
+function menuLabel(kind: OpenSiteKind): string {
+  if (kind === 'once') {
+    return ONCE_LABEL;
+  }
+
+  return SCOPE_LABEL[kind];
+}
+
+const MENU_ITEMS: ReadonlyArray<readonly [string, OpenSiteKind]> = [
+  ['scope-once', 'once'],
   ['scope-tab', 'tab'],
   ['scope-session', 'session'],
   ['scope-always', 'always'],
@@ -136,8 +145,8 @@ export function renderActions(view: ActionsView): void {
 
   onClick('open-site', null);
 
-  for (const [role, scope] of MENU_ITEMS) {
-    setText(role, SCOPE_LABEL[scope]);
+  for (const [role, kind] of MENU_ITEMS) {
+    setText(role, menuLabel(kind));
     onClick(role, null);
   }
 
@@ -207,17 +216,17 @@ export function renderActions(view: ActionsView): void {
     };
   }
 
-  const openWith = (scope: AllowanceScope): (() => void) => {
+  const openWith = (kind: OpenSiteKind): (() => void) => {
     return (): void => {
       setHidden('action-error', true);
       close(false);
-      void openSite({ scope, url: original, navigate: view.navigate, listed: view.listed });
+      void openSite({ kind, url: original, navigate: view.navigate, listed: view.listed });
     };
   };
 
   onClick('open-site', openWith('tab'));
 
-  for (const [role, scope] of MENU_ITEMS) {
-    onClick(role, openWith(scope));
+  for (const [role, kind] of MENU_ITEMS) {
+    onClick(role, openWith(kind));
   }
 }

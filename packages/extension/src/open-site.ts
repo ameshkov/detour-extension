@@ -1,37 +1,45 @@
 import type { AllowanceScope } from './allowances';
 import { MESSAGE } from './constants';
-import { ACTION_ERROR } from './copy';
+import { ACTION_ERROR, PASS_ERROR } from './copy';
 import { setHidden, setText } from './dom';
 import { devLog } from './log';
-import type { AllowMessage } from './messages';
-import { isAllowanceResponse } from './messages';
+import type { AllowMessage, PassMessage } from './messages';
+import { isAllowanceResponse, isPassResponse } from './messages';
+
+/** `once` opens the page and writes nothing, so it is not an allowance. */
+export type OpenSiteKind = AllowanceScope | 'once';
 
 export type OpenSiteInput = {
-  scope: AllowanceScope;
+  kind: OpenSiteKind;
   url: string;
   navigate: (url: string) => void;
-  /** A listed URL needs an allowance. Any other URL opens at once. */
+  /** A listed URL needs a record. Any other URL opens at once. */
   listed: boolean;
 };
 
 /**
- * The bound on the allowance message. A cold service worker needs time to wake,
- * so the page waits for the stored answer and only a late answer gives up.
+ * The bound on the message that records the open. A cold service worker needs
+ * time to wake, so the page waits for the stored answer and only a late answer
+ * gives up.
  */
 const ALLOW_TIMEOUT_MS = 1500;
 
+function messageOf(input: OpenSiteInput): AllowMessage | PassMessage {
+  return input.kind === 'once'
+    ? { type: MESSAGE.pass, url: input.url }
+    : { type: MESSAGE.allow, scope: input.kind, url: input.url };
+}
+
 /**
- * One `allow` message and the stored answer. The service worker reads the tab
- * from the sender, so the page sends no tab id at all. A message that fails or
- * does not answer inside the bound answers false.
+ * One `allow` or `pass` message and the stored answer. The service worker reads
+ * the tab from the sender, so the page sends no tab id at all. A message that
+ * fails or does not answer inside the bound answers false.
  */
-async function storeAllowance(input: OpenSiteInput): Promise<boolean> {
+async function recordOpen(input: OpenSiteInput): Promise<boolean> {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   const send = async (): Promise<unknown> => {
-    const message: AllowMessage = { type: MESSAGE.allow, scope: input.scope, url: input.url };
-
-    return chrome.runtime.sendMessage(message);
+    return chrome.runtime.sendMessage(messageOf(input));
   };
 
   const bound = new Promise<null>((resolve) => {
@@ -41,9 +49,9 @@ async function storeAllowance(input: OpenSiteInput): Promise<boolean> {
   try {
     const answer = await Promise.race([send(), bound]);
 
-    return isAllowanceResponse(answer);
+    return input.kind === 'once' ? isPassResponse(answer) : isAllowanceResponse(answer);
   } catch (error) {
-    devLog('actions', 'the allowance message failed', error);
+    devLog('actions', 'the open message failed', error);
 
     return false;
   } finally {
@@ -52,9 +60,9 @@ async function storeAllowance(input: OpenSiteInput): Promise<boolean> {
 }
 
 /**
- * A listed site opens after the allowance is stored, and not before. An unlisted
- * URL needs no allowance, so it opens at once. A failed or late write keeps the
- * page and shows the action error.
+ * A listed site opens after its allowance or its one-time pass is stored, and
+ * not before. An unlisted URL needs neither, so it opens at once. A failed or
+ * late write keeps the page and shows the action error.
  */
 export async function openSite(input: OpenSiteInput): Promise<void> {
   if (!input.listed) {
@@ -63,8 +71,8 @@ export async function openSite(input: OpenSiteInput): Promise<void> {
     return;
   }
 
-  if (!(await storeAllowance(input))) {
-    setText('action-error', ACTION_ERROR);
+  if (!(await recordOpen(input))) {
+    setText('action-error', input.kind === 'once' ? PASS_ERROR : ACTION_ERROR);
     setHidden('action-error', false);
 
     return;
