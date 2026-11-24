@@ -21,6 +21,8 @@ export type LoadAnswerInput = {
   url: string;
   meta: Promise<PageMeta | null>;
   now: number;
+  /** A run that retired asks for nothing and stores nothing. */
+  retired?: () => boolean;
 };
 
 /**
@@ -81,15 +83,27 @@ function requestAnswer(url: string, title: string | null): Promise<AlternativesA
  * day-long copy of it would outlive the budget window.
  */
 export async function loadAnswer(input: LoadAnswerInput): Promise<AlternativesAnswer | null> {
+  if (input.retired?.() === true) {
+    return null;
+  }
+
   const cached = await readAltCache(input.url, input.now);
 
-  if (cached !== null) {
+  // The read of the cache hashes the URL, which can outlast the run that
+  // asked, so the answer of a retired run stops here and asks for nothing.
+  if (cached !== null || input.retired?.() === true) {
     return cached;
   }
 
-  const answer = await requestAnswer(input.url, (await input.meta)?.title ?? null);
+  const title = (await input.meta)?.title ?? null;
 
-  if (answer !== null && !answer.degraded) {
+  if (input.retired?.() === true) {
+    return null;
+  }
+
+  const answer = await requestAnswer(input.url, title);
+
+  if (answer !== null && !answer.degraded && input.retired?.() !== true) {
     try {
       await writeAltCache(input.url, answer, input.now);
     } catch {

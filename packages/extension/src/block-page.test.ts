@@ -7,7 +7,7 @@ import { writeAltCache } from './alts-cache';
 import type { AlternativesAnswer } from './alternatives';
 import { requestAlternatives } from './alternatives';
 import type { BlockPageOptions } from './block-page';
-import { startBlockPage } from './block-page';
+import { startBlockPage, stopBlockPage } from './block-page';
 import { ALT_TTL_MS, MESSAGE, STORAGE } from './constants';
 import {
   ALTERNATIVES_FAILED,
@@ -249,6 +249,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  stopBlockPage();
   vi.useRealTimers();
   vi.restoreAllMocks();
   restoreWindowTop();
@@ -1151,6 +1152,56 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     expect(role('alternatives').dataset.slow).toBe('true');
     expect(role('slow-note').hidden).toBe(false);
+  });
+
+  it('writes nothing into a document that retired its run', async () => {
+    vi.useFakeTimers();
+
+    const pending = deferred<Response>();
+
+    answerMeta();
+
+    void start(URL, () => pending.promise);
+
+    await drainStart();
+
+    // The reader is on a new page, and the answer of the old run arrives late.
+    stopBlockPage();
+    mountShell(SHELL);
+
+    pending.resolve(
+      new Response(JSON.stringify(ANSWER), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    await vi.advanceTimersByTimeAsync(10);
+
+    expect(role('alternatives').dataset.state).toBe('loading');
+    expect(role('list').children).toHaveLength(0);
+    expect(role('source-title').textContent).toBe('');
+  });
+
+  it('sends nothing for a page whose run has retired', async () => {
+    const meta = deferred<unknown>();
+    const calls: FetchCall[] = [];
+
+    fake.respond('getMeta', () => meta.promise);
+
+    const running = start(URL, answerFetch(calls, ANSWER));
+
+    await vi.waitFor(() => {
+      expect(messagesOfType('getMeta')).toHaveLength(1);
+    });
+
+    stopBlockPage();
+    meta.resolve({ ok: true, meta: META });
+
+    await running;
+
+    expect(messagesOfType('getAlternatives')).toEqual([]);
+    expect(calls).toHaveLength(0);
   });
 
   it('starts no note without a url', async () => {

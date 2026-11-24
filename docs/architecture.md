@@ -232,6 +232,10 @@ stored list, and a worker with no stored list uses the bundled copy.
 card and the result rows take their images from the answers and never from
 the shell.
 
+A start retires the run before it, and `stopBlockPage` retires the run that
+owns the document. A retired run asks for no answer, stores none, and paints
+nothing, so a page that a new run or a teardown now owns stays as it is.
+
 The list area carries one of four states in `data-state`: `loading`,
 `results`, `empty`, and `error`. Those four values are the whole state set. A
 results state renders one `<li>` per alternative: the first one is the hero,

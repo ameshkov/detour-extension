@@ -271,6 +271,8 @@ and names the list. Both systems import it. It imports neither of them.
   and a test that needs a document starts with
   `// @vitest-environment happy-dom`.
 - The fake `chrome.*` lives in `packages/extension/src/testing/fake-chrome.ts`.
+  A page test retires its run with `stopBlockPage` in `afterEach`, so an answer
+  or a note timer of the old run cannot paint the next shell.
 - The metadata reader runs against the saved pages in `sites/fixtures/pages/`.
 - The dummy server test starts the server on a free port, reads real HTTP
   answers, and closes it in `afterAll`. Never call a remote service in a test.

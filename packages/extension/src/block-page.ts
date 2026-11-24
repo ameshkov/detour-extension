@@ -27,6 +27,25 @@ let enterShortcut: ((event: KeyboardEvent) => void) | null = null;
 /** The stopper of the countdown that runs, so Enter and a second start can stop it. */
 let stopCountdown: (() => void) | null = null;
 
+/** The note of the run that owns the document, cleared when that run retires. */
+let clearNote: (() => void) | null = null;
+
+/**
+ * The run that owns the document. A start retires the run before it, so an
+ * answer, a note timer, or a countdown of the old run cannot paint a document
+ * that a new run or a teardown now owns.
+ */
+let pageRun = 0;
+
+/** Retires the run that owns the document and stops what it left running. */
+export function stopBlockPage(): void {
+  pageRun += 1;
+  stopCountdown?.();
+  stopCountdown = null;
+  clearNote?.();
+  clearNote = null;
+}
+
 function installEnterShortcut(openTab: (url: string) => void): void {
   if (enterShortcut !== null) {
     document.removeEventListener('keydown', enterShortcut);
@@ -70,7 +89,9 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
     return;
   }
 
-  stopCountdown?.();
+  stopBlockPage();
+
+  const run = pageRun;
 
   const original = originalUrl(options.search);
   const now = options.now ?? Date.now();
@@ -110,7 +131,6 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
   const metaPromise = askMeta(original);
   let meta: PageMeta | null = null;
   let loading = false;
-  let clearNote: (() => void) | null = null;
 
   /** The note starts after the list read, so its labels can name the site. */
   const startNote = (): void => {
@@ -130,6 +150,10 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
   };
 
   const render = (state: AlternativesState, answer: AlternativesAnswer | null): void => {
+    if (run !== pageRun) {
+      return;
+    }
+
     renderAlternatives({
       state,
       answer,
@@ -150,6 +174,10 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
   };
 
   const search = async (): Promise<void> => {
+    if (run !== pageRun) {
+      return;
+    }
+
     loading = true;
     setRetryDisabled(true);
 
@@ -158,23 +186,30 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
         url: original,
         meta: metaPromise,
         now,
+        retired: () => run !== pageRun,
       });
 
       meta = await metaPromise.catch(() => null);
       render(stateOf(answer), answer);
-      autoOpen(answer);
+
+      if (run === pageRun) {
+        autoOpen(answer);
+      }
     } catch {
       render('error', null);
     } finally {
-      clearNote?.();
-      loading = false;
-      setRetryDisabled(false);
+      if (run === pageRun) {
+        clearNote?.();
+        clearNote = null;
+        loading = false;
+        setRetryDisabled(false);
+      }
     }
   };
 
   if (retry instanceof HTMLButtonElement) {
     retry.onclick = (): void => {
-      if (loading) {
+      if (run !== pageRun || loading) {
         return;
       }
 
@@ -186,7 +221,9 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
   }
 
   const card = metaPromise.then((answer) => {
-    renderSourceCard(answer);
+    if (run === pageRun) {
+      renderSourceCard(answer);
+    }
   });
 
   await Promise.all([card, search()]);

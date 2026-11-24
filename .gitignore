@@ -9,3 +9,6 @@ playwright-report/
 
 # Local specification notes. Not part of the product.
 .sdd/
+
+# A store that pnpm keeps in the project when it crosses a file system.
+.pnpm-store/
