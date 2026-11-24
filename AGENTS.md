@@ -351,9 +351,11 @@ Dummy server configuration:
 
 Local development configuration:
 
-- `pnpm list:sync` copies `dist/sites.json` from a `detour-list` checkout into
-  `sites/sites.release.json`. `DETOUR_LIST_PATH` names another checkout, such
-  as a release commit.
+- `pnpm list:sync` fetches `dist/sites.json` at `master` from the detour-list
+  remote into `sites/sites.release.json`. It clones into a temporary directory,
+  so a local checkout plays no part and no branch of it can leak into the copy.
+  `DETOUR_LIST_REMOTE` names another remote, and `DETOUR_LIST_REF` names a tag
+  or a branch instead of `master`.
 - `pnpm list:build` validates `sites/sites.release.json`, then writes
   `packages/extension/src/sites.json` and its identifier in `sites-id.ts`.
 - `pnpm list:build:dev` also reads `sites/sites.dev.yaml` and appends its

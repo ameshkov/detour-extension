@@ -14,8 +14,8 @@ This repository bundles a copy of that artifact, because a worker with no
 stored list needs a list to read. To update the copy:
 
 1. Build the list in `detour-list` with `pnpm list:build`.
-2. Run `pnpm list:sync` here. It reads `../detour-list/dist/sites.json`, or the
-   checkout that `DETOUR_LIST_PATH` names.
+2. Run `pnpm list:sync` here. It fetches `dist/sites.json` at `master` from the
+   detour-list remote, so a local checkout is not needed.
 3. Run `pnpm list:build` and commit `sites/sites.release.json`.
 
 Never edit `sites/sites.release.json` by hand, and never edit

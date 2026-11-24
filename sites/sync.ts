@@ -1,46 +1,31 @@
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { SitesJsonSchema } from '@detour/shared';
+import { loadRemoteList } from './remote-list';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const LIST_REPOSITORY = 'detour-list';
 const TARGET = join(ROOT, 'sites', 'sites.release.json');
 
 /**
- * The checkout of detour-list, which holds the artifact that this extension
- * bundles. `DETOUR_LIST_PATH` names another checkout, such as a release tag.
+ * The remote of detour-list, and the ref whose artifact this build reads.
+ * `DETOUR_LIST_REMOTE` names another URL, such as a fork, and `DETOUR_LIST_REF`
+ * names a release tag instead of the default branch.
  */
-const source = resolve(process.env.DETOUR_LIST_PATH ?? join(ROOT, '..', LIST_REPOSITORY));
-const artifact = join(source, 'dist', 'sites.json');
+const remote = process.env.DETOUR_LIST_REMOTE ?? 'https://github.com/ameshkov/detour-list.git';
+const ref = process.env.DETOUR_LIST_REF ?? 'master';
 
-if (!existsSync(artifact)) {
-  process.stderr.write(`${artifact}: the artifact is missing; run pnpm list:build in ${source}\n`);
-  process.exit(1);
-}
+const result = loadRemoteList({ remote, ref });
 
-const result = SitesJsonSchema.safeParse(JSON.parse(readFileSync(artifact, 'utf8')));
-
-if (!result.success) {
-  for (const issue of result.error.issues) {
-    const path = issue.path.map((part) => String(part)).join('.');
-    process.stderr.write(`${path === '' ? '' : `${path}: `}${issue.message}\n`);
+if (!result.ok) {
+  for (const problem of result.problems) {
+    process.stderr.write(`${problem}\n`);
   }
 
   process.exit(1);
 }
 
-writeFileSync(TARGET, `${JSON.stringify(result.data, null, 2)}\n`);
+writeFileSync(TARGET, `${JSON.stringify(result.list, null, 2)}\n`);
 
-process.stdout.write(`${result.data.sites.length} sites from ${artifact}\n`);
-
-try {
-  const commit = execFileSync('git', ['-C', source, 'rev-parse', '--short', 'HEAD'], {
-    encoding: 'utf8',
-  }).trim();
-
-  process.stdout.write(`detour-list at ${commit}\n`);
-} catch {
-  // A copy without git history is still a valid artifact.
-}
+process.stdout.write(
+  `${result.list.sites.length} sites from ${remote} (${ref} at ${result.commit})\n`,
+);

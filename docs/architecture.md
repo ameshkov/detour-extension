@@ -457,8 +457,10 @@ copy of its artifact, because a worker with no stored list needs a list to
 read, and because the extension must not fetch the list from the repository
 host at run time.
 
-`pnpm list:sync` copies `dist/sites.json` from a `detour-list` checkout into
-`sites/sites.release.json`. `DETOUR_LIST_PATH` names another checkout.
+`pnpm list:sync` fetches `dist/sites.json` at `master` from the detour-list
+remote into `sites/sites.release.json`. It clones into a temporary directory,
+so the shared checkout and its branch play no part. `DETOUR_LIST_REMOTE` names
+another remote, and `DETOUR_LIST_REF` names a tag or a branch.
 `pnpm list:build` validates that copy and writes two generated files:
 `packages/extension/src/sites.json`, and its identifier in `sites-id.ts`. Both
 are generated, and `.gitignore` keeps them out of the repository.

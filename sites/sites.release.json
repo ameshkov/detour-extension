@@ -870,6 +870,54 @@
       "note": "A consent dialog covers the story; \"Rechazar y suscribirse\" leads to subscription offers of 14,90 euros per 2 years or 1,99 euros per month, so there is no free reject.",
       "avoid": [],
       "prefer": []
+    },
+    {
+      "domain": "metro.co.uk",
+      "name": "Metro",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'DMG Media and its partners use cookies' panel covers the story with only 'GOT IT' and no reject, so a reader must accept tracking to read.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "tagesspiegel.de",
+      "name": "Der Tagesspiegel",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A Sourcepoint dialog offers only accept-all ad tracking or a paid contentpass subscription; the Plus story then stops after the teaser at a subscription card.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "cbssports.com",
+      "name": "CBS Sports",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [
+        "/*/news/**"
+      ],
+      "note": "An Admiral card headed \"Unlock the full power of CBSSports.com\" covers the story for readers who run an ad blocker, and \"Continue\" leads only to instructions for turning the blocker off.",
+      "avoid": [],
+      "prefer": []
     }
   ]
 }
