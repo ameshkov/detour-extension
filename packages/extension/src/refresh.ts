@@ -1,11 +1,12 @@
-import { SitesJsonSchema } from '@detour/shared';
+import { SitesJsonSchema, sha256Hex } from '@detour/shared';
 
 import { LIST_FETCH_TIMEOUT_MS } from './constants';
 import type { ServiceWorkerDeps } from './service-worker';
 import { BUNDLED_LIST, readStoredList, writeStoredList } from './storage';
+import { BUNDLED_LIST_ID } from './sites-id';
 
 export type RefreshResult = {
-  version: number;
+  listId: string;
   source: 'network' | 'stored' | 'bundled';
   disabled: boolean;
 };
@@ -13,7 +14,9 @@ export type RefreshResult = {
 /**
  * One fetch of the list, under the read deadline. A non-OK answer, an
  * unparseable body, and a schema failure all keep the list that is already in
- * use, and a worker with no stored list answers the bundled copy.
+ * use, and a worker with no stored list answers the bundled copy. The
+ * identifier of an accepted body is the SHA-256 of the body itself, which is
+ * the value that a backend publishes as the ETag.
  */
 export async function refreshList(deps: ServiceWorkerDeps): Promise<RefreshResult> {
   try {
@@ -22,17 +25,15 @@ export async function refreshList(deps: ServiceWorkerDeps): Promise<RefreshResul
     });
 
     if (response.ok) {
-      const body: unknown = await response.json();
-      const parsed = SitesJsonSchema.safeParse(body);
+      const text = await response.text();
+      const parsed = SitesJsonSchema.safeParse(JSON.parse(text));
 
       if (parsed.success) {
-        await writeStoredList(deps.now(), parsed.data);
+        const listId = await sha256Hex(text);
 
-        return {
-          version: parsed.data.version,
-          source: 'network',
-          disabled: parsed.data.disabled,
-        };
+        await writeStoredList(deps.now(), parsed.data, listId);
+
+        return { listId, source: 'network', disabled: parsed.data.disabled };
       }
     }
   } catch {
@@ -42,8 +43,12 @@ export async function refreshList(deps: ServiceWorkerDeps): Promise<RefreshResul
   const stored = await readStoredList();
 
   if (stored !== null) {
-    return { version: stored.list.version, source: 'stored', disabled: stored.list.disabled };
+    return { listId: stored.listId, source: 'stored', disabled: stored.list.disabled };
   }
 
-  return { version: BUNDLED_LIST.version, source: 'bundled', disabled: BUNDLED_LIST.disabled };
+  return {
+    listId: BUNDLED_LIST_ID,
+    source: 'bundled',
+    disabled: BUNDLED_LIST.disabled,
+  };
 }

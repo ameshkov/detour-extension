@@ -18,13 +18,23 @@ import {
   IMAGES_SETTING_LABEL,
   NO_ALLOWANCES,
   OPTIONS_HEADING,
+  COLUMN_WHY,
+  METERED_NOTE,
+  NO_WALL_NOTE,
   READING_HEADING,
   REMOVE_LABEL,
   SCOPE_LABEL,
+  WALL_CATEGORY_DETAIL,
+  WALL_CATEGORY_LABEL,
+  WALL_TYPE_LABEL,
+  WALLS_HEADING,
+  WALLS_INTRO,
   cacheCleared,
   removeAllowanceLabel,
+  wallCellLabel,
 } from './copy';
 import { startOptionsPage } from './options';
+import { defaultWalls } from './walls';
 import type { Settings } from './storage';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
@@ -74,6 +84,34 @@ function press(name: string, checked: boolean): void {
 
 function pressClear(): void {
   role('clear-cache')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+}
+
+function wallRows(): HTMLTableRowElement[] {
+  return [...document.querySelectorAll<HTMLTableRowElement>('[data-role="wall-rows"] tr')];
+}
+
+function wallChecks(): HTMLInputElement[] {
+  return [...document.querySelectorAll<HTMLInputElement>('[data-role="wall-check"]')];
+}
+
+function wallCheck(type: string, category: string): HTMLInputElement {
+  const found = wallChecks().find(
+    (element) =>
+      element.getAttribute('aria-label') === wallCellLabel(category as never, type as never),
+  );
+
+  if (found === undefined) {
+    throw new Error(`the table has no ${category} ${type} cell`);
+  }
+
+  return found;
+}
+
+function pressWall(type: string, category: string, chosen: boolean): void {
+  const element = wallCheck(type, category);
+
+  element.checked = chosen;
+  element.dispatchEvent(new Event('change'));
 }
 
 function messagesOfType(type: string): unknown[] {
@@ -286,12 +324,130 @@ describe('the allowance table', () => {
   });
 });
 
+describe('the walls table', () => {
+  it('names the section and explains what a tick does', async () => {
+    await startOptionsPage();
+
+    expect(role('walls-heading').textContent).toBe(WALLS_HEADING);
+    expect(role('walls-intro').textContent).toBe(WALLS_INTRO);
+    expect(role('metered-note').textContent).toBe(METERED_NOTE);
+    expect(role('no-wall-note').textContent).toBe(NO_WALL_NOTE);
+    expect(role('th-why').textContent).toBe(COLUMN_WHY);
+    expect(role('th-hard').textContent).toBe(WALL_TYPE_LABEL.hard);
+    expect(role('th-soft').textContent).toBe(WALL_TYPE_LABEL.soft);
+    expect(role('th-metered').textContent).toBe(WALL_TYPE_LABEL.metered);
+  });
+
+  it('draws one row per category and one cell per type', async () => {
+    await startOptionsPage();
+
+    expect(wallRows()).toHaveLength(7);
+    expect(wallRows()[0]?.querySelector('[data-role="wall-name"]')?.textContent).toBe(
+      WALL_CATEGORY_LABEL.adblock,
+    );
+    expect(wallRows()[0]?.querySelector('[data-role="wall-detail"]')?.textContent).toBe(
+      WALL_CATEGORY_DETAIL.adblock,
+    );
+    expect(role('wall-rows').querySelectorAll('td')).toHaveLength(21);
+  });
+
+  it('holds no box in a metered cell outside the paywall row', async () => {
+    await startOptionsPage();
+
+    const empties = document.querySelectorAll('[data-role="wall-cell"][data-empty="true"]');
+
+    expect(wallChecks()).toHaveLength(15);
+    expect(empties).toHaveLength(6);
+    expect(wallRows()[0]?.querySelectorAll('td')[2]?.getAttribute('data-empty')).toBe('true');
+    expect(wallCheck('metered', 'paywall').checked).toBe(false);
+  });
+
+  it('ticks the default ad-blocker walls of both types', async () => {
+    await startOptionsPage();
+
+    expect(wallCheck('hard', 'adblock').checked).toBe(true);
+    expect(wallCheck('soft', 'adblock').checked).toBe(true);
+    expect(wallCheck('hard', 'paywall').checked).toBe(false);
+  });
+
+  it('sends the whole record when one cell changes', async () => {
+    await startOptionsPage();
+    pressWall('hard', 'paywall', true);
+
+    await vi.waitFor(() => {
+      expect(messagesOfType('setSettings')).toEqual([
+        {
+          type: 'setSettings',
+          settings: {
+            enabled: true,
+            autoOpenBest: false,
+            imagesEnabled: true,
+            walls: { hard: ['adblock', 'paywall'], soft: ['adblock'], metered: [] },
+          },
+        },
+      ]);
+    });
+  });
+
+  it('clears a cell the reader unticks', async () => {
+    await startOptionsPage();
+    pressWall('soft', 'adblock', false);
+
+    await vi.waitFor(() => {
+      expect(messagesOfType('setSettings')).toEqual([
+        {
+          type: 'setSettings',
+          settings: {
+            enabled: true,
+            autoOpenBest: false,
+            imagesEnabled: true,
+            walls: { hard: ['adblock'], soft: [], metered: [] },
+          },
+        },
+      ]);
+    });
+  });
+
+  it('returns the focus to the cell after the write', async () => {
+    await startOptionsPage();
+    pressWall('hard', 'paywall', true);
+
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(wallCheck('hard', 'paywall'));
+    });
+  });
+
+  it('renders what the worker stored after a press', async () => {
+    fake.respond('setSettings', () => {
+      const stored: Settings = {
+        enabled: true,
+        autoOpenBest: false,
+        imagesEnabled: true,
+        walls: { hard: [], soft: [], metered: ['paywall'] },
+      };
+
+      fake.storage.local.values.settings = stored;
+
+      return { ok: true, settings: stored };
+    });
+
+    await startOptionsPage();
+    pressWall('hard', 'region', true);
+
+    await vi.waitFor(() => {
+      expect(wallCheck('hard', 'adblock').checked).toBe(false);
+    });
+    expect(wallCheck('metered', 'paywall').checked).toBe(true);
+  });
+});
+
 describe('the reading settings', () => {
   it('shows the two reading settings', async () => {
     fake.storage.local.values.settings = {
       enabled: true,
       autoOpenBest: true,
       imagesEnabled: false,
+      walls: defaultWalls(),
     };
 
     await startOptionsPage();
@@ -309,6 +465,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      walls: defaultWalls(),
     };
 
     await startOptionsPage();
@@ -318,7 +475,12 @@ describe('the reading settings', () => {
       expect(messagesOfType('setSettings')).toEqual([
         {
           type: 'setSettings',
-          settings: { enabled: true, autoOpenBest: true, imagesEnabled: true },
+          settings: {
+            enabled: true,
+            autoOpenBest: true,
+            imagesEnabled: true,
+            walls: defaultWalls(),
+          },
         },
       ]);
     });
@@ -326,6 +488,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: true,
       imagesEnabled: true,
+      walls: defaultWalls(),
     });
   });
 
@@ -334,6 +497,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      walls: defaultWalls(),
     };
 
     await startOptionsPage();
@@ -343,7 +507,12 @@ describe('the reading settings', () => {
       expect(messagesOfType('setSettings')).toEqual([
         {
           type: 'setSettings',
-          settings: { enabled: true, autoOpenBest: false, imagesEnabled: false },
+          settings: {
+            enabled: true,
+            autoOpenBest: false,
+            imagesEnabled: false,
+            walls: defaultWalls(),
+          },
         },
       ]);
     });
@@ -354,6 +523,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      walls: defaultWalls(),
     };
     // The responder stores a value the page did not send, so a page that keeps
     // its own checked state instead of reading the store again fails here.
@@ -377,6 +547,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: true,
       imagesEnabled: false,
+      walls: defaultWalls(),
     });
   });
 });
@@ -391,6 +562,7 @@ describe('a message that fails', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: false,
+      walls: defaultWalls(),
     };
     // Both writes reject, so the page renders again from storage alone: the
     // removal never happened and the press of the switch is undone by the read.

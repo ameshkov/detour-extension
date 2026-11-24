@@ -1,4 +1,4 @@
-import type { SitesJson, WallType } from '@detour/shared';
+import type { SitesJson, Wall } from '@detour/shared';
 import { registrableDomain } from '@detour/shared';
 
 import { pausedRowLabel } from './copy';
@@ -14,13 +14,13 @@ import {
   renderSwitch,
 } from './popup-sections';
 import type { Settings } from './storage';
-import { isPaused, readList, readPause, readSettings } from './storage';
+import { isPaused, readList, readListId, readPause, readSettings } from './storage';
 
 /** The page the popup was opened from, and what the list says about it. */
 export type PopupSite = {
   host: string;
   listed: boolean;
-  wall: WallType | null;
+  walls: Wall[];
   tabId: number;
   url: string;
 };
@@ -34,7 +34,7 @@ export type PopupView = {
   until: number;
   site: PopupSite | null;
   apiBase: string;
-  listVersion: number;
+  listId: string;
   now: number;
   reload: () => void;
 };
@@ -77,7 +77,7 @@ function siteFor(list: SitesJson, tab: ActiveTab): PopupSite | null {
   return {
     host,
     listed: entry !== null,
-    wall: entry?.wall ?? null,
+    walls: entry?.walls ?? [],
     tabId: tab.id,
     url: tab.url,
   };
@@ -124,7 +124,12 @@ export async function startPopup(options: PopupOptions): Promise<void> {
   const now = options.now ?? Date.now();
 
   const load = async (): Promise<void> => {
-    const [settings, pause, list] = await Promise.all([readSettings(), readPause(), readList()]);
+    const [settings, pause, list, listId] = await Promise.all([
+      readSettings(),
+      readPause(),
+      readList(),
+      readListId(),
+    ]);
     const tab = await activeTab();
     const paused = isPaused(pause, now);
 
@@ -135,7 +140,7 @@ export async function startPopup(options: PopupOptions): Promise<void> {
       until: paused ? pause.until : 0,
       site: tab === null ? null : siteFor(list, tab),
       apiBase: options.apiBase,
-      listVersion: list.version,
+      listId,
       now,
       reload: () => void load(),
     });

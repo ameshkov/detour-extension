@@ -147,7 +147,7 @@ describe('the background registration', () => {
       expect(sendResponse).toHaveBeenCalledWith({
         ok: true,
         blocked: true,
-        site: { domain: 'cnet.com', name: 'CNET', wall: 'soft' },
+        site: { domain: 'cnet.com', name: 'CNET', walls: [{ category: 'adblock', type: 'soft' }] },
       });
     });
   });

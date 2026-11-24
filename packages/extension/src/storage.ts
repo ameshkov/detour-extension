@@ -4,20 +4,27 @@ import { SitesJsonSchema } from '@detour/shared';
 import type { AllowanceEntry, AllowanceScope, AllowanceState } from './allowances';
 import { DEFAULT_SETTINGS, LIST_STORAGE_VERSION, STORAGE } from './constants';
 import bundledList from './sites.json';
+import { BUNDLED_LIST_ID } from './sites-id';
+import type { WallSettings } from './walls';
+import { defaultWalls, readWallSettings } from './walls';
 
 export type Settings = {
   enabled: boolean;
   autoOpenBest: boolean;
   imagesEnabled: boolean;
+  /** The walls that stop a page, grouped by the type that presents them. */
+  walls: WallSettings;
 };
 
 /**
  * The stored list and the extension's own storage version, kept apart from the
- * content version of the list itself.
+ * content version of the list itself. The identifier is the SHA-256 of the body
+ * that the list came from, so a report names the exact list that the reader used.
  */
 export type StoredList = {
   storageVersion: number;
   fetchedAt: number;
+  listId: string;
   list: SitesJson;
 };
 
@@ -67,7 +74,7 @@ export async function readSettings(): Promise<Settings> {
   const stored = await readValue('local', STORAGE.settings);
 
   if (typeof stored !== 'object' || stored === null) {
-    return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, walls: defaultWalls() };
   }
 
   const record = stored as Record<string, unknown>;
@@ -76,6 +83,7 @@ export async function readSettings(): Promise<Settings> {
     enabled: readBoolean(record.enabled, DEFAULT_SETTINGS.enabled),
     autoOpenBest: readBoolean(record.autoOpenBest, DEFAULT_SETTINGS.autoOpenBest),
     imagesEnabled: readBoolean(record.imagesEnabled, DEFAULT_SETTINGS.imagesEnabled),
+    walls: readWallSettings(record.walls),
   };
 }
 
@@ -84,6 +92,7 @@ export async function writeSettings(settings: Settings): Promise<void> {
     enabled: settings.enabled,
     autoOpenBest: settings.autoOpenBest,
     imagesEnabled: settings.imagesEnabled,
+    walls: settings.walls,
   });
 }
 
@@ -161,8 +170,9 @@ export async function readAllowances(): Promise<AllowanceState> {
 
 /**
  * The stored envelope, or null when the store is empty, carries another storage
- * version, or holds a list that the schema rejects. The content version of an
- * accepted list is a revision: a newer one needs no extension release.
+ * version, or holds a list that the schema rejects. The identifier of an
+ * accepted list is the SHA-256 of the body behind it, so a report names the
+ * exact list in use.
  */
 export async function readStoredList(): Promise<StoredList | null> {
   const stored = await readValue('local', STORAGE.list);
@@ -173,19 +183,32 @@ export async function readStoredList(): Promise<StoredList | null> {
 
   const envelope = stored as Record<string, unknown>;
 
-  if (envelope.storageVersion !== LIST_STORAGE_VERSION || typeof envelope.fetchedAt !== 'number') {
+  if (
+    envelope.storageVersion !== LIST_STORAGE_VERSION ||
+    typeof envelope.fetchedAt !== 'number' ||
+    typeof envelope.listId !== 'string'
+  ) {
     return null;
   }
 
   const parsed = SitesJsonSchema.safeParse(envelope.list);
 
   return parsed.success
-    ? { storageVersion: LIST_STORAGE_VERSION, fetchedAt: envelope.fetchedAt, list: parsed.data }
+    ? {
+        storageVersion: LIST_STORAGE_VERSION,
+        fetchedAt: envelope.fetchedAt,
+        listId: envelope.listId,
+        list: parsed.data,
+      }
     : null;
 }
 
-export async function writeStoredList(fetchedAt: number, list: SitesJson): Promise<void> {
-  const stored: StoredList = { storageVersion: LIST_STORAGE_VERSION, fetchedAt, list };
+export async function writeStoredList(
+  fetchedAt: number,
+  list: SitesJson,
+  listId: string,
+): Promise<void> {
+  const stored: StoredList = { storageVersion: LIST_STORAGE_VERSION, fetchedAt, listId, list };
 
   await writeValue('local', STORAGE.list, stored);
 }
@@ -194,4 +217,11 @@ export async function readList(): Promise<SitesJson> {
   const stored = await readStoredList();
 
   return stored?.list ?? BUNDLED_LIST;
+}
+
+/** The identifier of the list in use, for a report or a message. */
+export async function readListId(): Promise<string> {
+  const stored = await readStoredList();
+
+  return stored?.listId ?? BUNDLED_LIST_ID;
 }

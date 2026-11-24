@@ -3,16 +3,17 @@ import type { SitesJson } from '@detour/shared';
 import {
   ALTERNATIVES_HEADING,
   ALTERNATIVES_LOADING,
+  ANTI_USER_NOTE,
   FOOTNOTE,
-  PRACTICE_EXPLANATION,
+  NO_URL_HEADLINE,
   SOURCE_LABEL,
-  WALL_PRACTICE,
   headline,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
 import { findSite } from './list-matching';
 import type { PageMeta } from './metadata';
 import { hostOf, isWebUrl } from './page-url';
+import { renderWalls } from './wall-chips';
 
 /** The original URL, or null when the page was opened without one. */
 export function originalUrl(search: string): string | null {
@@ -52,17 +53,19 @@ function renderSourceLink(original: string | null): void {
 }
 
 /**
- * Everything the page can say without asking anyone: the explanation, the two
+ * Everything the page can say without asking anyone: the headline, the two
  * headings, the site chip, the footnote, and the source link. It runs before the
  * first storage read and the first request, so the page is usable while the list
- * area waits.
+ * area waits. The walls and the judgement wait for the list, because both depend
+ * on the entry that matched.
  */
 export function renderExplanation(original: string | null): void {
   const host = hostOf(original);
 
-  setText('headline', headline(null));
-  setText('practice', '');
-  setText('explanation', PRACTICE_EXPLANATION);
+  setText('headline', NO_URL_HEADLINE);
+  setText('lede', '');
+  setHidden('lede', true);
+  renderWalls('walls', []);
   setText('source-label', SOURCE_LABEL);
   setText('alternatives-heading', ALTERNATIVES_HEADING);
   setText('status', original === null ? '' : ALTERNATIVES_LOADING);
@@ -73,12 +76,20 @@ export function renderExplanation(original: string | null): void {
   renderSourceLink(original);
 }
 
-/** The site, its wall, the named headline, and the chip of the matched entry. */
+/**
+ * The site, its walls, the named headline, and the chip of the matched entry. A
+ * paywall, a consent dialog, or an age check is the publisher's business, so the
+ * judgement appears only when the entry carries an ad-blocker wall.
+ */
 export function renderListEntry(list: SitesJson | null, original: string | null): void {
   const site = list === null || original === null ? null : findSite(list, original);
+  const walls = site?.walls ?? [];
+  const judged = walls.some((wall) => wall.category === 'adblock');
 
-  setText('headline', headline(site?.name ?? null));
-  setText('practice', site === null ? '' : WALL_PRACTICE[site.wall]);
+  setText('headline', headline(site?.name ?? null, walls.length));
+  renderWalls('walls', walls);
+  setText('lede', judged ? ANTI_USER_NOTE : '');
+  setHidden('lede', !judged);
 
   if (site !== null) {
     setText('chip-host', site.domain);

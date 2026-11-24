@@ -1,31 +1,43 @@
-import type { WallType } from '@detour/shared';
+import type { WallCategory, WallType } from '@detour/shared';
 
 import type { AllowanceScope } from './allowances';
 import type { PauseKind } from './pause';
 import type { SearchEngineKey } from './search-fallback';
 
-export const NO_URL_HEADLINE = 'This site blocks readers who use an ad blocker';
+export const NO_URL_HEADLINE = 'This site puts a wall in front of this story';
+
+const WALL_COUNTS: Record<number, string> = {
+  2: 'two',
+  3: 'three',
+  4: 'four',
+  5: 'five',
+  6: 'six',
+  7: 'seven',
+};
 
 /**
- * The headline names the site from the list. Without a site it still says what
- * happened, because a missing `?u` must not leave the page without a title.
+ * The headline names the site and how many walls the list records for it. The
+ * pills under it name the walls, so the sentence does not repeat a category, and
+ * it stays true for an ad-blocker wall and a paywall alike. Without a site it
+ * still says what happened, because a missing `?u` must not leave the page
+ * without a title.
  */
-export function headline(siteName: string | null): string {
-  return siteName === null ? NO_URL_HEADLINE : `${siteName} blocks readers who use an ad blocker`;
+export function headline(siteName: string | null, walls: number): string {
+  if (siteName === null) {
+    return NO_URL_HEADLINE;
+  }
+
+  return `${siteName} puts ${walls >= 2 ? `${WALL_COUNTS[walls] ?? walls} walls` : 'a wall'} in front of this story`;
 }
 
-export const WALL_PRACTICE: Record<WallType, string> = {
-  hard: 'The site replaces the article with a wall.',
-  soft: 'The site covers the article with a wall.',
-  metered: 'The site limits how many articles a reader can open.',
-};
+/** The judgement belongs to the ad-blocker wall, so a page without one carries none. */
+export const ANTI_USER_NOTE =
+  'An ad-blocker wall is an anti-user practice: the site tries to control what software runs on your computer.';
 
 // The guard
 export const GUARD_LINK_LABEL = 'Open the Detour page';
 
 // The block page
-export const PRACTICE_EXPLANATION =
-  'That is an anti-user practice: the site decides which software may run on your computer.';
 export const SOURCE_LABEL = 'You tried to open';
 export const ALTERNATIVES_HEADING = 'Read this elsewhere';
 export const ALTERNATIVES_LOADING = 'Looking for the same story elsewhere…';
@@ -92,14 +104,11 @@ export function REPORT_ISSUE_TITLE(host: string | null): string {
 
 export function reportIssueBody(input: {
   url: string | null;
-  listVersion: number;
+  listId: string;
   extensionVersion: string;
 }): string {
   const page = input.url === null ? [] : [`The page Detour stopped: ${input.url}`];
-  const versions = [
-    `List version: ${input.listVersion}`,
-    `Extension version: ${input.extensionVersion}`,
-  ];
+  const versions = [`List: ${input.listId}`, `Extension version: ${input.extensionVersion}`];
 
   return [...page, ...versions].join('\n');
 }
@@ -115,11 +124,22 @@ export const SITE_UNLISTED = 'is not on the list';
 /** The report is the sentence the block says, so the link carries the whole line. */
 export const SITE_REPORT_HINT = 'If you see a wall here, report it.';
 
-/** The type of wall, named as the list names it and never softened. */
-export const WALL_LABEL: Record<WallType, string> = {
-  hard: 'Hard wall',
-  soft: 'Soft wall',
-  metered: 'Metered wall',
+/** The category of a wall, named as the list names it and never softened. */
+export const WALL_CATEGORY_LABEL: Record<WallCategory, string> = {
+  adblock: 'Ad blocker',
+  paywall: 'Paywall',
+  registration: 'Registration',
+  consent: 'Consent',
+  region: 'Region',
+  vpn: 'VPN',
+  age: 'Age check',
+};
+
+/** How the wall presents, in one word, for the second half of a pill. */
+export const WALL_TYPE_LABEL: Record<WallType, string> = {
+  hard: 'Hard',
+  soft: 'Soft',
+  metered: 'Metered',
 };
 
 export const SHOW_ALTERNATIVES_LABEL = 'Show alternatives';
@@ -179,6 +199,27 @@ export const REMOVE_LABEL = 'remove';
 /** The visible label is the same in every row, so the accessible name names the site. */
 export function removeAllowanceLabel(host: string): string {
   return `Remove the allowance for ${host}`;
+}
+
+export const WALLS_HEADING = 'Walls to stop';
+export const WALLS_INTRO =
+  'Detour stops a page before it loads when the page has a ticked wall. The block page then offers the same story from other publishers.';
+export const COLUMN_WHY = 'Why it appears';
+export const WALL_CATEGORY_DETAIL: Record<WallCategory, string> = {
+  adblock: 'The site asks readers to turn it off',
+  paywall: 'The site asks for a subscription',
+  registration: 'The site asks for an account',
+  consent: 'The content waits for a cookie choice',
+  region: 'The site refuses some countries',
+  vpn: 'The site refuses VPN and proxy addresses',
+  age: 'The site asks for an age',
+};
+export const METERED_NOTE = 'A dashed cell cannot be ticked: only a subscription limits a count.';
+export const NO_WALL_NOTE = 'A page with no ticked wall loads as usual.';
+
+/** The visible cell holds no text, so the accessible name names both the type and the category. */
+export function wallCellLabel(category: WallCategory, type: WallType): string {
+  return `${WALL_CATEGORY_LABEL[category]}, ${WALL_TYPE_LABEL[type].toLowerCase()} wall`;
 }
 
 export const READING_HEADING = 'Reading';

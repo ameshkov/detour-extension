@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./list-format": "./src/list-format.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "tldts": "7.4.26",

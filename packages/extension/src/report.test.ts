@@ -6,12 +6,14 @@ import { reportUrl } from './report';
 
 const FORBES_URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-move/';
 
-function issues(url: string | null, listVersion = 7, extensionVersion = '0.1.0'): URL {
-  return new URL(reportUrl({ url, listVersion, extensionVersion }));
+const LIST_ID = 'a'.repeat(64);
+
+function issues(url: string | null, listId = LIST_ID, extensionVersion = '0.1.0'): URL {
+  return new URL(reportUrl({ url, listId, extensionVersion }));
 }
 
 describe('the report link', () => {
-  it('prefills the issue with the url, the list version, and the extension version', () => {
+  it('prefills the issue with the url, the list identifier, and the extension version', () => {
     const issue = issues(FORBES_URL);
 
     expect(issue.origin + issue.pathname).toBe(REPORT_ISSUE_URL);
@@ -19,13 +21,13 @@ describe('the report link', () => {
     expect(issue.searchParams.get('body')).toBe(
       reportIssueBody({
         url: FORBES_URL,
-        listVersion: 7,
+        listId: LIST_ID,
         extensionVersion: '0.1.0',
       }),
     );
     expect(issue.searchParams.get('body')?.split('\n')).toEqual([
       `The page Detour stopped: ${FORBES_URL}`,
-      'List version: 7',
+      `List: ${LIST_ID}`,
       'Extension version: 0.1.0',
     ]);
   });
@@ -37,7 +39,7 @@ describe('the report link', () => {
   it('leaves the url line out of a report without a url', () => {
     const body = issues(null).searchParams.get('body')?.split('\n');
 
-    expect(body).toEqual(['List version: 7', 'Extension version: 0.1.0']);
+    expect(body).toEqual([`List: ${LIST_ID}`, 'Extension version: 0.1.0']);
   });
 
   it('keeps a value that is not a web url out of the title', () => {

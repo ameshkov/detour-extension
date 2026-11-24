@@ -123,12 +123,21 @@ under the pointer, and a `remove` link turns `--blocked`.
 The popup names the verdict of the page in colour as well as in words: the site the list carries
 takes `--accent` and the site it does not takes `--muted`. No dot stands in for either answer.
 
+A wall is one pill on the block page and in the popup: the category in `--ink` at 600, a middot in
+`--control-line`, and the type in `--muted`. The pill is a `--surface` fill with a
+`--control-line` edge and a 99 px radius, so it reads as a word and not as a control. The block
+page sets it to 11.5 px and the popup to 10 px. The pills wrap rather than clip, and the sentence
+that judges an ad-blocker wall follows them in ink.
+
+The settings page draws the same 16 px checkbox as its reading rows in a grid: seven category rows
+across the three type columns. A cell that the list cannot hold carries a dashed square instead of
+a box, so the reader sees that the choice does not exist rather than that it is off.
+
 ## Type
 
 The table gives the block page sizes. The popup sets the wordmark to 12.5 px, its rows to
-12.5 px at 600, and the wall label to 9.5 px uppercase with 0.12em tracking. The options page
-sets its title to 27 px serif and its sections to 11 px uppercase at 0.1em, so the page and its
-parts never share a size.
+12.5 px at 600, and its wall pills to 10 px. The options page sets its title to 27 px serif and
+its sections to 11 px uppercase at 0.1em, so the page and its parts never share a size.
 
 | Role          | Family | Size                            | Weight                 | Tracking |
 | ------------- | ------ | ------------------------------- | ---------------------- | -------- |
@@ -138,11 +147,10 @@ parts never share a size.
 | Source title  | Serif  | 17 px                           | 600                    | -0.01em  |
 | Hero title    | Serif  | 18.5 px                         | 600                    | -0.015em |
 | Row title     | Sans   | 14.5 px                         | 600                    | -0.006em |
-| Practice line | Sans   | 15 px                           | 400                    | —        |
-| Explanation   | Sans   | 15 px, in ink                   | 550                    | —        |
+| Wall pill     | Sans   | 11.5 px, and 10 px in the popup | 600 for the category   | —        |
+| Judgement     | Sans   | 15 px, in ink                   | 550                    | —        |
 | Row meta      | Sans   | 12.5 px                         | 400, the domain at 550 | —        |
 | Popup row     | Sans   | 12.5 px                         | 600                    | —        |
-| Wall label    | Sans   | 9.5 px, uppercase               | 600                    | 0.12em   |
 | Report link   | Sans   | 11.5 px, underlined             | 400                    | —        |
 | Section label | Sans   | 11 px, uppercase                | 600                    | 0.1em    |
 | Wordmark      | Sans   | 14 px, and 12.5 px in the popup | 650                    | -0.01em  |
@@ -165,6 +173,7 @@ The display family is `ui-serif, Georgia, "Iowan Old Style", serif`. The interfa
 | Popup             | 340 px wide, with 36 px rows                      |
 | Options page      | 640 px at most, with 22 px of padding             |
 | Reading checkbox  | 16 px square, with a 5 px radius                  |
+| Wall pill         | 5 px 11 px of padding, and 3 px 8 px in the popup |
 | Menu caret        | a 12 px path in a 34 px button                    |
 
 Below 520 px the headline drops to 24 px, the row thumbnails drop out, and the hero image stacks

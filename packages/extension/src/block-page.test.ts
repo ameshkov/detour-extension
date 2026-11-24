@@ -14,17 +14,16 @@ import {
   ALTERNATIVES_HEADING,
   ALTERNATIVES_LOADING,
   ALTERNATIVES_NONE,
+  ANTI_USER_NOTE,
   FAILED_DETAIL,
   FOOTNOTE,
   KEEP_WAITING_LABEL,
   NONE_DETAIL,
   NO_URL_HEADLINE,
-  PRACTICE_EXPLANATION,
   RETRY_EMPTY_LABEL,
   RETRY_LABEL,
   SLOW_NOTE,
   SOURCE_LABEL,
-  WALL_PRACTICE,
   countdownText,
   headline,
   openAnywayLabel,
@@ -73,9 +72,9 @@ const ANSWER: AlternativesAnswer = {
   ],
 };
 
+const STORED_ID = 'a'.repeat(64);
+
 const HARD_LIST: SitesJson = {
-  version: 2,
-  updated: '2026-11-12',
   disabled: false,
   avoid: [],
   prefer: [],
@@ -83,13 +82,31 @@ const HARD_LIST: SitesJson = {
     {
       domain: 'forbes.com',
       name: 'Forbes',
-      wall: 'hard',
+      walls: [{ category: 'adblock', type: 'hard' }],
       paths: [],
       note: 'Full-page wall for readers with an ad blocker.',
       avoid: [],
       prefer: [],
     },
   ],
+};
+
+const TWO_WALL_LIST: SitesJson = {
+  ...HARD_LIST,
+  sites: [
+    {
+      ...HARD_LIST.sites[0]!,
+      walls: [
+        { category: 'adblock', type: 'soft' },
+        { category: 'paywall', type: 'metered' },
+      ],
+    },
+  ],
+};
+
+const PAYWALL_LIST: SitesJson = {
+  ...HARD_LIST,
+  sites: [{ ...HARD_LIST.sites[0]!, walls: [{ category: 'paywall', type: 'hard' }] }],
 };
 
 type FetchCall = { input: string; init?: RequestInit };
@@ -236,8 +253,8 @@ describe('the block page shell', () => {
       'chip-dot',
       'chip-host',
       'headline',
-      'practice',
-      'explanation',
+      'walls',
+      'lede',
       'source',
       'source-label',
       'source-title',
@@ -338,7 +355,8 @@ describe('the block page shell', () => {
 
     const running = start(URL, answerFetch(calls, ANSWER));
 
-    expect(role('explanation').textContent).toBe(PRACTICE_EXPLANATION);
+    expect(role('lede').hidden).toBe(true);
+    expect(role('walls').hidden).toBe(true);
     expect(role('source-label').textContent).toBe(SOURCE_LABEL);
     expect(role('alternatives-heading').textContent).toBe(ALTERNATIVES_HEADING);
     expect(role('source-link').getAttribute('href')).toBe(URL);
@@ -362,7 +380,8 @@ describe('the block page shell', () => {
     await start(URL, answerFetch(calls, ANSWER));
 
     expect(role('headline').textContent).toBe('');
-    expect(role('explanation').textContent).toBe('');
+    expect(role('lede').textContent).toBe('');
+    expect(role('walls').hidden).toBe(true);
     expect(role('chip').hidden).toBe(true);
     expect(role('actions').hidden).toBe(true);
     expect(calls).toHaveLength(0);
@@ -370,7 +389,7 @@ describe('the block page shell', () => {
   });
 
   it('names the site in the chip', async () => {
-    await writeStoredList(NOW, HARD_LIST);
+    await writeStoredList(NOW, HARD_LIST, STORED_ID);
     answerMeta(null);
 
     await start(FORBES_URL, answerFetch([], ANSWER));
@@ -415,24 +434,55 @@ describe('the block page shell', () => {
     await running;
   });
 
-  it('names the site, the wall type, and the practice', async () => {
-    await writeStoredList(NOW, HARD_LIST);
+  it('names the site, its walls, and the judgement', async () => {
+    await writeStoredList(NOW, HARD_LIST, STORED_ID);
     answerMeta(null);
 
     await start(FORBES_URL, answerFetch([], ANSWER));
 
-    expect(role('headline').textContent).toBe(headline('Forbes'));
-    expect(role('practice').textContent).toBe(WALL_PRACTICE.hard);
-    expect(role('explanation').textContent).toBe(PRACTICE_EXPLANATION);
+    const chips = role('walls').querySelectorAll('[data-role="wall"]');
+
+    expect(role('headline').textContent).toBe(headline('Forbes', 1));
+    expect(chips).toHaveLength(1);
+    expect(role('walls').textContent).toContain('Ad blocker');
+    expect(role('walls').textContent).toContain('Hard');
+    expect(role('walls').hidden).toBe(false);
+    expect(role('lede').textContent).toBe(ANTI_USER_NOTE);
+    expect(role('lede').hidden).toBe(false);
   });
 
-  it('names the wall of a soft entry', async () => {
+  it('draws one pill per wall and counts them in the headline', async () => {
+    await writeStoredList(NOW, TWO_WALL_LIST, STORED_ID);
+    answerMeta(null);
+
+    await start(FORBES_URL, answerFetch([], ANSWER));
+
+    const chips = role('walls').querySelectorAll('[data-role="wall"]');
+
+    expect(chips).toHaveLength(2);
+    expect(role('headline').textContent).toBe('Forbes puts two walls in front of this story');
+    expect(role('walls').textContent).toContain('Paywall');
+    expect(role('walls').textContent).toContain('Metered');
+  });
+
+  it('draws the wall of a soft entry', async () => {
     answerMeta(null);
 
     await start(URL, answerFetch([], ANSWER));
 
-    expect(role('headline').textContent).toBe(headline('CNET'));
-    expect(role('practice').textContent).toBe(WALL_PRACTICE.soft);
+    expect(role('headline').textContent).toBe(headline('CNET', 1));
+    expect(role('walls').textContent).toBe('Ad blocker·Soft');
+  });
+
+  it('judges no page that carries no ad-blocker wall', async () => {
+    await writeStoredList(NOW, PAYWALL_LIST, STORED_ID);
+    answerMeta(null);
+
+    await start(FORBES_URL, answerFetch([], ANSWER));
+
+    expect(role('walls').textContent).toBe('Paywall·Hard');
+    expect(role('lede').textContent).toBe('');
+    expect(role('lede').hidden).toBe(true);
   });
 
   it('renders the general explanation without a url', async () => {
@@ -441,7 +491,8 @@ describe('the block page shell', () => {
     await startPage('', answerFetch(calls, ANSWER));
 
     expect(role('headline').textContent).toBe(NO_URL_HEADLINE);
-    expect(role('explanation').textContent).toBe(PRACTICE_EXPLANATION);
+    expect(role('lede').hidden).toBe(true);
+    expect(role('walls').hidden).toBe(true);
     expect(role('source-link').getAttribute('href')).toBeNull();
     expect(role('source-link').textContent).toBe('');
     expect(role('source').hidden).toBe(true);
@@ -868,7 +919,7 @@ describe('the block page shell', () => {
   it('opens the site in this tab for the default action', async () => {
     const navigated: string[] = [];
 
-    await writeStoredList(NOW, HARD_LIST);
+    await writeStoredList(NOW, HARD_LIST, STORED_ID);
     answerMeta(null);
 
     await start(FORBES_URL, answerFetch([], ANSWER), NOW, {
@@ -1043,7 +1094,7 @@ describe('the block page shell', () => {
 
     const navigated: string[] = [];
 
-    await writeStoredList(NOW, HARD_LIST);
+    await writeStoredList(NOW, HARD_LIST, STORED_ID);
     answerMeta(null);
 
     void start(FORBES_URL, pendingFetch([]), NOW, { navigate: (url) => navigated.push(url) });

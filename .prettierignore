@@ -1,9 +1,12 @@
 pnpm-lock.yaml
 node_modules/
 .sdd/
-docs/list-format.md
 packages/*/src/sites.json
+packages/*/src/sites-id.ts
 packages/*/dist/
 sites/fixtures/pages/
 test-results/
 playwright-report/
+
+# The artifact copy is foreign data, kept as detour-list writes it.
+sites/sites.release.json

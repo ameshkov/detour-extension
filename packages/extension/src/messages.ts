@@ -1,4 +1,4 @@
-import type { WallType } from '@detour/shared';
+import type { Wall, WallType } from '@detour/shared';
 
 import type { AllowanceScope, AllowanceState } from './allowances';
 import type { AlternativesAnswer } from './alternatives';
@@ -7,10 +7,11 @@ import { MESSAGE } from './constants';
 import type { PageMeta } from './metadata';
 import { isPageMeta } from './metadata';
 import type { Settings } from './storage';
+import { WALL_TYPES, isWallCategory, isWallSettings } from './walls';
 
 export type MessageError = 'bad_message' | 'missing_tab' | 'navigation_failed' | 'unknown_message';
 
-export type ListedSite = { domain: string; name: string; wall: WallType };
+export type ListedSite = { domain: string; name: string; walls: Wall[] };
 
 export type IsBlockedMessage = { type: 'isBlocked'; url: string };
 export type BlockedMessage = { type: 'blocked'; url: string };
@@ -68,7 +69,6 @@ export type MessageResponse =
   | ClearCacheResponse;
 
 const SCOPE_VALUES: readonly AllowanceScope[] = ['tab', 'session', 'always'];
-const WALL_VALUES: readonly WallType[] = ['hard', 'soft', 'metered'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -76,10 +76,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isAllowanceScope(value: unknown): value is AllowanceScope {
   return SCOPE_VALUES.includes(value as AllowanceScope);
-}
-
-function isWallType(value: unknown): value is WallType {
-  return WALL_VALUES.includes(value as WallType);
 }
 
 function isSettings(value: unknown): value is Settings {
@@ -90,7 +86,8 @@ function isSettings(value: unknown): value is Settings {
   return (
     typeof value.enabled === 'boolean' &&
     typeof value.autoOpenBest === 'boolean' &&
-    typeof value.imagesEnabled === 'boolean'
+    typeof value.imagesEnabled === 'boolean' &&
+    isWallSettings(value.walls)
   );
 }
 
@@ -148,12 +145,21 @@ export function parseMessage(value: unknown): Message | null {
   }
 }
 
+function isWall(value: unknown): value is Wall {
+  return (
+    isRecord(value) && isWallCategory(value.category) && WALL_TYPES.includes(value.type as WallType)
+  );
+}
+
+/** A wall category and a wall type are both checked by the response that carries them. */
 function isListedSite(value: unknown): value is ListedSite {
   return (
     isRecord(value) &&
     typeof value.domain === 'string' &&
     typeof value.name === 'string' &&
-    isWallType(value.wall)
+    Array.isArray(value.walls) &&
+    value.walls.length > 0 &&
+    value.walls.every(isWall)
   );
 }
 

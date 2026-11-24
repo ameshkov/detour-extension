@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+const LIST_ID = 'a'.repeat(64);
+
 import {
   ENABLED_SWITCH_LABEL,
   KEEP_WAITING_LABEL,
@@ -19,9 +21,13 @@ import {
   SITE_REPORT_HINT,
   SITE_UNLISTED,
   SLOW_NOTE,
+  ANTI_USER_NOTE,
+  NO_URL_HEADLINE,
   STAY_LABEL,
-  WALL_LABEL,
+  WALL_CATEGORY_LABEL,
+  WALL_TYPE_LABEL,
   countdownText,
+  headline,
   openAnywayLabel,
   pauseCountdown,
   pausedRowLabel,
@@ -42,27 +48,40 @@ describe('the copy', () => {
     expect(resultsCount(5)).toBe('5 publishers without a wall');
   });
 
+  it('counts the walls in the headline', () => {
+    expect(headline('Forbes', 1)).toBe('Forbes puts a wall in front of this story');
+    expect(headline('Forbes', 2)).toBe('Forbes puts two walls in front of this story');
+    expect(headline('Forbes', 7)).toBe('Forbes puts seven walls in front of this story');
+    expect(headline(null, 0)).toBe(NO_URL_HEADLINE);
+  });
+
+  it('judges the ad-blocker wall in a sentence of its own', () => {
+    expect(ANTI_USER_NOTE).toBe(
+      'An ad-blocker wall is an anti-user practice: the site tries to control what software runs on your computer.',
+    );
+  });
+
   it('names the site in the open actions', () => {
     expect(openAnywayLabel('Forbes')).toBe('Open Forbes anyway');
     expect(openInsteadLabel('Forbes')).toBe('Open Forbes instead');
   });
 
-  it('writes the issue body from the url, both versions, and the labels', () => {
+  it('writes the issue body from the url, both identifiers, and the labels', () => {
     const body = reportIssueBody({
       url: FORBES_URL,
-      listVersion: 7,
+      listId: LIST_ID,
       extensionVersion: '0.1.0',
     });
 
     expect(body).toBe(
       [
         `The page Detour stopped: ${FORBES_URL}`,
-        'List version: 7',
+        `List: ${LIST_ID}`,
         'Extension version: 0.1.0',
       ].join('\n'),
     );
-    expect(reportIssueBody({ url: null, listVersion: 7, extensionVersion: '0.1.0' })).toBe(
-      ['List version: 7', 'Extension version: 0.1.0'].join('\n'),
+    expect(reportIssueBody({ url: null, listId: LIST_ID, extensionVersion: '0.1.0' })).toBe(
+      [`List: ${LIST_ID}`, 'Extension version: 0.1.0'].join('\n'),
     );
   });
 
@@ -140,7 +159,7 @@ describe('the copy', () => {
     expect(openInsteadLabel('Forbes')).toBe('Open Forbes instead');
   });
 
-  it('names the popup state, the two site verdicts, and the wall types', () => {
+  it('names the popup state, the two site verdicts, and the wall words', () => {
     expect(POPUP_ON).toBe('On');
     expect(POPUP_OFF).toBe('Off');
     expect(POPUP_PAUSED).toBe('Paused');
@@ -149,7 +168,9 @@ describe('the copy', () => {
     expect(SITE_LISTED).toBe('is on the list');
     expect(SITE_UNLISTED).toBe('is not on the list');
     expect(SITE_REPORT_HINT).toBe('If you see a wall here, report it.');
-    expect(WALL_LABEL).toEqual({ hard: 'Hard wall', soft: 'Soft wall', metered: 'Metered wall' });
+    expect(WALL_CATEGORY_LABEL.adblock).toBe('Ad blocker');
+    expect(WALL_CATEGORY_LABEL.age).toBe('Age check');
+    expect(WALL_TYPE_LABEL).toEqual({ hard: 'Hard', soft: 'Soft', metered: 'Metered' });
     expect(SETTINGS_LABEL).toBe('Settings');
     expect(SHOW_ALTERNATIVES_LABEL).toBe('Show alternatives');
   });

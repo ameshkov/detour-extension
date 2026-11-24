@@ -282,13 +282,19 @@ describe('the stylesheet', () => {
       ),
     ).toBe('right');
     expect(
-      styleRule('body[data-page="options"] td:nth-child(3)')?.style.getPropertyValue('text-align'),
+      styleRule(
+        'body[data-page="options"] [data-role="allowance-table"] td:nth-child(3)',
+      )?.style.getPropertyValue('text-align'),
     ).toBe('right');
     expect(
-      styleRule('body[data-page="options"] td:last-child')?.style.getPropertyValue('text-align'),
+      styleRule(
+        'body[data-page="options"] [data-role="allowance-table"] td:last-child',
+      )?.style.getPropertyValue('text-align'),
     ).toBe('right');
     expect(
-      styleRule('body[data-page="options"] td:last-child')?.style.getPropertyValue('padding-left'),
+      styleRule(
+        'body[data-page="options"] [data-role="allowance-table"] td:last-child',
+      )?.style.getPropertyValue('padding-left'),
     ).toBe('18px');
     expect(
       styleRule(
@@ -404,6 +410,14 @@ describe('the stylesheet', () => {
     ).toBe('rotate(180deg)');
   });
 
+  it('anchors the menu to the split control, not to the row above it', () => {
+    const group = styleRule('[data-role="open-group"]');
+
+    expect(group?.style.getPropertyValue('position')).toBe('relative');
+    expect(group?.style.getPropertyValue('display')).toBe('flex');
+    expect(styleRule('[data-role="actions"]')?.style.getPropertyValue('position')).toBe('');
+  });
+
   it('opens the menu above a row that has no room below', () => {
     const top = styleRule('[data-role="scope-menu"][data-side="top"]');
 
@@ -489,12 +503,80 @@ describe('the stylesheet', () => {
     );
   });
 
-  it('reads the practice in the muted tone and the judgement in ink', () => {
-    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('610px');
-    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('color')).toBe('var(--muted)');
-    expect(styleRule('[data-role="explanation"]')?.style.getPropertyValue('color')).toBe(
-      'var(--ink)',
+  it('draws a wall as the category in ink, a middot, and the type in grey', () => {
+    const pill = styleRule('[data-role="wall"]');
+
+    expect(pill?.style.getPropertyValue('display')).toBe('inline-flex');
+    expect(pill?.style.getPropertyValue('border-radius')).toBe('99px');
+    expect(pill?.style.getPropertyValue('background')).toBe('var(--surface)');
+    expect(pill?.style.getPropertyValue('font-size')).toBe('11.5px');
+    expect(styleRule('[data-role="wall-category"]')?.style.getPropertyValue('font-weight')).toBe(
+      '600',
     );
+    expect(styleRule('[data-role="wall-sep"]')?.style.getPropertyValue('color')).toBe(
+      'var(--control-line)',
+    );
+    expect(styleRule('[data-role="wall-type"]')?.style.getPropertyValue('color')).toBe(
+      'var(--muted)',
+    );
+  });
+
+  it('reads the judgement in ink, under the width of the column', () => {
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('610px');
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('color')).toBe('var(--ink)');
+    expect(styleRule('[data-role="explanation"]')).toBeNull();
+    expect(styleRule('[data-role="practice"]')).toBeNull();
+  });
+
+  it('centres the site block between the header and the first row', () => {
+    const row = styleRule('body[data-page="popup"] [data-role="site-row"]');
+
+    expect(row?.style.getPropertyValue('padding')).toBe('12px 15px 0px');
+    expect(
+      styleRule('body[data-page="popup"] [data-role="site-walls"]')?.style.getPropertyValue(
+        'padding',
+      ),
+    ).toBe('0px 15px 12px');
+    // The action row carries no margin of its own, so the 12 px under the pills
+    // is the only space between them and the hairline of that row.
+    expect(
+      styleRule('body[data-page="popup"] [data-role="site-alternatives"]')?.style.getPropertyValue(
+        'margin-top',
+      ),
+    ).not.toBe('8px');
+  });
+
+  it('draws the popup pills smaller than the block page ones', () => {
+    const pill = styleRule('body[data-page="popup"] [data-role="wall"]');
+
+    expect(pill?.style.getPropertyValue('font-size')).toBe('10px');
+    expect(pill?.style.getPropertyValue('padding')).toBe('3px 8px');
+    expect(
+      styleRule('body[data-page="popup"] [data-role="site-walls"]')?.style.getPropertyValue(
+        'padding',
+      ),
+    ).toBe('0px 15px 12px');
+  });
+
+  it('draws the walls table as a grid of category rows and type columns', () => {
+    const cell = styleRule('body[data-page="options"] [data-role="wall-cell"]');
+
+    expect(cell?.style.getPropertyValue('text-align')).toBe('center');
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="walls-table"] th[data-role="th-hard"]',
+      )?.style.getPropertyValue('text-align'),
+    ).toBe('center');
+    expect(
+      styleRule(
+        'body[data-page="options"] [data-role="wall-cell"][data-empty="true"]::after',
+      )?.style.getPropertyValue('border'),
+    ).toContain('dashed');
+    expect(
+      styleRule('body[data-page="options"] [data-role="wall-check"]')?.style.getPropertyValue(
+        'appearance',
+      ),
+    ).toBe('none');
   });
 
   it('marks the on state of the popup with a dot', () => {
@@ -613,13 +695,9 @@ describe('the stylesheet', () => {
     ).toBe('initial');
   });
 
-  it('marks the wall type small and uppercase, as the source label is', () => {
-    const label = styleRule('body[data-page="popup"] [data-role="site-wall"]');
-
-    expect(label?.style.getPropertyValue('text-transform')).toBe('uppercase');
-    expect(label?.style.getPropertyValue('font-size')).toBe('9.5px');
-    expect(label?.style.getPropertyValue('letter-spacing')).toBe('0.12em');
-    expect(label?.style.getPropertyValue('color')).toBe('var(--muted)');
+  it('keeps the site block free of a second line of prose', () => {
+    expect(styleRule('body[data-page="popup"] [data-role="site-wall"]')).toBeNull();
+    expect(styleRule('body[data-page="popup"] [data-role="site-detail"]')).toBeNull();
   });
 
   it('leads a failure with a mark and an engine link with an arrow', () => {

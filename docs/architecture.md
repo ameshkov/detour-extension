@@ -11,10 +11,10 @@ backend.
 extension  →  packages/shared  ←  dummy server
 ```
 
-`packages/shared` holds the list types, the schema, the host and path
-matching, the query cleaner, and the SHA-256 helper that keys the caches. The
-extension and the dummy server import it. It imports neither of them, so the
-dependency points at the shared package.
+`packages/shared` holds the served list contract, the host and path matching,
+the query cleaner, and the SHA-256 helper that keys the caches and names the
+list. The extension and the dummy server import it. It imports neither of
+them, so the dependency points at the shared package.
 
 The production backend is outside this repository. It implements the
 [backend contract](#backend-contract). `dev/dummy-server.ts` is a local
@@ -27,13 +27,13 @@ the load. The service worker owns the list, the allowances, the metadata, and
 the navigation. The block page owns presentation, and the popup and the
 options page show what the service worker stored.
 
-| Surface        | Responsibility                                                          | Files                                                                                                                                                         | Talks to                |
-| -------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Guard          | Decide fast, stop the load, report the URL.                             | `guard.ts`, `guard-entry.ts`                                                                                                                                  | Service worker          |
-| Service worker | Own the list, the allowances, the metadata, and the navigation.         | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts` | Storage, backend API    |
-| Block page     | Explain the wall, show the source, load the alternatives.               | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                               | Storage, service worker |
-| Popup          | Show the state, the page's verdict, the pause, and the settings.        | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
-| Options page   | List the allowances, remove one, set the two settings, clear the cache. | `options.html`, `options-entry.ts`, `options.ts`                                                                                                              | Storage, service worker |
+| Surface        | Responsibility                                                                | Files                                                                                                                                                         | Talks to                |
+| -------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Guard          | Decide fast, stop the load, report the URL.                                   | `guard.ts`, `guard-entry.ts`                                                                                                                                  | Service worker          |
+| Service worker | Own the list, the allowances, the metadata, and the navigation.               | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts` | Storage, backend API    |
+| Block page     | Name the site and its walls, show the source, load the alternatives.          | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                               | Storage, service worker |
+| Popup          | Show the state, the page's verdict and walls, the pause, and settings.        | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
+| Options page   | List the allowances, set the walls and the reading settings, clear the cache. | `options.html`, `options-entry.ts`, `options.ts`                                                                                                              | Storage, service worker |
 
 The source files sit in `packages/extension/src`. The guard keeps one
 module-level marker for the document and draws at most one anchor, only for a
@@ -105,7 +105,8 @@ throws across the boundary.
 | `pause`            | `{ until, session }`      | `{ ok: true, pauseUntil, session }`                                  |
 | `clearCache`       | none                      | `{ ok: true, cleared }`                                              |
 
-`site` is `{ domain, name, wall }` from the list, or `null`. `meta` is `null`
+`site` is `{ domain, name, walls }` from the list, or `null`, and each wall is
+`{ category, type }`. `meta` is `null`
 or `{ title, description }`, and each field is a string or `null`. `answer`
 is `null` or the backend's alternatives answer. `scope` is `tab`, `session`,
 or `always`. `cleared` is the number of storage keys that `clearCache`
@@ -161,12 +162,18 @@ stay.
 | `meta:<sha256(url)>` | local   | service worker | 7 days, 500 entries       |
 | `alt:<sha256(url)>`  | local   | block page     | 24 hours                  |
 
-`settings` holds `enabled`, `autoOpenBest`, and `imagesEnabled`, and its
-default is `{ enabled: true, autoOpenBest: false, imagesEnabled: true }`.
+`settings` holds `enabled`, `autoOpenBest`, `imagesEnabled`, and `walls`, and
+its default is `{ enabled: true, autoOpenBest: false, imagesEnabled: true,
+walls: { hard: ['adblock'], soft: ['adblock'], metered: [] } }`. `walls` groups
+the categories the reader chose by the type that presents them, so one reader
+can stop an ad-blocker wall that covers the article and leave a paywall that
+replaces it alone.
 
 The allowance check runs in this order: the extension is enabled, the pause
-has passed, the list is not `disabled`, the URL is listed, and no
-`allowAlways`, `allowSession`, or `allowTabs` entry covers the host. A tab
+has passed, the list is not `disabled`, the URL is listed, one of the entry's
+walls is a wall the reader chose, and no `allowAlways`, `allowSession`, or
+`allowTabs` entry covers the host. A site whose walls are all switched off
+loads, exactly as an unlisted site does. A tab
 entry also covers a tab that the entry's tab opened. Closing a tab removes its
 entries.
 
@@ -177,9 +184,11 @@ answers `getAlternatives`, or writes an allowance. A failed navigation keeps
 the key, so the guard's fallback link still opens a page whose requests
 answer.
 
-`list` holds `{ storageVersion, fetchedAt, list }`. `storageVersion` is the
-extension's own storage format, and it is `1`. A stored envelope with another
-`storageVersion` is discarded, and the extension uses the bundled list.
+`list` holds `{ storageVersion, fetchedAt, listId, list }`. `storageVersion`
+is the extension's own storage format, and it is `2`. `listId` is the SHA-256
+of the stored list, and a report carries it. A stored envelope with another
+`storageVersion`, or without an identifier, is discarded, and the extension
+uses the bundled list.
 
 ### Metadata
 
@@ -224,8 +233,12 @@ image appears only when `imagesEnabled` is on and the answer carries one. A row
 holds two lines of text under the tile: the title, then the domain in ink with
 the description after it, one middot apart.
 
-The headline is followed by one paragraph: the practice in `--muted`, and the
-sentence that judges it in `--ink`.
+The headline names the site and counts the walls that the list records for it,
+and a row of pills follows it. One pill names one wall: the category in ink, a
+middot, and the type in grey. A page that carries an ad-blocker wall adds one
+sentence under the pills, and a page that carries another wall alone adds
+none, because a paywall, a consent dialog, or an age check is the publisher's
+business.
 
 The fallback box holds an editable query and four engine links, in the order
 DuckDuckGo, Brave, Google, and Bing. The query is the answer's own query when
@@ -237,8 +250,10 @@ shows the note, the `Open <site> instead` action, and `Keep waiting`.
 
 The action row follows the page. `Open <site> anyway` grants the tab
 allowance and opens the site, and its caret opens a menu of the other two
-scopes. The menu opens above the row when the row sits at the foot of the
-window, so a scope is never past the edge of the viewport.
+scopes. The menu hangs off the split control itself, so the gap above or below
+it is the sheet's own 6 px, and it opens above the control when there is no
+room below. It closes on Escape, on a second press of the caret, on a press of
+a scope, and on a press anywhere else on the page.
 
 The countdown starts when `autoOpenBest` is on and at least one alternative
 exists. It counts 3, 2, 1, and then navigates the tab to the first
@@ -254,7 +269,7 @@ as it renders. The page caches a finished answer under `alt:<sha256(url)>` for
 
 `Report a problem` is a quiet link to
 `https://github.com/ameshkov/detour-extension/issues/new`. The body carries the
-blocked URL, the list version, and the extension version.
+blocked URL, the list identifier, and the extension version.
 
 The page navigates through two injected functions, so a test drives it without
 a browser navigation: `navigate` for this tab and `openTab` for a new one.
@@ -264,12 +279,12 @@ a browser navigation: `navigate` for this tab and `openTab` for a new one.
 The popup is 340 px wide. Its header carries the mark tile, the wordmark, the
 state, and the switch of `settings.enabled`. Below it is a block about the page
 in the tab the popup was opened from: the site and whether the list carries it,
-the sentence for its wall type, and one action. The verdict is a word and a
+the pills of its walls, and one action. The verdict is a word and a
 colour: the site takes the accent when the list carries it and the muted tone
 when it does not, so no dot carries the answer. When the list carries the site,
 the action is `Show alternatives` and it sends `showAlternatives`; when it does
 not, the action is the sentence `If you see a wall here, report it.`, a link
-that carries the page, the list version, and the extension version into a
+that carries the page, the list identifier, and the extension version into a
 prefilled issue. A page that names no site — a browser page, a store page, a
 `file:` — hides the block.
 
@@ -284,8 +299,12 @@ opens the options page. The footer keeps two links, `How it works` and
 
 The options page is 640 px at most. It lists every entry of the three
 allowance stores with its scope and its `addedAt` date as a UTC `YYYY-MM-DD`,
-and it removes one entry at a time. It also holds the two reading settings,
-which are `autoOpenBest` and `imagesEnabled`. Its cache section clears the
+and it removes one entry at a time. It also holds the walls table,
+whose rows are the seven categories and whose columns are the three types, and
+the two reading settings, which are `autoOpenBest` and `imagesEnabled`. A cell
+marked as empty cannot be ticked, because only a subscription limits a count.
+The table writes the whole settings record through `setSettings`, so a press
+keeps the reading settings and the wall choice of every other cell. Its cache section clears the
 list, the cached answers, and the cached page reads after a confirmation, and
 it reports how many entries the worker removed.
 
@@ -311,8 +330,6 @@ origin with no path, so every request is the origin followed by one route.
 
 ```json
 {
-  "version": 1,
-  "updated": "2026-11-16",
   "disabled": false,
   "avoid": [],
   "prefer": [],
@@ -320,12 +337,15 @@ origin with no path, so every request is the origin followed by one route.
 }
 ```
 
-A site carries `domain`, `name`, `wall`, `paths`, `note`, `avoid`, and
-`prefer`. `version` is an integer of 1 or more. `disabled` is the kill switch.
+A site carries `domain`, `name`, `walls`, `paths`, `note`, `avoid`, and
+`prefer`. A wall carries `category` and `type`. `disabled` is the kill switch.
+The list carries no version and no date: the commit that produced the artifact
+is the version, and the SHA-256 of the body is the identifier that the `ETag`
+carries.
 
-A successful answer is stored with the time it was fetched. The extension
-accepts a valid content version newer than the bundled one, because the
-version is a revision of the list and not a compatibility number.
+A successful answer is stored with the time it was fetched and the SHA-256 of
+the parsed list. Any schema-valid answer replaces the stored list, because a
+newer body is a newer revision.
 
 ### Alternatives
 
@@ -426,20 +446,28 @@ It signs image links with `HMAC-SHA256` and the fixed local key
 one.
 
 The list comes from `packages/extension/src/sites.json`, which
-`pnpm list:build` writes. The fixture pages are in the same module, so a test
-starts one server and reads real HTTP answers.
+`pnpm list:build` writes. The `ETag` of `GET /v1/list` is the SHA-256 of the
+served body. The fixture pages are in the same module, so a test starts one
+server and reads real HTTP answers.
 
 ## The list
 
-The source is `sites/sites.yaml`. `pnpm list:build` validates the source and
-writes `packages/extension/src/sites.json`. The file is generated, and
-`.gitignore` keeps it out of the repository.
+The list itself lives in the `detour-list` repository. This repository keeps a
+copy of its artifact, because a worker with no stored list needs a list to
+read, and because the extension must not fetch the list from the repository
+host at run time.
+
+`pnpm list:sync` copies `dist/sites.json` from a `detour-list` checkout into
+`sites/sites.release.json`. `DETOUR_LIST_PATH` names another checkout.
+`pnpm list:build` validates that copy and writes two generated files:
+`packages/extension/src/sites.json`, and its identifier in `sites-id.ts`. Both
+are generated, and `.gitignore` keeps them out of the repository.
 
 The dev list is `sites/sites.dev.yaml`, and only `pnpm list:build:dev` reads
-it. That command appends the overlay entries to the release entries, keeps the
-release `version`, `disabled`, `avoid`, and `prefer`, and sets `updated` to
-the latest of the release date and every overlay `verified` date. The release
-list carries no local entry, and the release build never reads the overlay.
+it. That command appends the overlay entries to the release entries. The
+release list carries no local entry, and the release build never reads the
+overlay. The overlay uses the shape of the served list, so it carries no
+editorial fields.
 
 ## The local stack
 

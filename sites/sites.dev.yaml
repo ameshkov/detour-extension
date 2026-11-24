@@ -1,8 +1,13 @@
+# The local overlay. Only pnpm list:build:dev reads this file, and it adds these
+# entries to the release artifact. A publisher never enters this file. The
+# overlay uses the shape of the served list, so it carries no editorial fields.
 sites:
   - domain: 127.0.0.1
     name: Local fixture
-    wall: hard
+    walls:
+      - category: adblock
+        type: hard
+      - category: paywall
+        type: metered
     paths: ['/walled/*']
     note: Local fixture page for development; it is not a publisher.
-    verified: 2026-11-14
-    evidence: sites/evidence/127.0.0.1.md

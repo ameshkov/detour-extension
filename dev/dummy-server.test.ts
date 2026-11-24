@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SitesJsonSchema } from '@detour/shared';
@@ -6,8 +8,6 @@ import type { DummyServer } from './dummy-server';
 import { startDummyServer } from './dummy-server';
 
 const LIST = SitesJsonSchema.parse({
-  version: 1,
-  updated: '2026-11-16',
   disabled: false,
   avoid: [],
   prefer: [],
@@ -15,7 +15,7 @@ const LIST = SitesJsonSchema.parse({
     {
       domain: '127.0.0.1',
       name: 'Local fixture',
-      wall: 'hard',
+      walls: [{ category: 'adblock', type: 'hard' }],
       paths: ['/walled/*'],
       note: 'A local fixture host.',
       avoid: [],
@@ -54,17 +54,22 @@ async function alternativesFor(body: unknown): Promise<Response> {
 }
 
 describe('the dummy server list route', () => {
-  it('serves the list with a version tag', async () => {
+  it('serves the list with an entity tag of the body', async () => {
     const response = await fetch(`${server.origin}/v1/list`);
+    const tag = `"${createHash('sha256')
+      .update(await response.clone().text())
+      .digest('hex')}"`;
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('etag')).toBe('"v1"');
+    expect(response.headers.get('etag')).toBe(tag);
     expect(await response.json()).toEqual(LIST);
   });
 
   it('answers 304 for the current tag', async () => {
+    const first = await fetch(`${server.origin}/v1/list`);
+    const tag = first.headers.get('etag') ?? '';
     const response = await fetch(`${server.origin}/v1/list`, {
-      headers: { 'if-none-match': '"v1"' },
+      headers: { 'if-none-match': tag },
     });
 
     expect(response.status).toBe(304);

@@ -5,11 +5,15 @@ import type { AlternativesAnswer } from './alternatives';
 import { DEFAULT_SETTINGS, MESSAGE } from './constants';
 import { isAlternativesResponse, isGetMetaResponse } from './messages';
 import type { PageMeta } from './metadata';
+import { BUNDLED_LIST_ID } from './sites-id';
 import type { Settings } from './storage';
-import { readList, readSettings } from './storage';
+import { readList, readListId, readSettings } from './storage';
+import { defaultWalls } from './walls';
 
 export type BlockState = {
   list: SitesJson | null;
+  /** The SHA-256 of the list in use, which the report names. */
+  listId: string;
   settings: Settings;
 };
 
@@ -36,14 +40,18 @@ export function askMeta(url: string): Promise<PageMeta | null> {
     .catch(() => null);
 }
 
-/** The list and the settings, or the defaults when a read fails. */
+/** The list, its identifier, and the settings, or the defaults when a read fails. */
 export async function readPageState(): Promise<BlockState> {
   try {
-    const [list, settings] = await Promise.all([readList(), readSettings()]);
+    const [list, listId, settings] = await Promise.all([readList(), readListId(), readSettings()]);
 
-    return { list, settings };
+    return { list, listId, settings };
   } catch {
-    return { list: null, settings: { ...DEFAULT_SETTINGS } };
+    return {
+      list: null,
+      listId: BUNDLED_LIST_ID,
+      settings: { ...DEFAULT_SETTINGS, walls: defaultWalls() },
+    };
   }
 }
 

@@ -1,4 +1,4 @@
-import type { SitesJson } from '@detour/shared';
+import type { SitesJson, WallCategory } from '@detour/shared';
 import { sha256Hex } from '@detour/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +10,7 @@ import { writeMetaCache } from './metadata-cache';
 import type { FetchLike } from './net';
 import type { ServiceWorkerDeps } from './service-worker';
 import { handleMessage, pruneCapability, pruneTabAllowances, refreshList } from './service-worker';
+import { BUNDLED_LIST_ID } from './sites-id';
 import { BUNDLED_LIST, writeStoredList } from './storage';
 
 const NOW = 1_700_000_000_000;
@@ -33,11 +34,19 @@ const CACHED_URL = 'https://www.cnet.com/news/cached-story/';
 const REFUSED_URL = 'https://www.cnet.com/news/refused-story/';
 const MEMOIZED_URL = 'https://www.cnet.com/news/memoized-story/';
 
-const CNET_SITE = { domain: 'cnet.com', name: 'CNET', wall: 'soft' };
+const CNET_SITE = {
+  domain: 'cnet.com',
+  name: 'CNET',
+  walls: [{ category: 'adblock', type: 'soft' }],
+};
+
+const STORED_ID = 'a'.repeat(64);
+
+async function idOf(list: SitesJson): Promise<string> {
+  return sha256Hex(JSON.stringify(list));
+}
 
 const NETWORK_LIST: SitesJson = {
-  version: BUNDLED_LIST.version + 1,
-  updated: '2026-11-13',
   disabled: false,
   avoid: [],
   prefer: [],
@@ -45,13 +54,18 @@ const NETWORK_LIST: SitesJson = {
     {
       domain: 'forbes.com',
       name: 'Forbes',
-      wall: 'hard',
+      walls: [{ category: 'adblock', type: 'hard' }],
       paths: [],
       note: 'A full-page wall for readers who use an ad blocker.',
       avoid: [],
       prefer: [],
     },
   ],
+};
+
+const PAYWALL_LIST: SitesJson = {
+  ...NETWORK_LIST,
+  sites: [{ ...NETWORK_LIST.sites[0]!, walls: [{ category: 'paywall', type: 'hard' }] }],
 };
 
 const METADATA_HTML =
@@ -140,6 +154,63 @@ describe('the isBlocked handler', () => {
       ok: true,
       blocked: true,
       site: CNET_SITE,
+    });
+  });
+
+  it('passes a page whose walls are all switched off', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.settings = {
+      enabled: true,
+      walls: { hard: [], soft: [], metered: [] },
+    };
+
+    await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
+      ok: true,
+      blocked: false,
+      site: null,
+    });
+  });
+
+  it('passes a paywall while the reader stops ad-blocker walls alone', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.list = {
+      storageVersion: LIST_STORAGE_VERSION,
+      fetchedAt: NOW,
+      listId: STORED_ID,
+      list: PAYWALL_LIST,
+    };
+
+    await expect(
+      handleMessage({ type: 'isBlocked', url: FORBES_URL }, {}, deps()),
+    ).resolves.toEqual({ ok: true, blocked: false, site: null });
+  });
+
+  it('blocks a paywall that the reader asked for', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.list = {
+      storageVersion: LIST_STORAGE_VERSION,
+      fetchedAt: NOW,
+      listId: STORED_ID,
+      list: PAYWALL_LIST,
+    };
+    fake.storage.local.values.settings = {
+      enabled: true,
+      walls: { hard: ['paywall'], soft: [], metered: [] },
+    };
+
+    await expect(
+      handleMessage({ type: 'isBlocked', url: FORBES_URL }, {}, deps()),
+    ).resolves.toEqual({
+      ok: true,
+      blocked: true,
+      site: {
+        domain: 'forbes.com',
+        name: 'Forbes',
+        walls: [{ category: 'paywall', type: 'hard' }],
+      },
     });
   });
 
@@ -233,20 +304,24 @@ describe('the isBlocked handler', () => {
 
   it('blocks a child of an allowed tab on another host', async () => {
     const fake = installFakeChrome();
-    const expressUrl = 'https://www.express.co.uk/news/uk/1234567/a-story';
+    const zdnetUrl = 'https://www.zdnet.com/article/a-story/';
 
     fake.storage.session.values.allowTabs = [{ host: 'cnet.com', tabId: 7, addedAt: NOW }];
 
     await expect(
       handleMessage(
-        { type: 'isBlocked', url: expressUrl },
+        { type: 'isBlocked', url: zdnetUrl },
         { tab: { id: 9, openerTabId: 7 } },
         deps(),
       ),
     ).resolves.toEqual({
       ok: true,
       blocked: true,
-      site: { domain: 'express.co.uk', name: 'Daily Express', wall: 'soft' },
+      site: {
+        domain: 'zdnet.com',
+        name: 'ZDNET',
+        walls: [{ category: 'adblock', type: 'soft' }],
+      },
     });
   });
 
@@ -256,6 +331,7 @@ describe('the isBlocked handler', () => {
     fake.storage.local.values.list = {
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: NOW,
+      listId: STORED_ID,
       list: { ...BUNDLED_LIST, disabled: true },
     };
 
@@ -269,14 +345,18 @@ describe('the isBlocked handler', () => {
   it('serves the stored list before the bundled list', async () => {
     installFakeChrome();
 
-    await writeStoredList(NOW, NETWORK_LIST);
+    await writeStoredList(NOW, NETWORK_LIST, STORED_ID);
 
     await expect(
       handleMessage({ type: 'isBlocked', url: FORBES_URL }, {}, deps()),
     ).resolves.toEqual({
       ok: true,
       blocked: true,
-      site: { domain: 'forbes.com', name: 'Forbes', wall: 'hard' },
+      site: {
+        domain: 'forbes.com',
+        name: 'Forbes',
+        walls: [{ category: 'adblock', type: 'hard' }],
+      },
     });
     await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
       ok: true,
@@ -503,6 +583,7 @@ describe('the metadata path', () => {
     fake.storage.local.values.list = {
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: NOW,
+      listId: STORED_ID,
       list: { ...BUNDLED_LIST, disabled: true },
     };
 
@@ -524,6 +605,7 @@ describe('the metadata path', () => {
     fake.storage.local.values.list = {
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: NOW,
+      listId: STORED_ID,
       list: { ...BUNDLED_LIST, disabled: true },
     };
 
@@ -1024,7 +1106,16 @@ describe('the allowance handlers', () => {
 describe('the settings handler', () => {
   it('stores the reading settings', async () => {
     const fake = installFakeChrome();
-    const settings = { enabled: false, autoOpenBest: true, imagesEnabled: false };
+    const settings = {
+      enabled: false,
+      autoOpenBest: true,
+      imagesEnabled: false,
+      walls: {
+        hard: ['adblock'] as WallCategory[],
+        soft: ['adblock'] as WallCategory[],
+        metered: [] as WallCategory[],
+      },
+    };
 
     await expect(handleMessage({ type: 'setSettings', settings }, {}, deps())).resolves.toEqual({
       ok: true,
@@ -1039,12 +1130,15 @@ describe('the settings handler', () => {
     });
   });
 
-  it('rejects settings that are not three booleans', async () => {
+  it('rejects settings without the walls', async () => {
     const fake = installFakeChrome();
 
     await expect(
       handleMessage(
-        { type: 'setSettings', settings: { enabled: true, autoOpenBest: true } },
+        {
+          type: 'setSettings',
+          settings: { enabled: true, autoOpenBest: true, imagesEnabled: true },
+        },
         {},
         deps(),
       ),
@@ -1197,7 +1291,7 @@ describe('the list refresh', () => {
     const { fetchImpl, calls } = recordingFetch(() => listResponse(NETWORK_LIST));
 
     await expect(refreshList(deps({ fetchImpl }))).resolves.toEqual({
-      version: NETWORK_LIST.version,
+      listId: await idOf(NETWORK_LIST),
       source: 'network',
       disabled: false,
     });
@@ -1208,6 +1302,7 @@ describe('the list refresh', () => {
     expect(fake.storage.local.values.list).toEqual({
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: NOW,
+      listId: await idOf(NETWORK_LIST),
       list: NETWORK_LIST,
     });
   });
@@ -1216,10 +1311,10 @@ describe('the list refresh', () => {
     const fake = installFakeChrome();
     const { fetchImpl } = recordingFetch(() => new Response('busy', { status: 503 }));
 
-    await writeStoredList(NOW - 1_000, NETWORK_LIST);
+    await writeStoredList(NOW - 1_000, NETWORK_LIST, STORED_ID);
 
     await expect(refreshList(deps({ fetchImpl }))).resolves.toEqual({
-      version: NETWORK_LIST.version,
+      listId: STORED_ID,
       source: 'stored',
       disabled: false,
     });
@@ -1227,6 +1322,7 @@ describe('the list refresh', () => {
     expect(fake.storage.local.values.list).toEqual({
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: NOW - 1_000,
+      listId: STORED_ID,
       list: NETWORK_LIST,
     });
   });
@@ -1243,7 +1339,7 @@ describe('the list refresh', () => {
         }),
       ),
     ).resolves.toEqual({
-      version: BUNDLED_LIST.version,
+      listId: BUNDLED_LIST_ID,
       source: 'bundled',
       disabled: BUNDLED_LIST.disabled,
     });
@@ -1255,7 +1351,7 @@ describe('the list refresh', () => {
     const { fetchImpl } = recordingFetch(() => listResponse(disabled));
 
     await expect(refreshList(deps({ fetchImpl }))).resolves.toEqual({
-      version: disabled.version,
+      listId: await idOf(disabled),
       source: 'network',
       disabled: true,
     });
@@ -1263,6 +1359,7 @@ describe('the list refresh', () => {
     expect(fake.storage.local.values.list).toEqual({
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: NOW,
+      listId: await idOf(disabled),
       list: disabled,
     });
     await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({

@@ -3,20 +3,35 @@ import { z } from 'zod';
 export const WallTypeSchema = z
   .enum(['hard', 'soft', 'metered'])
   .describe(
-    'The kind of wall. hard replaces the article, soft covers it, and metered limits the number of articles.',
+    'How the wall presents. hard replaces the article, soft covers it, and metered limits the number of articles.',
   );
 
 export type WallType = z.infer<typeof WallTypeSchema>;
 
+export const WallCategorySchema = z
+  .enum(['adblock', 'paywall', 'registration', 'consent', 'region', 'vpn', 'age'])
+  .describe(
+    "Why the wall appears. adblock asks the reader to disable the ad blocker, paywall asks for a subscription, registration asks for an account, consent blocks the content until the reader accepts cookies or tracking, region refuses the reader's country, vpn refuses a VPN or proxy address, and age asks the reader to verify their age.",
+  );
+
+export type WallCategory = z.infer<typeof WallCategorySchema>;
+
+export const WallSchema = z
+  .object({
+    category: WallCategorySchema,
+    type: WallTypeSchema,
+  })
+  .describe('One wall that a reader meets, with its category and its type.');
+
+export type Wall = z.infer<typeof WallSchema>;
+
 const DOMAIN_PATTERN =
   /^(?!www\.)(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const PATH_GLOB_PATTERN = /^\/[^\s?#]*$/;
-const EVIDENCE_PATTERN = /^sites\/evidence\/[a-z0-9.-]+\.md$/;
 
 const DOMAIN_MESSAGE =
   'a domain is lowercase, has at least two labels, and carries no www. prefix, scheme, path, or port';
 const PATH_GLOB_MESSAGE = 'a path glob starts with / and holds no whitespace, ?, or #';
-const EVIDENCE_MESSAGE = 'an evidence path is a file under sites/evidence/ that ends with .md';
 
 export const DomainEntrySchema = z
   .object({
@@ -29,14 +44,24 @@ export const DomainEntrySchema = z
 
 export type DomainEntry = z.infer<typeof DomainEntrySchema>;
 
-export const SiteEntrySchema = z
+/**
+ * One publisher of the artifact that a backend serves.
+ *
+ * The artifact drops the editorial fields `verified` and `evidence`, and the
+ * extension does not read the alternatives: a backend answers those. The
+ * extension keeps the fields that decide a stop and render the block page.
+ */
+export const ListedSiteSchema = z
   .object({
     domain: z
       .string()
       .regex(DOMAIN_PATTERN, DOMAIN_MESSAGE)
       .describe('The registrable domain of the publisher.'),
     name: z.string().min(1).describe('The publisher name, as the block page shows it.'),
-    wall: WallTypeSchema,
+    walls: z
+      .array(WallSchema)
+      .min(1, 'must name at least one wall')
+      .describe('Every wall that a reader meets here, with one entry per category.'),
     paths: z
       .array(z.string().regex(PATH_GLOB_PATTERN, PATH_GLOB_MESSAGE))
       .default([])
@@ -46,11 +71,6 @@ export const SiteEntrySchema = z
       .min(1)
       .max(200)
       .describe('One sentence on the wall, from 1 to 200 characters.'),
-    verified: z.iso.date().describe('The calendar date of the hand check.'),
-    evidence: z
-      .string()
-      .regex(EVIDENCE_PATTERN, EVIDENCE_MESSAGE)
-      .describe('The evidence document under sites/evidence/, ending with .md.'),
     avoid: z
       .array(DomainEntrySchema)
       .default([])
@@ -62,31 +82,13 @@ export const SiteEntrySchema = z
         'Domains that score 2 for this site in the ranking; a global prefer domain scores 1.',
       ),
   })
-  .describe('One listed publisher.');
+  .describe('One listed publisher, without the editorial fields.');
 
-export type SiteEntry = z.infer<typeof SiteEntrySchema>;
+export type ListedSite = z.infer<typeof ListedSiteSchema>;
 
-export const SiteDevListSchema = z
+/** The list as a backend serves it at `GET /v1/list`. */
+export const SitesJsonSchema = z
   .object({
-    sites: z
-      .array(SiteEntrySchema)
-      .min(1)
-      .describe('The entries that a development build adds to the release list.'),
-  })
-  .describe('The local overlay: entries that never reach the release list.');
-
-export type SiteDevList = z.infer<typeof SiteDevListSchema>;
-
-export const SiteListSchema = z
-  .object({
-    version: z
-      .number()
-      .int()
-      .min(1)
-      .describe('The list version, an integer of 1 or more that increments on every list change.'),
-    updated: z.iso
-      .date()
-      .describe('The calendar date of the last change. It is not before any verified date.'),
     disabled: z
       .boolean()
       .default(false)
@@ -99,11 +101,10 @@ export const SiteListSchema = z
       .array(DomainEntrySchema)
       .default([])
       .describe('Domains that score 1 for every source in the ranking.'),
-    sites: z.array(SiteEntrySchema).min(1).describe('The listed publishers, at least one.'),
+    sites: z.array(ListedSiteSchema).describe('The listed publishers.'),
   })
-  .describe('The site list: the editorial data that the extension and a backend read.')
+  .describe('The list as the extension and a backend consume it.')
   .superRefine((list, ctx) => {
-    const globalDomains = new Set([...list.avoid, ...list.prefer].map((entry) => entry.domain));
     const seenDomains = new Set<string>();
 
     list.sites.forEach((site, index) => {
@@ -117,48 +118,37 @@ export const SiteListSchema = z
 
       seenDomains.add(site.domain);
 
-      if (globalDomains.has(site.domain)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['sites', index, 'domain'],
-          message: `the site domain ${site.domain} is in the global avoid or prefer list`,
-        });
-      }
+      const seenCategories = new Set<string>();
 
-      if (site.verified > list.updated) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['updated'],
-          message: `the updated date ${list.updated} is before the verified date ${site.verified} of ${site.domain}`,
-        });
-      }
+      site.walls.forEach((wall, position) => {
+        if (seenCategories.has(wall.category)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['sites', index, 'walls', position, 'category'],
+            message: `duplicate wall category ${wall.category}`,
+          });
+        }
+
+        seenCategories.add(wall.category);
+
+        if (wall.type === 'metered' && wall.category !== 'paywall') {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['sites', index, 'walls', position, 'category'],
+            message: 'a metered wall has the paywall category',
+          });
+        }
+      });
     });
   });
 
-export type SiteList = z.infer<typeof SiteListSchema>;
+export type SitesJson = z.infer<typeof SitesJsonSchema>;
 
-export class ListValidationError extends Error {
-  readonly issues: string[];
+/** The local overlay: entries that a development build adds to the release list. */
+export const SitesJsonDevSchema = z
+  .object({
+    sites: z.array(ListedSiteSchema).min(1).describe('The entries that the overlay adds.'),
+  })
+  .describe('The local overlay, in the shape of the served list.');
 
-  constructor(issues: string[]) {
-    super(`invalid site list:\n${issues.join('\n')}`);
-    this.name = 'ListValidationError';
-    this.issues = issues;
-  }
-}
-
-function formatIssue(issue: z.core.$ZodIssue): string {
-  const path = issue.path.map((part) => String(part)).join('.');
-
-  return path === '' ? issue.message : `${path}: ${issue.message}`;
-}
-
-export function parseSiteList(input: unknown): SiteList {
-  const result = SiteListSchema.safeParse(input);
-
-  if (!result.success) {
-    throw new ListValidationError(result.error.issues.map(formatIssue));
-  }
-
-  return result.data;
-}
+export type SitesJsonDev = z.infer<typeof SitesJsonDevSchema>;

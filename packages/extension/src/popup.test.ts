@@ -15,13 +15,14 @@ import {
   SETTINGS_LABEL,
   SHOW_ALTERNATIVES_LABEL,
   SITE_REPORT_HINT,
-  WALL_LABEL,
-  WALL_PRACTICE,
+  WALL_CATEGORY_LABEL,
+  WALL_TYPE_LABEL,
 } from './copy';
 import { nextMidnight } from './pause';
 import { startPopup } from './popup';
 import type { Settings } from './storage';
 import { BUNDLED_LIST } from './storage';
+import { defaultWalls } from './walls';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 import { mountShell, readShell, role } from './testing/shell';
@@ -68,7 +69,8 @@ function storeList(): void {
   fake.storage.local.values[STORAGE.list] = {
     storageVersion: LIST_STORAGE_VERSION,
     fetchedAt: NOW,
-    list: { ...BUNDLED_LIST, version: 9, updated: '2026-11-05' },
+    listId: 'a'.repeat(64),
+    list: { ...BUNDLED_LIST, disabled: true },
   };
 }
 
@@ -121,22 +123,27 @@ afterEach(() => {
 });
 
 describe('the site block', () => {
-  it('says that a listed site is on the list and names the wall', async () => {
+  it('says that a listed site is on the list and draws its wall', async () => {
     await start();
 
     expect(role('site').hidden).toBe(false);
     expect(role('site-text').textContent).toBe('cnet.com is on the list');
     expect(role('site-row').dataset.listed).toBe('true');
-    expect(role('site-wall').hidden).toBe(false);
-    expect(role('site-wall').textContent).toBe(WALL_LABEL.soft);
-    expect(role('site-detail').textContent).toBe(WALL_PRACTICE.soft);
+    expect(role('site-walls').hidden).toBe(false);
+    expect(role('site-walls').textContent).toBe('Ad blocker·Soft');
     expect(role('site-alternatives').hidden).toBe(false);
     expect(role('site-alternatives-label').textContent).toBe(SHOW_ALTERNATIVES_LABEL);
     expect(role('site-report').hidden).toBe(true);
   });
 
-  it('names the wall of every type of entry', async () => {
-    for (const [wall, label] of Object.entries(WALL_LABEL)) {
+  it('draws the pill of every type of entry', async () => {
+    const walls = [
+      { category: 'adblock', type: 'hard' },
+      { category: 'adblock', type: 'soft' },
+      { category: 'paywall', type: 'metered' },
+    ] as const;
+
+    for (const wall of walls) {
       storeList();
 
       const entry = BUNDLED_LIST.sites[0]!;
@@ -144,12 +151,13 @@ describe('the site block', () => {
         list: { sites: Array<Record<string, unknown>> };
       };
 
-      list.list.sites = [{ ...entry, wall }];
+      list.list.sites = [{ ...entry, walls: [wall] }];
 
       await start();
 
-      expect(role('site-wall').textContent).toBe(label);
-      expect(role('site-detail').textContent).toBe(WALL_PRACTICE[wall as 'hard']);
+      expect(role('site-walls').textContent).toBe(
+        `${WALL_CATEGORY_LABEL[wall.category]}·${WALL_TYPE_LABEL[wall.type]}`,
+      );
     }
   });
 
@@ -161,8 +169,7 @@ describe('the site block', () => {
     expect(role('site').hidden).toBe(false);
     expect(role('site-text').textContent).toBe('example.com is not on the list');
     expect(role('site-row').dataset.listed).toBe('false');
-    expect(role('site-wall').hidden).toBe(true);
-    expect(role('site-detail').textContent).toBe('');
+    expect(role('site-walls').hidden).toBe(true);
     expect(role('site-alternatives').hidden).toBe(true);
     expect(role('site-report').hidden).toBe(false);
     expect(role('site-report').textContent).toBe(SITE_REPORT_HINT);
@@ -195,7 +202,7 @@ describe('the site block', () => {
     ]);
   });
 
-  it('holds no list version and no site count', () => {
+  it('holds no list identifier and no site count', () => {
     expect(SHELL).not.toContain('data-role="list"');
     expect(SHELL).not.toContain('<table');
   });
@@ -357,7 +364,12 @@ describe('the pause row', () => {
 
 describe('the switch of the list', () => {
   it('turns the list off from the header', async () => {
-    storeSettings({ enabled: true, autoOpenBest: true, imagesEnabled: true });
+    storeSettings({
+      enabled: true,
+      autoOpenBest: true,
+      imagesEnabled: true,
+      walls: defaultWalls(),
+    });
 
     await start();
 
@@ -369,7 +381,12 @@ describe('the switch of the list', () => {
     expect(messagesOfType('setSettings')).toEqual([
       {
         type: 'setSettings',
-        settings: { enabled: false, autoOpenBest: true, imagesEnabled: true },
+        settings: {
+          enabled: false,
+          autoOpenBest: true,
+          imagesEnabled: true,
+          walls: defaultWalls(),
+        },
       },
     ]);
 
@@ -379,7 +396,12 @@ describe('the switch of the list', () => {
   });
 
   it('shows off when the list is off', async () => {
-    storeSettings({ enabled: false, autoOpenBest: false, imagesEnabled: true });
+    storeSettings({
+      enabled: false,
+      autoOpenBest: false,
+      imagesEnabled: true,
+      walls: defaultWalls(),
+    });
 
     await start();
 
@@ -462,8 +484,7 @@ describe('the popup shell', () => {
       'site',
       'site-row',
       'site-text',
-      'site-wall',
-      'site-detail',
+      'site-walls',
       'site-report',
       'site-alternatives',
       'pause',

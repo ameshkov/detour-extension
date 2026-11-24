@@ -5,10 +5,6 @@ import {
   ALLOWED_SITES_INTRO,
   AUTO_OPEN_SETTING_DETAIL,
   AUTO_OPEN_SETTING_LABEL,
-  CACHE_CONFIRM,
-  CACHE_DETAIL,
-  CACHE_HEADING,
-  CLEAR_CACHE_LABEL,
   COLUMN_ADDED,
   COLUMN_SCOPE,
   COLUMN_SITE,
@@ -19,15 +15,15 @@ import {
   READING_HEADING,
   REMOVE_LABEL,
   SCOPE_LABEL,
-  cacheCleared,
   removeAllowanceLabel,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
 import type { RevokeMessage } from './messages';
-import { isClearCacheResponse } from './messages';
 import { createPageSender } from './page-send';
 import type { Settings } from './storage';
 import { readAllowances, readSettings } from './storage';
+import { renderCache } from './options-cache';
+import { renderWalls } from './options-walls';
 
 export type OptionsAllowance = {
   host: string;
@@ -163,6 +159,7 @@ export function renderOptions(view: OptionsView): void {
   setText('th-scope', COLUMN_SCOPE);
   setText('th-added', COLUMN_ADDED);
 
+  renderWalls(view);
   renderAllowances(view);
 
   for (const setting of READING_SETTINGS) {
@@ -170,42 +167,6 @@ export function renderOptions(view: OptionsView): void {
   }
 
   renderCache();
-}
-
-/**
- * The cache section. The reader confirms before a press drops the list, the
- * reads, and the answers, and the count the worker answers is what the page
- * shows. A worker that did not answer leaves the status hidden.
- */
-function renderCache(): void {
-  setText('cache-heading', CACHE_HEADING);
-  setText('cache-detail', CACHE_DETAIL);
-  setText('clear-cache', CLEAR_CACHE_LABEL);
-
-  const button = roleElement('clear-cache');
-
-  if (button === null) {
-    return;
-  }
-
-  button.onclick = (): void => {
-    if (!window.confirm(CACHE_CONFIRM)) {
-      return;
-    }
-
-    setHidden('cache-status', true);
-
-    sender.guard(async () => {
-      const answer: unknown = await chrome.runtime.sendMessage({ type: MESSAGE.clearCache });
-
-      if (!isClearCacheResponse(answer)) {
-        return;
-      }
-
-      setText('cache-status', cacheCleared(answer.cleared));
-      setHidden('cache-status', false);
-    });
-  };
 }
 
 /**

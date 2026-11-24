@@ -8,7 +8,11 @@ import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 const LISTED_URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
 const QUERY_URL = 'https://www.example.com/story?id=7&ref=home#top';
 const BLOCK_PAGE_URL = 'chrome-extension://jcncblagncbpbamfnekhdkomffdpehpk/block.html?u=x';
-const LISTED_SITE = { domain: 'cnet.com', name: 'CNET', wall: 'soft' } as const;
+const LISTED_SITE = {
+  domain: 'cnet.com',
+  name: 'CNET',
+  walls: [{ category: 'adblock', type: 'soft' }],
+} as const;
 
 type MessageAnswer = (message: unknown) => unknown;
 type StopSpy = ReturnType<typeof vi.fn>;

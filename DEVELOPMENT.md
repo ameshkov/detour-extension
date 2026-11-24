@@ -19,8 +19,8 @@ the manifests.
 
 ## The local stack
 
-`pnpm dev` builds the local list and starts two processes in the repository
-root:
+`pnpm dev` builds the bundled list with the local overlay and starts two
+processes in the repository root:
 
 | Process   | Address or output         | What it is                                                        |
 | --------- | ------------------------- | ----------------------------------------------------------------- |
@@ -104,8 +104,12 @@ The dummy server serves every page of a local run.
 | `/walled/redirect-to-open`                  | A listed page that refreshes to an unlisted host |
 | `/images/preview.png`, `/images/source.png` | The two images                                   |
 
-The dev overlay in `sites/sites.dev.yaml` lists `127.0.0.1` under `/walled/*`.
-The overlay is a development aid and it never enters the release list.
+The dev overlay in `sites/sites.dev.yaml` lists `127.0.0.1` under `/walled/*`,
+with an ad-blocker wall and a metered paywall. The default settings stop the
+ad-blocker wall, so the fixture stops and the block page shows both pills.
+Untick `Ad blocker` on the settings page, for the hard and the soft type, and
+the same page loads, because the paywall is not ticked. The overlay is a
+development aid and it never enters the release list.
 
 A blocked page caches its answer for 24 hours, so the second visit to
 `/walled/slow` or `/walled/fail` renders at once. Clear the cache in the
@@ -131,7 +135,7 @@ It answers these routes:
 
 | Route                   | Answer                                            |
 | ----------------------- | ------------------------------------------------- |
-| `GET /v1/list`          | The generated list, with an `ETag`                |
+| `GET /v1/list`          | The bundled list, with an `ETag` of the body      |
 | `POST /v1/alternatives` | Four saved results, an empty answer, or a failure |
 | `GET /v1/img`           | A signed image proxy                              |
 | `GET /`                 | A short page about the server                     |
@@ -150,7 +154,8 @@ missing source answers 400, a wrong signature answers 403, and a source that
 is not an image answers 415.
 
 The list comes from `packages/extension/src/sites.json`. Run
-`pnpm list:build` first if the file is missing.
+`pnpm list:build` first if the file is missing. The `ETag` is the SHA-256 of
+the served body, the same value that names the list in a report.
 
 The server reads its own origin from its port, so every image link and every
 page link points at the port that the server listens on.
@@ -192,8 +197,7 @@ the document checks, and the tests.
 
 ## Documents
 
-`pnpm docs:check` checks the links, the `pnpm` commands, and the generated
-list reference.
+`pnpm docs:check` checks the links and the `pnpm` commands.
 
-`pnpm docs:generate` writes `docs/list-format.md` from the schema. Never edit
-that file by hand.
+The list reference lives in `detour-list` at `docs/list-format.md`. This
+repository copies its artifact, so the reference is not duplicated here.

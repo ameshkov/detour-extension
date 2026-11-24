@@ -16,8 +16,6 @@ import {
   SITE_LISTED,
   SITE_REPORT_HINT,
   SITE_UNLISTED,
-  WALL_LABEL,
-  WALL_PRACTICE,
   pausedRowLabel,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
@@ -28,6 +26,7 @@ import type { PopupView } from './popup';
 import { reportUrl } from './report';
 import type { Settings } from './storage';
 import { currentVersion } from './version';
+import { renderWalls } from './wall-chips';
 
 type Tone = 'on' | 'off' | 'paused';
 
@@ -84,9 +83,7 @@ export function renderSite(view: PopupView): void {
   }
 
   setText('site-text', `${site.host} ${site.listed ? SITE_LISTED : SITE_UNLISTED}`);
-  setText('site-wall', site.wall === null ? '' : WALL_LABEL[site.wall]);
-  setText('site-detail', site.wall === null ? '' : WALL_PRACTICE[site.wall]);
-  setHidden('site-wall', !site.listed);
+  renderWalls('site-walls', site.listed ? site.walls : []);
 
   const row = roleElement('site-row');
 
@@ -120,7 +117,7 @@ export function renderSite(view: PopupView): void {
     report.textContent = SITE_REPORT_HINT;
     report.setAttribute(
       'href',
-      reportUrl({ url: site.url, listVersion: view.listVersion, extensionVersion: version }),
+      reportUrl({ url: site.url, listId: view.listId, extensionVersion: version }),
     );
   }
 }

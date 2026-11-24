@@ -4,13 +4,13 @@ import { hostOf } from './page-url';
 
 export type ReportInput = {
   url: string | null;
-  listVersion: number;
+  listId: string;
   extensionVersion: string;
 };
 
 /**
  * The prefilled issue form. The title names the site, and the body carries the
- * page, the list version, and the build, so a report arrives with the facts a
+ * page, the list, and the build, so a report arrives with the facts a
  * reader would otherwise have to look up.
  */
 export function reportUrl(input: ReportInput): string {

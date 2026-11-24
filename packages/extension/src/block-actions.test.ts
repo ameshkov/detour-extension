@@ -12,7 +12,7 @@ import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 import { mountShell, readShell, role } from './testing/shell';
 
 const URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-move/';
-const LIST_VERSION = 4;
+const LIST_ID = 'a'.repeat(64);
 const EXTENSION_VERSION = '0.1.0';
 
 let fake: FakeChrome;
@@ -24,7 +24,7 @@ function view(overrides: Partial<ActionsView> = {}): ActionsView {
     siteName: 'Forbes',
     host: 'forbes.com',
     listed: true,
-    listVersion: LIST_VERSION,
+    listId: LIST_ID,
     navigate: (url: string): void => {
       navigated.push(url);
     },
@@ -38,6 +38,11 @@ function press(name: string): void {
 
 function escapeOn(element: HTMLElement): void {
   element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+}
+
+/** A press that lands on one element and reaches the document the way a browser's does. */
+function pressElsewhere(target: EventTarget): void {
+  target.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
 }
 
 function allowMessages(): unknown[] {
@@ -199,6 +204,49 @@ describe('the allowance menu', () => {
     expect(document.activeElement).toBe(caret);
   });
 
+  it('closes the menu on a press outside it', () => {
+    renderActions(view());
+    press('open-menu');
+
+    pressElsewhere(document.body);
+
+    expect(role('scope-menu').hidden).toBe(true);
+    expect(role('open-menu').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('closes the menu on a press beside the row', () => {
+    renderActions(view());
+    press('open-menu');
+
+    pressElsewhere(role('headline'));
+
+    expect(role('scope-menu').hidden).toBe(true);
+  });
+
+  it('keeps the menu open on a press inside it', () => {
+    renderActions(view());
+    press('open-menu');
+
+    pressElsewhere(role('scope-session'));
+
+    expect(role('scope-menu').hidden).toBe(false);
+    expect(role('open-menu').getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('does not pull the focus back to the caret', () => {
+    const openSite = role('open-site');
+
+    renderActions(view());
+    openSite.focus();
+    press('open-menu');
+
+    pressElsewhere(role('headline'));
+
+    // The press elsewhere owns the focus, so closing the menu leaves it alone
+    // instead of returning the reader to the caret.
+    expect(document.activeElement).toBe(openSite);
+  });
+
   it('closes the menu on a second caret press', () => {
     renderActions(view());
 
@@ -211,6 +259,18 @@ describe('the allowance menu', () => {
 });
 
 describe('the open action', () => {
+  it('closes the menu of the scope it opens', async () => {
+    renderActions(view());
+    press('open-menu');
+    press('scope-always');
+
+    await vi.waitFor(() => {
+      expect(navigated).toEqual([URL]);
+    });
+
+    expect(role('scope-menu').hidden).toBe(true);
+  });
+
   it('opens the site in this tab by default', async () => {
     renderActions(view());
 
@@ -394,7 +454,7 @@ describe('a second render', () => {
 });
 
 describe('the report link', () => {
-  it('builds it from the url, the list version, and the extension version', () => {
+  it('builds it from the url, the list identifier, and the extension version', () => {
     renderActions(view());
 
     const link = role('report');
@@ -403,7 +463,7 @@ describe('the report link', () => {
     expect(href).toBe(
       reportUrl({
         url: URL,
-        listVersion: LIST_VERSION,
+        listId: LIST_ID,
         extensionVersion: EXTENSION_VERSION,
       }),
     );

@@ -1,3 +1,5 @@
+import { defaultWalls } from './walls';
+
 /**
  * The ten request names of the message contract between the contexts.
  */
@@ -48,11 +50,12 @@ export const PAUSE_DURATION_MS = 3600000;
 export const LIST_FETCH_TIMEOUT_MS = 5000;
 export const LIST_REFRESH_PERIOD_MINUTES = 360;
 export const LIST_REFRESH_ALARM = 'list-refresh';
-export const LIST_STORAGE_VERSION = 1;
+export const LIST_STORAGE_VERSION = 2;
 export const REPORT_ISSUE_URL = 'https://github.com/ameshkov/detour-extension/issues/new';
 
 export const DEFAULT_SETTINGS = {
   enabled: true,
   autoOpenBest: false,
   imagesEnabled: true,
+  walls: defaultWalls(),
 } as const;

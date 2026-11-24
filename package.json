@@ -7,10 +7,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build": "pnpm --filter @detour/extension build",
+    "build": "pnpm list:build && pnpm --filter @detour/extension build",
     "build:dev": "pnpm list:build:dev && pnpm --filter @detour/extension build:dev",
     "list:build": "tsx sites/build.ts",
     "list:build:dev": "tsx sites/build.ts --dev",
+    "list:sync": "tsx sites/sync.ts",
     "dev": "tsx dev/run-dev.ts",
     "dummy-server": "tsx dev/dummy-server.ts",
     "test": "pnpm list:build && vitest run",
@@ -20,7 +21,6 @@
     "lint:fix": "eslint . --fix",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
-    "docs:generate": "tsx scripts/docs/generate-list-format.ts",
     "docs:check": "tsx scripts/check-docs.ts",
     "check": "pnpm list:build && pnpm typecheck && pnpm lint && pnpm format:check && pnpm docs:check && pnpm test"
   },

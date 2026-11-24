@@ -7,8 +7,6 @@ import { findSite } from './list-matching';
 describe('list matching', () => {
   it('finds a site by its host', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -16,7 +14,7 @@ describe('list matching', () => {
         {
           domain: 'forbes.com',
           name: 'Forbes',
-          wall: 'hard',
+          walls: [{ category: 'adblock', type: 'hard' }],
           paths: [],
           note: 'A wall.',
           avoid: [],
@@ -30,8 +28,6 @@ describe('list matching', () => {
 
   it('finds a site on a subdomain', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -39,7 +35,7 @@ describe('list matching', () => {
         {
           domain: 'forbes.com',
           name: 'Forbes',
-          wall: 'hard',
+          walls: [{ category: 'adblock', type: 'hard' }],
           paths: [],
           note: 'A wall.',
           avoid: [],
@@ -53,8 +49,6 @@ describe('list matching', () => {
 
   it('leaves a lookalike host alone', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -62,7 +56,7 @@ describe('list matching', () => {
         {
           domain: 'forbes.com',
           name: 'Forbes',
-          wall: 'hard',
+          walls: [{ category: 'adblock', type: 'hard' }],
           paths: [],
           note: 'A wall.',
           avoid: [],
@@ -76,8 +70,6 @@ describe('list matching', () => {
 
   it('matches only the listed path', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -85,7 +77,7 @@ describe('list matching', () => {
         {
           domain: 'example.com',
           name: 'Example',
-          wall: 'soft',
+          walls: [{ category: 'adblock', type: 'soft' }],
           paths: ['/walled/*'],
           note: 'A wall on one path.',
           avoid: [],
@@ -100,8 +92,6 @@ describe('list matching', () => {
 
   it('matches the whole site with no paths', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -109,7 +99,7 @@ describe('list matching', () => {
         {
           domain: 'example.com',
           name: 'Example',
-          wall: 'metered',
+          walls: [{ category: 'paywall', type: 'metered' }],
           paths: [],
           note: 'A wall on the whole site.',
           avoid: [],
@@ -123,8 +113,6 @@ describe('list matching', () => {
 
   it('answers null for a value that is not a url', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -132,7 +120,7 @@ describe('list matching', () => {
         {
           domain: 'forbes.com',
           name: 'Forbes',
-          wall: 'hard',
+          walls: [{ category: 'adblock', type: 'hard' }],
           paths: [],
           note: 'A wall.',
           avoid: [],
@@ -146,8 +134,6 @@ describe('list matching', () => {
 
   it('answers null for a site that is not listed', () => {
     const list = {
-      version: 1,
-      updated: '2026-11-12',
       disabled: false,
       avoid: [],
       prefer: [],
@@ -155,7 +141,7 @@ describe('list matching', () => {
         {
           domain: 'forbes.com',
           name: 'Forbes',
-          wall: 'hard',
+          walls: [{ category: 'adblock', type: 'hard' }],
           paths: [],
           note: 'A wall.',
           avoid: [],

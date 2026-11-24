@@ -1,22 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SiteList } from './list-schema';
-import { parseSiteList } from './list-schema';
+import { SitesJsonSchema } from './list-schema';
+import type { SitesJson } from './list-schema';
 import { findListedSite, hostMatches, pathMatches } from './match';
 
 const baseEntry = {
   domain: 'forbes.com',
   name: 'Forbes',
-  wall: 'hard',
+  walls: [{ category: 'adblock', type: 'hard' }],
   note: 'Full-page wall for readers with an ad blocker.',
-  verified: '2026-11-01',
-  evidence: 'sites/evidence/forbes.com.md',
 };
 
 type SiteInput = Omit<typeof baseEntry, 'domain'> & { domain: string; paths?: string[] };
 
-function listOf(sites: SiteInput[]): SiteList {
-  return parseSiteList({ version: 1, updated: '2026-11-12', sites });
+function listOf(sites: SiteInput[]): SitesJson {
+  return SitesJsonSchema.parse({ sites });
 }
 
 describe('host matching', () => {

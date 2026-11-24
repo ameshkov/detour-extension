@@ -1,8 +1,8 @@
 # Privacy
 
 Detour is a Chrome extension and a backend service. The extension stops a page
-that walls readers who use an ad blocker, and the backend finds the same
-story on a publisher that does not. This page states what the two of them do
+that puts a wall in front of a story, for the walls that you chose, and the
+backend finds the same story on a publisher that does not. This page states what the two of them do
 with your data.
 
 ## What leaves your browser
@@ -19,6 +19,10 @@ rest of your browsing, leaves the browser.
 The extension asks the backend for the site list as well. That request
 carries no page and no reader, and the answer is the same list for everyone.
 
+The walls that stop a page, and the other settings of the extension, stay in
+the browser's local storage. They never leave the device, and the backend
+receives nothing about the choices you made.
+
 ## When you choose a search engine
 
 When Detour finds no alternative, or when the search fails, the block page
@@ -33,7 +37,7 @@ policy. Detour sends nothing to the engine itself, and it sets no referrer.
 The block page carries a `Report a problem` link, and the popup carries the
 sentence `If you see a wall here, report it.` as a link, which it shows for a
 site the list does not carry. Each one opens a new issue form on the project's
-GitHub page, with the list version and the extension version already in the
+GitHub page, with the list identifier and the extension version already in the
 body. The block page's link adds the address of the page that Detour stopped,
 and the popup's link adds the address of the page in front of the reader. GitHub receives that text when the form opens.
 You can read and edit it before you post, and no issue exists until you press

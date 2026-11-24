@@ -19,7 +19,7 @@ export type ActionsView = {
   siteName: string | null;
   host: string | null;
   listed: boolean;
-  listVersion: number;
+  listId: string;
   navigate: (url: string) => void;
 };
 
@@ -30,15 +30,23 @@ const MENU_ITEMS: ReadonlyArray<readonly [string, AllowanceScope]> = [
 ];
 
 /**
- * The Escape key of the open menu. It lives on the document only while the menu
- * is open, so a reader who moved focus into a menu item still closes it.
+ * The two listeners of the open menu: Escape, and a press outside the control.
+ * Both live on the document only while the menu is open, so a reader who moved
+ * focus into a menu item still closes it, and a press anywhere else closes it
+ * the way a menu of the browser does.
  */
 let escapeListener: ((event: KeyboardEvent) => void) | null = null;
+let outsideListener: ((event: PointerEvent) => void) | null = null;
 
-function stopEscapeListener(): void {
+function stopMenuListeners(): void {
   if (escapeListener !== null) {
     document.removeEventListener('keydown', escapeListener);
     escapeListener = null;
+  }
+
+  if (outsideListener !== null) {
+    document.removeEventListener('pointerdown', outsideListener);
+    outsideListener = null;
   }
 }
 
@@ -65,7 +73,7 @@ function renderReport(view: ActionsView, link: HTMLElement | null): void {
     'href',
     reportUrl({
       url: view.original,
-      listVersion: view.listVersion,
+      listId: view.listId,
       extensionVersion: version,
     }),
   );
@@ -111,7 +119,7 @@ export function renderActions(view: ActionsView): void {
   const menu = roleElement('scope-menu');
   const original = view.original !== null && isWebUrl(view.original) ? view.original : null;
 
-  stopEscapeListener();
+  stopMenuListeners();
   setHidden('scope-menu', true);
   setHidden('actions', original === null);
   setHidden('action-error', true);
@@ -145,22 +153,41 @@ export function renderActions(view: ActionsView): void {
     caret?.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
 
-  const close = (): void => {
+  const close = (focus = true): void => {
     setOpen(false);
-    stopEscapeListener();
-    caret?.focus();
+    stopMenuListeners();
+
+    if (focus) {
+      caret?.focus();
+    }
   };
 
   const open = (): void => {
     setOpen(true);
     placeMenu(menu, caret);
-    stopEscapeListener();
+    stopMenuListeners();
     escapeListener = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         close();
       }
     };
+    outsideListener = (event: PointerEvent): void => {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (menu?.contains(target) === true || caret?.contains(target) === true) {
+        return;
+      }
+
+      // A press elsewhere closes the menu and leaves the focus where the reader
+      // put it, so the other control of the page answers the press.
+      close(false);
+    };
     document.addEventListener('keydown', escapeListener);
+    document.addEventListener('pointerdown', outsideListener);
   };
 
   if (caret !== null) {
@@ -183,6 +210,7 @@ export function renderActions(view: ActionsView): void {
   const openWith = (scope: AllowanceScope): (() => void) => {
     return (): void => {
       setHidden('action-error', true);
+      close(false);
       void openSite({ scope, url: original, navigate: view.navigate, listed: view.listed });
     };
   };

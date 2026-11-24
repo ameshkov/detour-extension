@@ -19,6 +19,18 @@ test('blocks the listed fixture article and shows a signed result image', async 
 
   await expect(page).toHaveURL(BLOCK_PAGE);
   await expect(page.locator('[data-role="headline"]')).toContainText('Local fixture');
+  await expect(page.locator('[data-role="headline"]')).toContainText('two walls');
+
+  const pills = page.locator('[data-role="wall"]');
+
+  await expect(pills).toHaveCount(2);
+  await expect(pills.first()).toContainText('Ad blocker');
+  await expect(pills.first()).toContainText('Hard');
+  await expect(pills.nth(1)).toContainText('Paywall');
+  await expect(pills.nth(1)).toContainText('Metered');
+  await expect(page.locator('[data-role="lede"]')).toContainText(
+    'An ad-blocker wall is an anti-user practice',
+  );
   await expect(page.locator('[data-role="alternatives"]')).toHaveAttribute('data-state', 'results');
   expect(await page.locator('[data-role="list"] li').count()).toBeGreaterThan(0);
 
@@ -84,17 +96,54 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
   const menu = page.locator('[data-role="scope-menu"]');
 
   await expect(menu).toBeVisible();
-  // The row sits at the foot of this window, so the menu leaves the row's
-  // bottom edge alone and opens above it.
+  // The control sits at the foot of this window, so the menu opens above it.
   await expect(menu).toHaveAttribute('data-side', 'top');
 
   const box = await menu.boundingBox();
   const viewport = page.viewportSize();
+  const caretBox = await caret.boundingBox();
 
   expect(box).not.toBeNull();
   expect(viewport).not.toBeNull();
+  expect(caretBox).not.toBeNull();
   expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+
+  // The menu hangs off the control itself, so the gap is the 6 pixels of the
+  // sheet and not the padding of the row above it.
+  const gap = caretBox!.y - (box!.y + box!.height);
+
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeLessThanOrEqual(9);
+
+  // A press anywhere else closes it, as a menu of the browser does.
+  await page.mouse.click(20, 20);
+  await expect(menu).toBeHidden();
+});
+
+test('lets a listed page load when the reader switches its wall off', async ({ context, page }) => {
+  const options = await context.newPage();
+
+  await options.goto(`chrome-extension://${extensionId}/options.html`);
+
+  const adblockHard = options.getByLabel('Ad blocker, hard wall');
+  const adblockSoft = options.getByLabel('Ad blocker, soft wall');
+
+  await expect(adblockHard).toBeChecked();
+  await adblockHard.uncheck();
+  await expect(adblockHard).not.toBeChecked();
+  await adblockSoft.uncheck();
+  await expect(adblockSoft).not.toBeChecked();
+  await expect(options.getByLabel('Paywall, metered wall')).not.toBeChecked();
+
+  await options.close();
+
+  // The fixture also carries a metered paywall, and the reader stops ad-blocker
+  // walls alone, so the page loads and its own title is the proof.
+  await page.goto(LISTED_URL);
+
+  await expect(page.locator('h1')).toHaveText(WALLED_TITLE);
+  await expect(page).not.toHaveURL(BLOCK_PAGE);
 });
 
 test('leaves a path outside the listed glob alone', async ({ page }) => {

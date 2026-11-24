@@ -85,7 +85,7 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
     setHidden('alternatives', true);
   }
 
-  const { list, settings } = await readPageState();
+  const { list, listId, settings } = await readPageState();
 
   renderListEntry(list, original);
 
@@ -96,7 +96,8 @@ export async function startBlockPage(options: BlockPageOptions): Promise<void> {
     siteName: site?.name ?? null,
     host: site?.domain ?? hostOf(original),
     listed: site !== null,
-    listVersion: list?.version ?? 0,
+    listId,
+
     navigate,
   });
 

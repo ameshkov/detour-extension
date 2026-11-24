@@ -22,8 +22,9 @@ Detour is a Chrome extension that stops a visit to a publisher that walls a
 story from readers who use an ad blocker, and it shows the same story from
 publishers that do not. It reads a site list, finds the alternatives through
 one backend origin, and renders the block page. This repository holds the
-extension, the shared list package, the site list, and a local dummy backend.
-The production backend is a separate service.
+extension, the shared list contract, a bundled copy of the site list, and a
+local dummy backend. The list itself lives in `detour-list`, and the production
+backend is a separate service.
 
 ## Technical Context
 
@@ -31,7 +32,8 @@ The production backend is a separate service.
   later, and pnpm 11 for the workspace. Chrome 120 or later for the extension.
 - **Primary Dependencies**: no runtime framework in the extension. esbuild
   builds the bundle. `tldts` provides the registrable domain and `zod` checks
-  the list schema. The dummy server uses `node:http` and `node:crypto`.
+  the served list. `yaml` parses the local overlay at build time. The dummy
+  server uses `node:http` and `node:crypto`.
 - **Storage**: `chrome.storage.local` and `chrome.storage.session` in the
   extension. The dummy server keeps no store.
 - **Testing**: Vitest, `happy-dom` for the extension, and Playwright for the
@@ -60,12 +62,12 @@ eslint.config.js       the lint rules
 dev/                   dummy-server.ts, run-dev.ts, and their tests
 e2e/                   extension.spec.ts and fixtures.ts
 scripts/               check-docs.ts, documents.test.ts, brand.test.ts
-scripts/docs/          the link, anchor, command, and generated-file checks
-sites/                 sites.yaml, sites.dev.yaml, build.ts, and the pipeline tests
-sites/evidence/        one checked note per list entry
+scripts/docs/          the link, anchor, and command checks
+sites/                 sites.release.json, sites.dev.yaml, build.ts, list-build.ts,
+                       sync.ts, and their tests
 sites/fixtures/pages/  three saved publisher pages for the metadata reader
-docs/                  architecture.md, brand.md, privacy.md, list-format.md
-packages/shared/       list types, schema, matching, query cleaner, hash
+docs/                  architecture.md, brand.md, privacy.md
+packages/shared/       list contract, matching, query cleaner, hash
 packages/extension/    manifest.json, the five bundles, the three pages, ui.css,
                        logo-mark.png, the four toolbar icons, the tests, and
                        scripts/build.ts
@@ -77,7 +79,8 @@ helpers in `src/testing/`.
 ## Build And Test Commands
 
 - **Install**: `pnpm install --frozen-lockfile`
-- **Build the site list**: `pnpm list:build`
+- **Sync the list artifact from detour-list**: `pnpm list:sync`
+- **Build the bundled list**: `pnpm list:build`
 - **Build the list with the local overlay**: `pnpm list:build:dev`
 - **Build the extension**: `pnpm build`
 - **Build against the local dummy server**: `pnpm build:dev`
@@ -96,7 +99,6 @@ helpers in `src/testing/`.
 - **Check formatting**: `pnpm format:check`
 - **Fix formatting**: `pnpm format:fix`
 - **Check the documents**: `pnpm docs:check`
-- **Regenerate the list reference**: `pnpm docs:generate`
 - **Run every gate**: `pnpm check`
 
 ## Contribution Instructions
@@ -109,11 +111,10 @@ helpers in `src/testing/`.
 - You MUST update the document that a change touches, in the same pull request.
   A change to behavior, a command, an endpoint, a storage key, a user-visible
   string, or data handling updates its document.
-- You MUST keep `docs/list-format.md` generated from the schema. Run
-  `pnpm docs:generate` after a schema change. Never edit the generated file by
-  hand.
-- You MUST add a list entry with evidence and a `verified` date. Never add a
-  domain that you did not check by hand.
+- You MUST NOT edit `sites/sites.release.json` by hand. Run `pnpm list:sync`,
+  then `pnpm list:build`, and commit both the artifact copy and the build.
+- You MUST make a list change in `detour-list`. This repository owns no
+  editorial data, and its `CONTRIBUTING.md` points there.
 - You MUST update the Project Structure section of this file when the
   structure changes.
 - If a task asks for a refactor or a new convention, add the rule to the
@@ -147,8 +148,9 @@ The extension runs in a sandbox with a small API surface:
 - Fail open. A guard error, a timeout, a missing list, or a `disabled` list
   lets the page load.
 - Design for updates. The list carries a storage version, and an envelope of
-  another version is discarded. The settings fall back per field. Both caches
-  age out by timestamp.
+  another version is discarded. The list identifier is the SHA-256 of the served
+  body, which is also the ETag that a backend publishes. The settings fall back per
+  field. Both caches age out by timestamp.
 - The backend origin is a build value. Do not read it from a page, from
   storage, or from the network at run time.
 
@@ -200,16 +202,23 @@ guard (guard-entry.ts)  →  service worker (background.ts)  →  block page (bl
   storage key except `alt:<sha256(url)>`. It records `sha256(url)` under
   `capability:<tabId>` in the session store before the block navigation and
   prunes it on tab close. It answers metadata, alternatives, and an allowance
-  only for the sender's own tab and the URL it recorded.
+  only for the sender's own tab and the URL it recorded. It stops a page only
+  when one of the entry's walls is a wall that the reader chose, so a site
+  whose walls are all switched off loads.
 - The block page renders state and sends messages. It never reads a page, and
   it writes only `alt:<sha256(url)>`, from a finished backend answer. It reads
   the list, the settings, and its `alt:` entry from storage directly. It runs
   only in a top-level document. Its four states, `loading`, `results`,
-  `empty`, and `error`, are the whole state set.
+  `empty`, and `error`, are the whole state set. It names the site, counts its
+  walls, and draws one pill per wall. The judgement sentence appears only for
+  an ad-blocker wall.
 - The popup renders the state, the verdict on the page of the active tab with
-  the action that fits it, the pause, and the settings.
-- The options page lists every allowance, holds the two reading settings, and
-  clears the cache after a confirmation.
+  the pills of its walls and the action that fits it, the pause, and the
+  settings.
+- The options page lists every allowance, holds the walls table and the two
+  reading settings, and clears the cache after a confirmation. The table has
+  one category per row and one type per column; a metered cell outside the
+  paywall row has no box.
 - The popup and the options page read storage directly and write only through
   a message.
 - The message contract is the only interface between the contexts. The service
@@ -232,9 +241,9 @@ route handler  →  pure function (query, fixtures)  →  adapter (fetch)
 - The production backend is outside this repository. Do not add its search,
   cache, or budget code here. The dummy server answers saved results.
 
-**Shared code.** `packages/shared` holds the list types, the schema, the host
-and path matching, the query cleaner, and the SHA-256 helper that keys both
-caches. Both systems import it. It imports neither of them.
+**Shared code.** `packages/shared` holds the served list contract, the host and
+path matching, the query cleaner, and the SHA-256 helper that keys both caches
+and names the list. Both systems import it. It imports neither of them.
 
 ### Code Quality
 
@@ -256,7 +265,7 @@ caches. Both systems import it. It imports neither of them.
 ### Testing
 
 - Vitest. Test files sit next to the code as `*.test.ts`.
-- One runner. The root Vitest runs the shared package, the sites pipeline, the
+- One runner. The root Vitest runs the shared package, the list build, the
   scripts, the dummy server, and the extension. It uses the node environment,
   and a test that needs a document starts with
   `// @vitest-environment happy-dom`.
@@ -321,7 +330,10 @@ Extension configuration:
   broad page permission already covers it, and the explicit entry records the
   server that this build uses.
 - Extension settings live in `chrome.storage.local` under one key: `enabled`,
-  `autoOpenBest`, `imagesEnabled`.
+  `autoOpenBest`, `imagesEnabled`, and `walls`. `walls` groups the chosen wall
+  categories by the type that presents them, so the reader picks a type first
+  and then its categories. The default stops the `adblock` category of the
+  `hard` and `soft` types and nothing else.
 
 Dummy server configuration:
 
@@ -332,18 +344,20 @@ Dummy server configuration:
 - It serves the fixture pages on the same origin, including `/walled/slow` and
   `/walled/fail`. The local overlay lists `127.0.0.1` under `/walled/*`.
 - The list comes from `packages/extension/src/sites.json`, which
-  `pnpm list:build` writes.
+  `pnpm list:build` writes. Its ETag is the SHA-256 of the served body.
 - The image signing key is the fixed development value
   `local-development-only-key`. It is not a secret and it must not become one.
 - It answers every local caller with `Access-Control-Allow-Origin: *`.
 
 Local development configuration:
 
-- `pnpm list:build` reads `sites/sites.yaml` alone and writes
-  `packages/extension/src/sites.json`.
-- `pnpm list:build:dev` also reads `sites/sites.dev.yaml`, appends its entries,
-  and sets `updated` to the latest of the release date and every overlay
-  `verified` date.
+- `pnpm list:sync` copies `dist/sites.json` from a `detour-list` checkout into
+  `sites/sites.release.json`. `DETOUR_LIST_PATH` names another checkout, such
+  as a release commit.
+- `pnpm list:build` validates `sites/sites.release.json`, then writes
+  `packages/extension/src/sites.json` and its identifier in `sites-id.ts`.
+- `pnpm list:build:dev` also reads `sites/sites.dev.yaml` and appends its
+  entries in the shape of the served list.
 - `pnpm dev` builds the dev list, starts the dummy server on
   `http://127.0.0.1:8787`, and starts `watch:dev` into
   `packages/extension/dist`. `DETOUR_PORT` moves the server, and
@@ -358,25 +372,19 @@ Documents and their update triggers:
 | ---------------------- | ----------------------------------------------------------------- |
 | `README.md`            | Behavior, the backend URL, or install steps change                |
 | `DEVELOPMENT.md`       | A script, an environment value, the build, or the release changes |
-| `CONTRIBUTING.md`      | The list policy or the schema changes                             |
+| `CONTRIBUTING.md`      | How to contribute to the extension changes                        |
 | `docs/architecture.md` | The architecture, a storage key, a route, or a flow changes       |
-| `docs/list-format.md`  | Generated from the schema, never edited by hand                   |
 | `docs/privacy.md`      | Data that leaves the device, retention, or the provider changes   |
 | `docs/brand.md`        | The mark, the palette, or the license changes                     |
 | `AGENTS.md`            | The structure, a command, or a convention changes                 |
 
 ### Other
 
-- The list is editorial data, not code. A new site is a YAML entry with
-  `domain`, `name`, `wall`, `paths`, `note`, `verified`, and `evidence`. The
-  change carries the evidence file under `sites/evidence/` that `evidence`
-  names, and `pnpm list:build` must pass.
-- Increment `version` in `sites.yaml` on every list change.
-- Do not name a publisher without evidence. A wrong entry is a product defect.
-- The four seed entries are user-authorized placeholders for the prototype.
-  Their evidence records a probe and its limitation. Keep the four as they
-  are, add no unchecked entry, and replace them with observed entries before a
-  release.
+- The list is editorial data that lives in `detour-list`, not code. Do not add
+  a publisher here and do not edit the artifact copy. Run `pnpm list:sync`, then
+  `pnpm list:build`, and commit both.
+- The copy is the fallback for a worker with no stored list. A backend serves
+  the current list at `GET /v1/list`, so the copy may age between releases.
 - `sites/sites.dev.yaml` is the local overlay, and no publisher enters it. Only
   `pnpm list:build:dev` reads it; `pnpm list:build` writes the release list
   alone.

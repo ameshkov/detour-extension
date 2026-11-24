@@ -2,6 +2,7 @@ import { allowsHost, allowsTab } from './allowances';
 import { clearCache } from './cache';
 import { hasCapability, recordCapability } from './capabilities';
 import { findSite } from './list-matching';
+import { devLog } from './log';
 import type {
   BlockedMessage,
   BlockedResponse,
@@ -27,6 +28,7 @@ import {
   writePause,
   writeSettings,
 } from './storage';
+import { anyWallStops } from './walls';
 
 /** The one place a sender's tab is read: its id, the tab that opened it, and its page. */
 type TabSender = {
@@ -73,8 +75,13 @@ function fromExtensionPage(sender: TabSender): boolean {
   }
 }
 
-/** The answer that lets the page load: nothing blocked, nothing named. */
-function passThrough(): IsBlockedResponse {
+/**
+ * The answer that lets the page load, and the reason for it. The reason reaches
+ * the development console and never the release build, where `devLog` is dropped.
+ */
+function passThrough(reason: string): IsBlockedResponse {
+  devLog('worker', 'the page loads', reason);
+
   return { ok: true, blocked: false, site: null };
 }
 
@@ -97,33 +104,39 @@ export async function handleIsBlocked(
   const settings = await readSettings();
 
   if (!settings.enabled) {
-    return passThrough();
+    return passThrough('the list is off');
   }
 
   if (isPaused(await readPause(), deps.now())) {
-    return passThrough();
+    return passThrough('the pause is running');
   }
 
   const list = await readList();
 
   if (list.disabled) {
-    return passThrough();
+    return passThrough('the list is disabled');
   }
 
   const site = findSite(list, message.url);
 
   if (site === null) {
-    return passThrough();
+    return passThrough('the site is not listed');
+  }
+
+  // The reader decides which walls stop a page. A site whose walls are all
+  // switched off loads, exactly as an unlisted site does.
+  if (!anyWallStops(settings.walls, site.walls)) {
+    return passThrough('no chosen wall matches');
   }
 
   const allowances = await readAllowances();
 
   if (allowsHost(allowances.allowAlways, site.domain)) {
-    return passThrough();
+    return passThrough('the site is always allowed');
   }
 
   if (allowsHost(allowances.allowSession, site.domain)) {
-    return passThrough();
+    return passThrough('the site is allowed until Chrome restarts');
   }
 
   const tabId = sender.tab?.id;
@@ -132,13 +145,15 @@ export async function handleIsBlocked(
     tabId !== undefined &&
     allowsTab(allowances.allowTabs, site.domain, tabId, sender.tab?.openerTabId)
   ) {
-    return passThrough();
+    return passThrough('the tab is allowed');
   }
+
+  devLog('worker', 'the page stops', site.domain);
 
   return {
     ok: true,
     blocked: true,
-    site: { domain: site.domain, name: site.name, wall: site.wall },
+    site: { domain: site.domain, name: site.name, walls: site.walls },
   };
 }
 

@@ -1,6 +1,7 @@
 node_modules/
 packages/*/dist/
 packages/*/src/sites.json
+packages/*/src/sites-id.ts
 test-results/
 playwright-report/
 *.tsbuildinfo

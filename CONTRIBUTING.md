@@ -1,107 +1,53 @@
 # Contributing
 
-The site list is editorial data. A wrong entry is a product defect, so every entry carries
-evidence from a check by hand.
+This repository holds the Detour extension, its shared list contract, and the
+local dummy backend. The site list is editorial data, and it lives in the
+[detour-list](https://github.com/ameshkov/detour-list) repository.
 
-## Add a site
+## The site list
 
-Add an entry to `sites/sites.yaml` with these fields:
+Do not add or remove a publisher here. An entry enters or leaves the list in
+`detour-list`, which holds the schema, the evidence rule, and the generated
+reference at `docs/list-format.md`.
 
-```yaml
-sites:
-  - domain: example.com
-    name: Example
-    wall: hard
-    paths: []
-    note: A wall that replaces the article for readers who use an ad blocker.
-    verified: 2026-11-12
-    evidence: sites/evidence/example.com.md
-```
+This repository bundles a copy of that artifact, because a worker with no
+stored list needs a list to read. To update the copy:
 
-- `domain` is the registrable domain. It carries no `www.` prefix, no scheme, no path, and no
-  port.
-- `name` is the publisher name, as the block page shows it.
-- `wall` is `hard`, `soft`, or `metered`. `hard` replaces the article, `soft` covers it, and
-  `metered` limits the number of articles.
-- `paths` holds path globs. An empty list covers the whole site.
-- `note` is one sentence on what a reader sees.
-- `verified` is the date of your check.
-- `evidence` is the path of the evidence file.
+1. Build the list in `detour-list` with `pnpm list:build`.
+2. Run `pnpm list:sync` here. It reads `../detour-list/dist/sites.json`, or the
+   checkout that `DETOUR_LIST_PATH` names.
+3. Run `pnpm list:build` and commit `sites/sites.release.json`.
 
-A domain appears once. It is also absent from the global `avoid` and `prefer` lists.
-
-Then run `pnpm list:build` to validate the list and refresh
-`packages/extension/src/sites.json`.
-
-## The evidence file
-
-Create the file that `evidence` names. It sits under `sites/evidence/` and ends with `.md`.
-Start from this template:
-
-```md
-# <Publisher name>
-
-- Domain: <registrable domain>
-- Checked: <YYYY-MM-DD>
-- Page: <the URL that you checked>
-- Method: <what you did and what you saw>
-- Wall: <hard, soft, or metered>
-- Limitation: <what this check does not establish>
-
-<One paragraph on what appeared, on the method, and on the parts that you did not check.>
-```
-
-The template has these rules:
-
-- The `- Checked:` line holds a date, and that date equals `verified`.
-- The `- Page:` line names one URL, and every other line describes that URL.
-- The `- Method:` line says how you checked the page and what you saw.
-- The `- Limitation:` line says what the check does not establish.
-- The file holds at least 200 characters.
-
-Check the page in a browser with an ad blocker on, and record what appeared. Use `hard` when
-the wall replaces the article, `soft` when an overlay covers it, and `metered` when the wall
-limits the number of articles.
-
-### Prototype exception
-
-The four seed entries are user-authorized placeholders for the prototype. Each one carries a
-placeholder `wall` type and unverified coverage, because its evidence file states a
-limitation that denies the wall it names. Keep the four as they are. Do not add an entry that
-is not checked by hand, and replace the four with observed entries before a release.
+Never edit `sites/sites.release.json` by hand, and never edit
+`packages/extension/src/sites.json`: the build writes it.
 
 ## The local overlay
 
-`sites/sites.dev.yaml` carries the one local entry, `127.0.0.1`, which covers the fixture site
-server under the path glob `/walled/*`. The entry is not a publisher, and it never enters
-`sites/sites.yaml`.
+`sites/sites.dev.yaml` carries the one local entry, `127.0.0.1`, which covers
+the fixture site server under the path glob `/walled/*`. The entry is not a
+publisher, and it never enters the release artifact.
 
-`pnpm list:build` reads `sites/sites.yaml` alone and writes the release list: four sites, with no
-local entry. `pnpm list:build:dev` reads both files, appends the overlay entries to the release
-entries, keeps the release `version`, `disabled`, `avoid`, and `prefer`, and sets `updated` to the
-latest of the release date and every overlay `verified` date. Both commands write
-`packages/extension/src/sites.json`.
+`pnpm list:build` writes the release list alone. `pnpm list:build:dev` appends
+the overlay entries and writes the same output. An overlay domain that repeats
+a release domain is a duplicate, and the build refuses the merged list.
 
-An overlay entry follows the same rules as a release entry: a checked date, an evidence file
-under `sites/evidence/`, a unique domain, and a note on what a reader sees. An overlay domain
-that repeats a release domain is a duplicate, and the build refuses the merged list. A publisher
-never enters the overlay.
+## The extension
 
-## Remove a site
-
-1. Add one to `version` in `sites/sites.yaml`.
-2. Remove the entry.
-3. Remove its evidence file.
-4. Run `pnpm list:build`.
+- Write the test first. Watch it fail for the stated reason, then write the
+  code.
+- Run `pnpm check` before you report the change as done. It runs the list build,
+  the type check, the lint, the format check, the document checks, and the
+  tests.
+- Keep the bundle small. The extension declares one dependency,
+  `@detour/shared`.
 
 ## Review
 
-A change needs a checked date, a reachable evidence file, and a note that describes the wall.
-
-- The checked date equals `verified`.
-- The evidence path resolves to a file that holds the rules above.
-- The note says what a reader sees, in one sentence, and it does not moralize.
-- The domain is unique, and it is absent from `avoid` and `prefer`.
+- The list artifact copy matches its source, and `pnpm list:build` passes.
+- A behavior change carries a test that names the behavior.
+- A user-visible string lives in `copy.ts`, not in a page.
+- The storage envelope keeps its version, and a change to the shape of the
+  stored list raises `LIST_STORAGE_VERSION`.
 
 ## Documentation
 

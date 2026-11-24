@@ -1,0 +1,875 @@
+{
+  "disabled": false,
+  "avoid": [],
+  "prefer": [],
+  "sites": [
+    {
+      "domain": "cnet.com",
+      "name": "CNET",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker card covers the home page for readers who run an ad blocker; the stories stay behind it until the reader allows ads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "express.co.uk",
+      "name": "Daily Express",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We value your privacy' consent dialog covers the page; rejecting it with every purpose off leads to a Privacy Plus subscription prompt, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dailymail.com",
+      "name": "Daily Mail",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Choose how to use Daily Mail' panel covers the home page and stories until the reader accepts personalised ads or buys a subscription; there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "businessinsider.com",
+      "name": "Business Insider",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "soft"
+        }
+      ],
+      "paths": [
+        "/*-20*-*"
+      ],
+      "note": "A subscription dialog covers the story and the text says it is available to subscribers only; the front page reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "zdnet.com",
+      "name": "ZDNET",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral panel asks readers who use an ad blocker to turn it off; it appears after the page content and the article stays readable.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "telegraph.co.uk",
+      "name": "The Telegraph",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "soft"
+        }
+      ],
+      "paths": [
+        "/*/*/*/*/**"
+      ],
+      "note": "The story stops after its first paragraph at a 'TO CONTINUE...' prompt that asks the reader to create a free account or log in; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "forbes.com",
+      "name": "Forbes",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker card covers the story for readers who run an ad blocker; the only ways past it are to allow ads or to sign in.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "theverge.com",
+      "name": "The Verge",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral 'Support Our Free Content!' card covers the story for readers who run an ad blocker; the only ways past it are to disable the blocker, sign in, or contact support.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "hbr.org",
+      "name": "Harvard Business Review",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*/*"
+      ],
+      "note": "The story stops after its first paragraph at a 'This is a Subscriber-only benefit' block that asks the reader to subscribe or sign in as a subscriber; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "corriere.it",
+      "name": "Corriere della Sera",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Corriere della Sera' consent panel covers the story; refusing profiling leads only to paid plans ('Acceso Consentless' at 14,99 €/year or 'Acceso Premium'), so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "theatlantic.com",
+      "name": "The Atlantic",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/magazine/**"
+      ],
+      "note": "A subscription gate replaces the story after its opening paragraphs and asks the reader to sign in, start a free trial, or subscribe.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "welt.de",
+      "name": "WELT",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Datenschutz und Nutzererlebnis auf WELT.de' panel covers the story until the reader accepts tracking or buys WELT Pur; there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "repubblica.it",
+      "name": "la Repubblica",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A cookie consent dialog covers the story with only 'Accetta' and 'Rifiuta e abbonati', and refusing leads to a subscription offer, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "focus.de",
+      "name": "FOCUS online",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Sourcepoint dialog covers the story until the reader accepts ad tracking or pays for contentpass; the ad-based purposes cannot be deselected.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "marca.com",
+      "name": "MARCA",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A cookie dialog covers the page, and rejecting it offers only a 14.99-euro yearly cookieless subscription or a registration; accepting the cookies is the only free way on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "economist.com",
+      "name": "The Economist",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*/*/*/*"
+      ],
+      "note": "The story stops after its first paragraph at a gate that asks for a free trial or a free account; the front page reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "aftonbladet.se",
+      "name": "Aftonbladet",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Schibsted consent panel covers the story; rejecting personalised ads is a paid Schibsted annonsval subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vg.no",
+      "name": "VG",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Schibsted dialog covers the story until the reader accepts ad tracking or pays for Schibsted annonsevalg, because rejecting personalised ads is a paid service.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "bloomberg.com",
+      "name": "Bloomberg",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [
+        "/news/articles/*"
+      ],
+      "note": "The story stops after two paragraphs at a subscription offer, behind a terms dialog whose only button accepts tracking.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "t-online.de",
+      "name": "t-online",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Wie wollen Sie t-online nutzen?' panel covers the story until the reader accepts ad tracking or buys the PUR-Abo at 2,99 Euro/month; the ad purposes have no reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "elpais.com",
+      "name": "EL PAÍS",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An 'EL PAÍS ofrece los siguientes modos de navegación' panel covers the story until the reader accepts ad cookies or pays 2,5 €/month for anti-tracking; rejecting leads to that payment prompt.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lemonde.fr",
+      "name": "Le Monde",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Soutenez un journalisme fiable' dialog covers the page; free access is conditional on accepting the use of the reader's data, and refusing cookies requires a subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "spiegel.de",
+      "name": "DER SPIEGEL",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "SPIEGEL+ stories replace the article with a subscription offer, behind a privacy dialog whose personalised advertising has no reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "cbsnews.com",
+      "name": "CBS News",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed \"It looks like you're using an ad blocker.\" covers the story; \"Continue\" leads only to instructions for turning the blocker off, and \"I'll fix it next time\" dismisses it.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ft.com",
+      "name": "Financial Times",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/content/*"
+      ],
+      "note": "The story body is replaced by a 'Subscribe to unlock this article' offer in both states, and only the trial and subscription offers remain below the headline.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "gazzetta.it",
+      "name": "La Gazzetta dello Sport",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A consent dialog covers the story and offers profiling consent or a subscription; refusing the advertising purposes leads to a subscription page.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "iltalehti.fi",
+      "name": "Iltalehti",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Alma Media consent dialog covers the story and the front page; its settings offer only accepting targeted advertising or a paid 1,99 €/kk opt-out, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "newyorker.com",
+      "name": "The New Yorker",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/magazine/**"
+      ],
+      "note": "A subscription offer replaces the story after its first paragraph, and with an ad blocker on an email newsletter sign-up gate (\"Read this story for free\") replaces it instead.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "marketwatch.com",
+      "name": "MarketWatch",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "soft"
+        },
+        {
+          "category": "registration",
+          "type": "soft"
+        }
+      ],
+      "paths": [
+        "/story/**"
+      ],
+      "note": "A ‘Continue Reading with One of the Options Below’ panel covers the story and asks the reader to register for a limited number of free articles or to subscribe; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vox.com",
+      "name": "Vox",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Become a Vox member to continue reading' offer cuts the story after its first paragraphs, and with an ad blocker on an Admiral 'Support Our Content by Allowing Ads' card covers the page instead.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lefigaro.fr",
+      "name": "Le Figaro",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Make a choice for your data' dialog covers the story; 'Continue without accepting' leads to the digital subscription offers, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "idnes.cz",
+      "name": "iDNES.cz",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A consent gate replaces the story on the first visit and the same consent banner meets the reader later; the free way is consent to targeted ads, the paid one a 199 Kč monthly subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "axios.com",
+      "name": "Axios",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "Stories stop after the opening paragraphs, and a \"Sign up for Axios Hill Leaders to continue reading for free\" form with an email field replaces the rest.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "variety.com",
+      "name": "Variety",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'Please consider allowing ads' covers the story for readers who run an ad blocker; 'Continue without supporting' then leads into it.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "heise.de",
+      "name": "heise online",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Welcome to heise online' dialog covers the story; its settings reject every purpose but personalised advertising, so free reading needs that consent, the alternative a Pur subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ladepeche.fr",
+      "name": "La Dépêche du Midi",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi dialog covers the story; accepting targeted ads is the only way to read it free, and 'Refuser et s'abonner' leads to a subscription landing page.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "smh.com.au",
+      "name": "The Sydney Morning Herald",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/**/*-20*-p*.html"
+      ],
+      "note": "A 'Subscribe to unlock this article' card replaces the story for readers without a subscription, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "hollywoodreporter.com",
+      "name": "The Hollywood Reporter",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'Please consider allowing ads' covers the story for readers who run an ad blocker, and its only action is to allow ads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "bild.de",
+      "name": "BILD",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Datenschutz und Nutzungserlebnis auf BILD.de' panel covers the story until the reader accepts tracking or buys BILD Pur; four purposes are marked required for free use with no reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "name": "The Globe and Mail",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/**/article-*/"
+      ],
+      "note": "A 'Subscribe to read this article' card replaces the story for readers without a subscription, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "actu.fr",
+      "name": "actu.fr",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Soutenez un journalisme local' consent dialog covers the story; refusing all cookies leaves no access, and 'Refuser et s'abonner' leads to a 2 € per month subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "faz.net",
+      "name": "F.A.Z.",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Wie möchten Sie FAZ.NET nutzen?' panel covers the story until the reader accepts tracking or takes the Pur-Abo; the Cookie Manager offers no reject, so 'Einverstanden' is the only free way on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "n-tv.de",
+      "name": "n-tv",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Datenschutz und Nutzungserlebnis auf ntv' panel covers the story; its two required purposes offer only consent, and the alternative is the paid 2,99 € PUR subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "newscientist.com",
+      "name": "New Scientist",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/article/*"
+      ],
+      "note": "The story stops after its fourth paragraph at a 'Want the full story?' card that asks for a subscription to continue reading, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ilfattoquotidiano.it",
+      "name": "Il Fatto Quotidiano",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Caro navigatore' panel appears a few seconds after load and covers the story; the only free way on is to accept all advertising consents, and refusing leads to a supporter subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "elmundo.es",
+      "name": "El Mundo",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Welcome to El Mundo Consent Management' dialog covers the story; declining its cookies replaces the page with a choice between accepting them or a 14,99 €/year subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "eleconomista.es",
+      "name": "elEconomista.es",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An 'Acepta y continúa accediendo...' panel covers the story; refusing every cookie purpose returns to it, so free reading needs accepting tracking and the paid option is 0,50 € por 24h.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "expressen.se",
+      "name": "Expressen",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A Premium story shows its intro and a section list, then replaces the rest with an 'Expressen Premium' subscription offer, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "mundodeportivo.com",
+      "name": "Mundo Deportivo",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi dialog says access depends on consenting to cookies or taking a subscription, and its only buttons are 'Aceptar y continuar' and 'Rechazar y suscribirse', so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nytimes.com",
+      "name": "The New York Times",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Create a free account, or log in.' gate covers the story body under its headline and summary, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "newsweek.com",
+      "name": "Newsweek",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "soft"
+        }
+      ],
+      "paths": [
+        "/entertainment/celebrity-news/*"
+      ],
+      "note": "The story stops after the Depp section at an inline 'Continue reading' membership prompt that asks the reader to subscribe or sign in, and the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "jutarnji.hr",
+      "name": "Jutarnji list",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Hanza Media consent dialog covers the story and offers only 'Prihvati i zatvori' or purpose-by-purpose settings under 'Saznajte više', so a tracking choice stands before the article.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "washingtonpost.com",
+      "name": "The Washington Post",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*/*/*/**"
+      ],
+      "note": "A 'Ways to read this article' gate replaces the story body behind a free-account form with 'Start reading' or a monthly or annual subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "novinky.cz",
+      "name": "Novinky.cz",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A Seznam consent gate replaces the story on the first visit; the free way is consent to targeted ads, untargeted ads cost CZK 49 a month, and ad-free reading starts at CZK 125.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "chicagotribune.com",
+      "name": "Chicago Tribune",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A subscriber card covers the story and cuts the body off for readers without an ad blocker; with an ad blocker running, the article reads in full.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ilmessaggero.it",
+      "name": "Il Messaggero",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A subscription modal covers the story after the consent choice and the article body stays blurred under it, so a reader must subscribe to read.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "elespanol.com",
+      "name": "El Español",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An 'Acepta para seguir leyendo' dialog covers the story; rejecting cookies leads to 1 €/mes or 5,99 €/mes subscription offers or to accepting cookies.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lavanguardia.com",
+      "name": "La Vanguardia",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A consent dialog covers the story; \"Rechazar y suscribirse\" leads to subscription offers of 14,90 euros per 2 years or 1,99 euros per month, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    }
+  ]
+}

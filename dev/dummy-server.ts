@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
@@ -591,14 +591,18 @@ async function route(request: IncomingMessage, ctx: Ctx): Promise<Response | nul
       return errorBody(405, 'method_not_allowed');
     }
 
-    const tag = `"v${ctx.list.version}"`;
+    const body = JSON.stringify(ctx.list);
+    const tag = `"${createHash('sha256').update(body).digest('hex')}"`;
     const headers = { ETag: tag, 'Cache-Control': 'public, max-age=1800' };
 
     if (request.headers['if-none-match'] === tag) {
       return new Response(null, { status: 304, headers });
     }
 
-    return json(ctx.list, 200, headers);
+    return new Response(body, {
+      status: 200,
+      headers: { 'content-type': JSON_TYPE, ...headers },
+    });
   }
 
   if (pathname === '/v1/alternatives') {

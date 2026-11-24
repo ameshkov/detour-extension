@@ -1,11 +1,15 @@
 # Detour
 
-Detour is a Chrome extension that stops a visit to a publisher that walls a
-story from readers who use an ad blocker, and it shows the same story from
-publishers that do not. The extension reads the site list, finds the
-alternatives, and shows the block page. A backend server does the search and
-serves the list. This repository holds the extension and a dummy backend for
-local work. The production backend is a separate service.
+Detour is a Chrome extension that stops a visit to a publisher that puts a
+wall in front of a story, and it shows the same story from publishers that do
+not. The list names every wall that a page carries: an ad-blocker wall, a
+paywall, a registration prompt, a consent dialog, a region check, a VPN check,
+or an age check, each with a hard, soft, or metered type. The settings page
+holds a table of the walls that stop a page, one category per row and one type
+per column. The extension reads the site list, finds the alternatives, and
+shows the block page. A backend server does the search and serves the list.
+This repository holds the extension and a dummy backend for local work. The
+production backend is a separate service.
 
 ## Status
 
@@ -56,11 +60,11 @@ pnpm check
 
 - [DEVELOPMENT.md](DEVELOPMENT.md) — local setup, every script, and the
   checks.
-- [CONTRIBUTING.md](CONTRIBUTING.md) — how a site enters or leaves the list.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to work on the extension and where
+  a site enters or leaves the list.
 - [docs/architecture.md](docs/architecture.md) — the two systems, the storage
   keys, the routes, and the backend contract.
 - [docs/brand.md](docs/brand.md) — the mark, the palette, the type, and the
   licence.
 - [docs/privacy.md](docs/privacy.md) — what leaves the browser, what a backend
   keeps, and the search provider.
-- [docs/list-format.md](docs/list-format.md) — the generated field reference.

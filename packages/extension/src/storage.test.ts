@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_SETTINGS, LIST_STORAGE_VERSION } from './constants';
-import bundledList from './sites.json';
+import { BUNDLED_LIST_ID } from './sites-id';
 import {
   BUNDLED_LIST,
   isPaused,
   readAllowance,
   readAllowances,
   readList,
+  readListId,
   readPause,
   readSettings,
   readStoredList,
@@ -37,6 +38,43 @@ describe('the settings store', () => {
       enabled: false,
       autoOpenBest: false,
       imagesEnabled: true,
+      walls: { hard: ['adblock'], soft: ['adblock'], metered: [] },
+    });
+  });
+
+  it('reads a stored wall choice back', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.settings = {
+      enabled: true,
+      walls: { hard: ['adblock', 'paywall'], soft: [], metered: ['paywall'] },
+    };
+
+    await expect(readSettings()).resolves.toEqual({
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+      walls: {
+        hard: ['adblock', 'paywall'],
+        soft: [],
+        metered: ['paywall'],
+      },
+    });
+  });
+
+  it('drops a stored wall that the list cannot hold', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.settings = {
+      enabled: true,
+      walls: { hard: ['ads', 'adblock'], soft: 'adblock', metered: ['adblock'] },
+    };
+
+    await expect(readSettings()).resolves.toEqual({
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+      walls: { hard: ['adblock'], soft: ['adblock'], metered: [] },
     });
   });
 
@@ -50,14 +88,17 @@ describe('the settings store', () => {
 });
 
 describe('the list store', () => {
-  it('stores the list with its version and fetch time', async () => {
+  const LIST_ID = 'a'.repeat(64);
+
+  it('stores the list with its identifier and fetch time', async () => {
     const fake = installFakeChrome();
 
-    await writeStoredList(1_000, BUNDLED_LIST);
+    await writeStoredList(1_000, BUNDLED_LIST, LIST_ID);
 
     expect(fake.storage.local.values.list).toEqual({
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: 1_000,
+      listId: LIST_ID,
       list: BUNDLED_LIST,
     });
   });
@@ -65,20 +106,34 @@ describe('the list store', () => {
   it('reads the stored list back', async () => {
     installFakeChrome();
 
-    await writeStoredList(1_000, BUNDLED_LIST);
+    await writeStoredList(1_000, BUNDLED_LIST, LIST_ID);
 
     await expect(readStoredList()).resolves.toEqual({
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: 1_000,
+      listId: LIST_ID,
       list: BUNDLED_LIST,
     });
   });
 
-  it('discards an envelope of an unknown version', async () => {
+  it('discards an envelope of another storage version', async () => {
     const fake = installFakeChrome();
 
     fake.storage.local.values.list = {
-      storageVersion: 2,
+      storageVersion: LIST_STORAGE_VERSION + 1,
+      fetchedAt: 1_000,
+      listId: LIST_ID,
+      list: BUNDLED_LIST,
+    };
+
+    await expect(readList()).resolves.toEqual(BUNDLED_LIST);
+  });
+
+  it('discards an envelope without an identifier', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.list = {
+      storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: 1_000,
       list: BUNDLED_LIST,
     };
@@ -92,31 +147,34 @@ describe('the list store', () => {
     fake.storage.local.values.list = {
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: 1_000,
-      list: { ...BUNDLED_LIST, version: 0 },
+      listId: LIST_ID,
+      list: { ...BUNDLED_LIST, sites: [{ ...BUNDLED_LIST.sites[0]!, walls: [] }] },
     };
 
     await expect(readList()).resolves.toEqual(BUNDLED_LIST);
   });
 
-  it('accepts a list newer than the bundle', async () => {
+  it('accepts a stored list other than the bundle', async () => {
     const fake = installFakeChrome();
-    const newer = { ...BUNDLED_LIST, version: BUNDLED_LIST.version + 1 };
+    const other = { ...BUNDLED_LIST, disabled: true };
 
     fake.storage.local.values.list = {
       storageVersion: LIST_STORAGE_VERSION,
       fetchedAt: 1_000,
-      list: newer,
+      listId: LIST_ID,
+      list: other,
     };
 
     await expect(readStoredList()).resolves.not.toBeNull();
-    await expect(readList()).resolves.toEqual(newer);
+    await expect(readList()).resolves.toEqual(other);
+    await expect(readListId()).resolves.toBe(LIST_ID);
   });
 
-  it('falls back to the bundled list', async () => {
+  it('falls back to the bundled list and its identifier', async () => {
     installFakeChrome();
 
     await expect(readList()).resolves.toEqual(BUNDLED_LIST);
-    expect(BUNDLED_LIST.version).toBe(bundledList.version);
+    await expect(readListId()).resolves.toBe(BUNDLED_LIST_ID);
   });
 });
 
