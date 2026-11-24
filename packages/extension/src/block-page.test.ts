@@ -254,10 +254,11 @@ describe('the block page shell', () => {
       'walls',
       'lede',
       'source',
+      'source-text',
       'source-label',
       'source-title',
       'source-link',
-      'source-description',
+      'open-group',
       'alternatives',
       'list-head',
       'alternatives-heading',
@@ -299,6 +300,7 @@ describe('the block page shell', () => {
       'countdown',
       'retry-row',
       'actions',
+      'open-group',
       'scope-menu',
       'action-error',
     ];
@@ -490,15 +492,23 @@ describe('the block page shell', () => {
     expect(role('source').hidden).toBe(false);
   });
 
-  it('renders the source card from the metadata', async () => {
+  it('names the stopped page from the metadata', async () => {
     answerMeta();
 
     await start(URL, answerFetch([], ANSWER));
 
     expect(role('source-title').textContent).toBe(META.title);
-    expect(role('source-description').textContent).toBe(META.description);
     expect(role('source-link').textContent).toBe(COMPACT_URL);
+    expect(role('source-text').childElementCount).toBe(3);
     expect(role('source').querySelector('img')).toBeNull();
+  });
+
+  it('names the site in the tab', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(document.title).toBe('Detour — CNET');
   });
 
   it('renders the card with the url only when the metadata fails', async () => {
@@ -510,7 +520,6 @@ describe('the block page shell', () => {
 
     expect(role('source-link').textContent).toBe(COMPACT_URL);
     expect(role('source-title').textContent).toBe('');
-    expect(role('source-description').textContent).toBe('');
   });
 
   it('keeps the url-only card when the runtime is absent', async () => {
@@ -522,7 +531,6 @@ describe('the block page shell', () => {
 
     expect(role('source-link').textContent).toBe(COMPACT_URL);
     expect(role('source-title').textContent).toBe('');
-    expect(role('source-description').textContent).toBe('');
     expect(role('status').textContent).toBe(ALTERNATIVES_FAILED);
     expect(role('list').querySelectorAll('li')).toHaveLength(0);
     expect(role('actions').hidden).toBe(false);
@@ -571,7 +579,7 @@ describe('the block page shell', () => {
 
     expect(rows).toHaveLength(2);
     expect(rows[0]?.querySelector('a')?.getAttribute('href')).toBe(first.url);
-    expect(rows[0]?.querySelector('a')?.textContent).toBe(first.title);
+    expect(rows[0]?.querySelector('[data-role="result-title"]')?.textContent).toBe(first.title);
     expect(rows[0]?.textContent).toContain(first.domain);
     expect(rows[0]?.textContent).toContain(first.description);
     expect(role('status').textContent).toBe('');
@@ -594,7 +602,9 @@ describe('the block page shell', () => {
 
     await start(URL, answerFetch([], malicious));
 
-    expect(role('list').querySelector('a')?.textContent).toBe('<img src=x onerror="alert(1)">');
+    expect(role('list').querySelector('[data-role="result-title"]')?.textContent).toBe(
+      '<img src=x onerror="alert(1)">',
+    );
     expect(role('list').querySelector('img')).toBeNull();
   });
 

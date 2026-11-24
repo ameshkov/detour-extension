@@ -241,8 +241,13 @@ image appears only when `imagesEnabled` is on and the answer carries one. A row
 holds two lines of text under the tile: the title, then the domain in ink with
 the description after it, one middot apart.
 
+The whole row is one link: the title, the domain, the description, and the
+image all open the alternative, so the reader aims at the row and not at a
+line of text in it. The description takes two lines under the title, and a
+phone drops it, so every row keeps the height it needs and no more.
+
 The headline names the site and counts the walls that the list records for it,
-and a row of pills follows it. One pill names one wall: the category in ink, a
+the tab carries that name, and a row of pills follows the headline. One pill names one wall: the category in ink, a
 middot, and the type in grey. A page that carries an ad-blocker wall adds one
 sentence under the pills, and a page that carries another wall alone adds
 none, because a paywall, a consent dialog, or an age check is the publisher's
@@ -256,12 +261,17 @@ metadata title, the URL, and the site name.
 At three seconds without an answer the loading area gains `data-slow` and
 shows the note, the `Open <site> instead` action, and `Keep waiting`.
 
-The action row follows the page. `Open <site> anyway` grants the tab
-allowance and opens the site, and its caret opens a menu of the other scopes
-and `Just once`, which opens the site without an allowance. The menu hangs off the split control itself, so the gap above or below
-it is the sheet's own 6 px, and it opens above the control when there is no
-room below. It closes on Escape, on a second press of the caret, on a press of
-a scope, and on a press anywhere else on the page.
+The source card at the top names the page the reader tried to open, and it
+holds `Open <site> anyway`. That control grants the tab allowance and opens
+the site, and its caret opens a menu of the other scopes and `Just once`,
+which opens the site without an allowance. The way back to the page sits
+beside the page itself, not under the whole list. The menu hangs off the split
+control, so the gap above or below it is the sheet's own 6 px, and it opens
+above the control when there is no room below. It closes on Escape, on a
+second press of the caret, on a press of a scope, and on a press anywhere else
+on the page.
+
+The foot of the page is one line: the privacy note and the report link.
 
 The countdown starts when `autoOpenBest` is on and at least one alternative
 exists. It counts 3, 2, 1, and then navigates the tab to the first

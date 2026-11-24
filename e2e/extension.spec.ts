@@ -87,7 +87,6 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
   await waitForBlockPage(page, LISTED_URL);
 
   await page.setViewportSize({ width: 1000, height: 520 });
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 
   const caret = page.locator('[data-role="open-menu"]');
 
@@ -96,8 +95,8 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
   const menu = page.locator('[data-role="scope-menu"]');
 
   await expect(menu).toBeVisible();
-  // The control sits at the foot of this window, so the menu opens above it.
-  await expect(menu).toHaveAttribute('data-side', 'top');
+  // The control sits under the headline now, so this window has room below it.
+  await expect(menu).not.toHaveAttribute('data-side', 'top');
 
   const box = await menu.boundingBox();
   const viewport = page.viewportSize();
@@ -111,7 +110,7 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
 
   // The menu hangs off the control itself, so the gap is the 6 pixels of the
   // sheet and not the padding of the row above it.
-  const gap = caretBox!.y - (box!.y + box!.height);
+  const gap = box!.y - (caretBox!.y + caretBox!.height);
 
   expect(gap).toBeGreaterThanOrEqual(4);
   expect(gap).toBeLessThanOrEqual(9);
@@ -195,6 +194,20 @@ test('opens the listed article once without an allowance', async ({ page, worker
   await waitForBlockPage(page, LISTED_URL);
 
   await expect(page).toHaveURL(BLOCK_PAGE);
+});
+
+test('opens a result from every part of its row', async ({ page }) => {
+  await waitForBlockPage(page, LISTED_URL);
+
+  const row = page.locator('[data-role="list"] > li').first();
+  const link = row.locator('a');
+  const rowBox = await row.boundingBox();
+  const linkBox = await link.boundingBox();
+
+  expect(rowBox).not.toBeNull();
+  expect(linkBox?.width).toBe(rowBox?.width);
+  expect(linkBox?.height).toBe(rowBox?.height);
+  await expect(link).toHaveAttribute('href', /^https:\/\//);
 });
 
 test('shows the empty state for an article without alternatives', async ({ page }) => {

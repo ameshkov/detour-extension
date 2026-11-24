@@ -16,10 +16,26 @@
       <p data-role="walls" hidden></p>
       <p data-role="lede" hidden></p>
       <section data-role="source">
-        <p data-role="source-label"></p>
-        <p data-role="source-title"></p>
-        <a data-role="source-link" target="_blank" rel="noreferrer noopener"></a>
-        <p data-role="source-description"></p>
+        <div data-role="source-text">
+          <p data-role="source-label"></p>
+          <p data-role="source-title"></p>
+          <a data-role="source-link" target="_blank" rel="noreferrer noopener"></a>
+        </div>
+        <div data-role="open-group" hidden>
+          <button data-role="open-site" type="button"></button>
+          <button data-role="open-menu" type="button" aria-haspopup="menu" aria-expanded="false">
+            <span data-role="open-menu-caret" aria-hidden="true">
+              <svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
+            </span>
+          </button>
+          <div data-role="scope-menu" role="menu" hidden>
+            <button data-role="scope-once" type="button" role="menuitem"></button>
+            <button data-role="scope-tab" type="button" role="menuitem"></button>
+            <button data-role="scope-session" type="button" role="menuitem"></button>
+            <button data-role="scope-always" type="button" role="menuitem"></button>
+          </div>
+        </div>
+        <p data-role="action-error" role="alert" hidden></p>
       </section>
       <section data-role="alternatives" data-state="loading">
         <div data-role="list-head">
@@ -51,24 +67,9 @@
         </div>
       </section>
       <div data-role="actions" hidden>
-        <div data-role="open-group">
-          <button data-role="open-site" type="button"></button>
-          <button data-role="open-menu" type="button" aria-haspopup="menu" aria-expanded="false">
-            <span data-role="open-menu-caret" aria-hidden="true">
-              <svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
-            </span>
-          </button>
-          <div data-role="scope-menu" role="menu" hidden>
-            <button data-role="scope-once" type="button" role="menuitem"></button>
-            <button data-role="scope-tab" type="button" role="menuitem"></button>
-            <button data-role="scope-session" type="button" role="menuitem"></button>
-            <button data-role="scope-always" type="button" role="menuitem"></button>
-          </div>
-        </div>
-        <p data-role="action-error" role="alert" hidden></p>
+        <p data-role="footnote"></p>
         <a data-role="report" target="_blank" rel="noreferrer noopener"></a>
       </div>
-      <p data-role="footnote"></p>
     </main>
     <script src="block.js"></script>
   </body>

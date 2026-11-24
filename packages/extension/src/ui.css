@@ -83,15 +83,15 @@ button {
 main {
   max-width: 700px;
   margin: 0 auto;
-  padding: 40px 28px 26px;
+  padding: 34px 28px 24px;
 }
 
 [data-role='headline'] {
-  margin: 16px 0 14px;
+  margin: 10px 0 12px;
   font-family: var(--serif);
-  font-size: 33px;
+  font-size: 28px;
   font-weight: 600;
-  line-height: 1.16;
+  line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
@@ -102,7 +102,7 @@ main {
   flex-wrap: wrap;
   gap: 6px;
   max-width: 610px;
-  margin: 0 0 18px;
+  margin: 0 0 13px;
 }
 
 [data-role='wall'] {
@@ -133,38 +133,51 @@ main {
 /* The judgement is the only paragraph left, so it takes the ink and keeps the
    weight of the body it used to share. */
 [data-role='lede'] {
-  max-width: 610px;
-  margin: 0 0 28px;
+  max-width: 590px;
+  margin: 0 0 20px;
   color: var(--ink);
-  font-size: 15px;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
+/* The page the reader tried to open, with the control that opens it anyway
+   beside it: the way back sits with the page it belongs to, not under the
+   whole list. */
 [data-role='source'] {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 18px;
+  row-gap: 8px;
+  align-items: center;
+  padding: 13px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
 }
 
+[data-role='source-text'] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 [data-role='source-label'] {
   margin: 0;
   color: var(--muted);
-  font-size: 9.5px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+/* The stopped page stays in sans: the serif belongs to the headline and to the
+   stories the reader is offered. */
 [data-role='source-title'] {
   margin: 0;
-  font-family: var(--serif);
-  font-size: 17px;
+  font-family: var(--sans);
+  font-size: 14.5px;
   font-weight: 600;
-  line-height: 1.34;
-  letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 /* The host and the path on one line. A longer address ends in an ellipsis, and
@@ -179,11 +192,12 @@ main {
   white-space: nowrap;
 }
 
-[data-role='source-description'] {
+[data-role='action-error'] {
+  grid-column: 1 / -1;
   margin: 0;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.55;
+  color: var(--blocked);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 [data-role='list-head'] {
@@ -205,6 +219,7 @@ main {
   margin-left: auto;
   color: var(--muted);
   font-size: 11.5px;
+  white-space: nowrap;
 }
 
 [data-role='status'] {
@@ -258,55 +273,65 @@ main {
   list-style: none;
 }
 
-[data-role='list'] > li {
+/* The row is one link, so the title, the domain, the description, and the image
+   all open the story. The padding and the border live on that link, and the
+   item is only the slot that carries the divider. */
+[data-role='list'] > li > a {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 96px;
+  grid-template-columns: 24px minmax(0, 1fr) 104px;
   column-gap: 13px;
+  align-items: start;
   padding: 13px;
   border: 1px solid transparent;
   border-radius: var(--radius);
-  transition: background-color 120ms ease;
+  color: var(--ink);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
 [data-role='list'] > li + li {
   border-top: 1px solid var(--line-soft);
-  border-radius: 0;
 }
 
-[data-role='list'] > li[data-variant='row']:hover {
-  background: var(--surface);
+/* A pressed row lifts into a card of its own, and the raised card closes its
+   edge, so the next divider does not cut it. */
+[data-role='list'] > li:hover > a,
+[data-role='list'] > li:focus-within > a {
   border-color: var(--line);
-  border-radius: var(--radius);
+  background: var(--surface);
 }
 
-/* The raised row closes its own edge, so the next divider would cut the card. */
-[data-role='list'] > li[data-variant='row']:hover + li {
+[data-role='list'] > li:hover + li,
+[data-role='list'] > li:focus-within + li {
   border-top-color: transparent;
 }
 
-[data-role='list'] > li[data-variant='hero'] {
+/* The hero is a card already, so it answers with its edge and not with a fill. */
+[data-role='list'] > li[data-variant='hero'] > a {
   grid-template-columns: 216px minmax(0, 1fr);
   column-gap: 17px;
   align-items: center;
-  border: 1px solid var(--line);
+  border-color: var(--line);
   border-radius: 13px;
   background: var(--surface);
 }
 
-[data-role='list'] > li[data-layout='text'] {
+[data-role='list'] > li[data-variant='hero']:hover > a,
+[data-role='list'] > li[data-variant='hero']:focus-within > a {
+  border-color: var(--control-line);
+  background: var(--surface);
+}
+
+[data-role='list'] > li[data-layout='text'] > a {
   grid-template-columns: 24px minmax(0, 1fr);
 }
 
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] {
+[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a {
   grid-template-columns: minmax(0, 1fr);
 }
 
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a,
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > [data-role='result-meta'] {
-  grid-column: 1;
-}
-
-[data-role='list'] > li > [data-role='tile'] {
+[data-role='list'] > li > a > [data-role='tile'] {
   display: grid;
   grid-column: 1;
   grid-row: 1 / span 2;
@@ -322,37 +347,46 @@ main {
 
 /* The favicon the backend serves is the tile: it fills the box, and the letter
    tile takes over only when the answer carries none or the image fails. */
-[data-role='list'] > li > [data-role='tile'] img {
+[data-role='list'] > li > a > [data-role='tile'] img {
   width: 24px;
   height: 24px;
   border-radius: 7px;
   object-fit: cover;
 }
 
-[data-role='list'] > li > a {
+[data-role='list'] > li > a > [data-role='result-title'] {
   grid-column: 2;
   grid-row: 1;
-  color: var(--ink);
   font-size: 14.5px;
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: -0.006em;
 }
 
-[data-role='list'] > li[data-variant='hero'] > a {
+[data-role='list'] > li[data-variant='hero'] > a > [data-role='result-title'] {
   font-family: var(--serif);
   font-size: 18.5px;
   line-height: 1.3;
   letter-spacing: -0.015em;
 }
 
-[data-role='list'] > li > [data-role='result-meta'] {
+[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a > [data-role='result-title'],
+[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a > [data-role='result-meta'] {
+  grid-column: 1;
+}
+
+/* Two lines of description keep every row at a height a reader can scan. */
+[data-role='list'] > li > a > [data-role='result-meta'] {
+  display: -webkit-box;
   grid-column: 2;
   grid-row: 2;
   margin: 0;
+  overflow: hidden;
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 [data-role='result-domain'] {
@@ -360,16 +394,16 @@ main {
   font-weight: 550;
 }
 
-[data-role='list'] > li > img {
+[data-role='list'] > li > a > img {
   grid-column: 3;
   grid-row: 1 / span 2;
-  width: 96px;
-  height: 60px;
+  width: 104px;
+  height: 66px;
   border-radius: 8px;
   object-fit: cover;
 }
 
-[data-role='list'] > li[data-variant='hero'] > img {
+[data-role='list'] > li[data-variant='hero'] > a > img {
   grid-column: 1;
   grid-row: 1 / span 2;
   width: 216px;
@@ -532,13 +566,13 @@ main {
   opacity: 0.5;
 }
 
+/* The foot of the page: the privacy note and the report link, one line. */
 [data-role='actions'] {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 20px 0;
-  margin-top: 30px;
-  padding-top: 22px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 14px;
   border-top: 1px solid var(--line-soft);
 }
 
@@ -551,11 +585,12 @@ main {
 }
 
 [data-role='open-site'] {
-  padding: 10px 16px;
-  border: 1px solid var(--ink);
-  border-radius: 9px 0 0 9px;
+  padding: 8px 12px;
+  border: 1px solid var(--control-line);
+  border-radius: 8px 0 0 8px;
+  background: var(--surface);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 550;
   transition: background-color 120ms ease;
 }
@@ -565,11 +600,12 @@ main {
   align-self: stretch;
   align-items: center;
   justify-content: center;
-  width: 34px;
+  width: 30px;
   margin-left: -1px;
   padding: 0;
-  border: 1px solid var(--ink);
-  border-radius: 0 9px 9px 0;
+  border: 1px solid var(--control-line);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
   color: var(--ink);
   font-size: 13px;
   transition: background-color 120ms ease;
@@ -602,7 +638,7 @@ main {
 
 [data-role='open-site']:hover,
 [data-role='open-menu']:hover {
-  background: var(--surface);
+  background: var(--hover);
 }
 
 [data-role='scope-menu'] {
@@ -643,13 +679,18 @@ main {
   margin-left: auto;
   padding-left: 20px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 11.5px;
+}
+
+[data-role='report']:hover {
+  color: var(--accent);
 }
 
 [data-role='footnote'] {
-  margin: 20px 0 0;
+  max-width: 520px;
+  margin: 0;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
@@ -1267,49 +1308,22 @@ body[data-page='options'] [data-role='cache-status'] {
   }
 
   [data-role='headline'] {
-    margin: 14px 0 12px;
-    font-size: 24px;
+    margin: 10px 0;
+    font-size: 21px;
   }
 
   [data-role='lede'] {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
+  /* The bar stacks, and the open control takes the row under the address. */
   [data-role='source'] {
-    padding: 10px;
-  }
-
-  [data-role='list'] > li > img {
-    display: none;
-  }
-
-  [data-role='list'] > li[data-variant='hero'] {
     grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
   }
 
-  /* The image takes the first row and the text follows in the order it has. */
-  [data-role='list'] > li[data-variant='hero'] > img,
-  [data-role='list'] > li[data-variant='hero'] > a,
-  [data-role='list'] > li[data-variant='hero'] > [data-role='result-meta'] {
-    grid-column: 1;
-    grid-row: auto;
-  }
-
-  [data-role='list'] > li[data-variant='hero'] > img {
-    display: block;
-    width: 100%;
-    height: 160px;
-    margin-bottom: 11px;
-  }
-
-  [data-role='actions'] {
-    gap: 12px 0;
-    align-items: stretch;
-  }
-
-  /* The split takes the row's whole width, and the report link moves below it. */
   [data-role='open-group'] {
-    flex: 1 1 auto;
+    width: 100%;
   }
 
   [data-role='open-site'] {
@@ -1320,12 +1334,57 @@ body[data-page='options'] [data-role='cache-status'] {
     flex: 0 0 auto;
   }
 
-  /* The block page's action row alone. The popup footer carries a report link
-     too, and this breakpoint always matches the 340 pixel popup, where a link
-     of the whole row would push its neighbour out of the frame. */
+  /* The count moves under the heading, so neither of them wraps. */
+  [data-role='list-head'] {
+    display: block;
+  }
+
+  [data-role='count'] {
+    display: block;
+    margin: 4px 0 0;
+  }
+
+  /* A phone shows the domain alone: the title carries the story, and the
+     description would cut a sentence in the middle of a narrow row. */
+  [data-role='result-description'] {
+    display: none;
+  }
+
+  [data-role='list'] > li > a > img {
+    display: none;
+  }
+
+  [data-role='list'] > li[data-variant='hero'] > a {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The image takes the first row and the text follows in the order it has. */
+  [data-role='list'] > li[data-variant='hero'] > a > img,
+  [data-role='list'] > li[data-variant='hero'] > a > [data-role='result-title'],
+  [data-role='list'] > li[data-variant='hero'] > a > [data-role='result-meta'] {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  [data-role='list'] > li[data-variant='hero'] > a > img {
+    display: block;
+    width: 100%;
+    height: 160px;
+    margin-bottom: 11px;
+  }
+
+  /* The foot stacks: the report link leaves the note for its own line. */
+  [data-role='actions'] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  /* The block page's footer alone. The popup carries a report link too, and
+     this breakpoint always matches the 340 pixel popup, where a link of the
+     whole row would push its neighbour out of the frame. */
   [data-role='actions'] [data-role='report'] {
-    flex: 0 0 100%;
-    margin-left: 0;
+    margin: 10px 0 0;
     padding-left: 0;
   }
 }

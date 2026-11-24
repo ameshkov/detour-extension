@@ -6,6 +6,11 @@ import type { SearchEngineKey } from './search-fallback';
 
 export const NO_URL_HEADLINE = 'This site puts a wall in front of this story';
 
+/** The tab names the site, so one block page is easy to find among many tabs. */
+export function pageTitle(siteName: string | null): string {
+  return siteName === null ? 'Detour' : `Detour — ${siteName}`;
+}
+
 const WALL_COUNTS: Record<number, string> = {
   2: 'two',
   3: 'three',

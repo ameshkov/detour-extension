@@ -8,6 +8,7 @@ import {
   NO_URL_HEADLINE,
   SOURCE_LABEL,
   headline,
+  pageTitle,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
 import { findSite } from './list-matching';
@@ -87,13 +88,17 @@ export function renderListEntry(list: SitesJson | null, original: string | null)
   const judged = walls.some((wall) => wall.category === 'adblock');
 
   setText('headline', headline(site?.name ?? null, walls.length));
+  document.title = pageTitle(site?.name ?? null);
   renderWalls('walls', walls);
   setText('lede', judged ? ANTI_USER_NOTE : '');
   setHidden('lede', !judged);
 }
 
-/** The metadata answer adds a title and a description; the URL stays as it is. */
+/**
+ * The metadata answer adds the title of the stopped page; the URL stays as it
+ * is. The description of the page is not drawn: the bar names the page, and the
+ * story is the one the list carries.
+ */
 export function renderSourceCard(meta: PageMeta | null): void {
   setText('source-title', meta?.title ?? '');
-  setText('source-description', meta?.description ?? '');
 }

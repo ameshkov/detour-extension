@@ -118,10 +118,15 @@ function imageElement(url: string): HTMLImageElement {
 /**
  * One row: the hero leads with its preview image, and a row trails with its
  * thumbnail and carries the tile of the answer's favicon, or its letter.
+ *
+ * The whole row is one link, so the reader aims at the row and not at a line
+ * of text inside it. The title, the domain, the description, the tile, and the
+ * image all belong to that link.
  */
 
 function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean): HTMLLIElement {
   const row = document.createElement('li');
+  const link = document.createElement('a');
   const preview =
     imagesEnabled && typeof alternative.image === 'string' ? imageElement(alternative.image) : null;
 
@@ -131,39 +136,48 @@ function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean)
     row.dataset.layout = 'text';
   }
 
-  if (hero && preview !== null) {
-    row.append(preview);
-  }
-
-  if (!hero) {
-    row.append(tileElement(alternative, imagesEnabled));
-  }
-
-  const link = document.createElement('a');
-  const meta = document.createElement('p');
-  const domain = document.createElement('span');
-
   link.setAttribute('href', alternative.url);
   link.setAttribute('target', '_blank');
   link.setAttribute('rel', 'noreferrer noopener');
-  link.textContent = alternative.title;
+
+  if (hero && preview !== null) {
+    link.append(preview);
+  }
+
+  if (!hero) {
+    link.append(tileElement(alternative, imagesEnabled));
+  }
+
+  const title = document.createElement('span');
+  const meta = document.createElement('p');
+  const domain = document.createElement('span');
+
+  title.setAttribute('data-role', 'result-title');
+  title.textContent = alternative.title;
 
   // The domain names the source and the description follows it, so one line
-  // carries both and the row keeps its height for the title.
+  // carries both and the row keeps its height for the title. The description
+  // keeps its own element, because a narrow screen drops it whole.
   meta.setAttribute('data-role', 'result-meta');
   domain.setAttribute('data-role', 'result-domain');
   domain.textContent = alternative.domain;
   meta.append(domain);
 
   if (alternative.description !== '') {
-    meta.append(` · ${alternative.description}`);
+    const description = document.createElement('span');
+
+    description.setAttribute('data-role', 'result-description');
+    description.textContent = ` · ${alternative.description}`;
+    meta.append(description);
   }
 
-  row.append(link, meta);
+  link.append(title, meta);
 
   if (!hero && preview !== null) {
-    row.append(preview);
+    link.append(preview);
   }
+
+  row.append(link);
 
   return row;
 }

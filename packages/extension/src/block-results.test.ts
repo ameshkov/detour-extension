@@ -142,6 +142,40 @@ describe('the alternatives list', () => {
     expect(rows()[1]?.dataset.variant).toBe('row');
   });
 
+  it('makes the whole row one link, so any part of it opens the story', () => {
+    renderAlternatives(view({ state: 'results', answer: ANSWER }));
+
+    for (const [index, row] of [...rows()].entries()) {
+      const link = row.querySelector('a');
+
+      expect(row.children, `row ${index}`).toHaveLength(1);
+      expect(link?.parentElement, `row ${index}`).toBe(row);
+      expect(link?.getAttribute('href'), `row ${index}`).toBe(ANSWER.alternatives[index]?.url);
+      expect(link?.getAttribute('target')).toBe('_blank');
+      expect(link?.querySelector('[data-role="result-title"]')?.textContent).toBe(
+        ANSWER.alternatives[index]?.title,
+      );
+      expect(link?.querySelector('[data-role="result-meta"]'), `row ${index}`).not.toBeNull();
+    }
+  });
+
+  it('keeps the image and the tile inside the link', () => {
+    renderAlternatives(view({ state: 'results', answer: answeredWithFavicon() }));
+
+    const [hero, row] = [...rows()];
+
+    expect(hero?.querySelector('a > img')).not.toBeNull();
+    expect(row?.querySelector('a > [data-role="tile"]')).not.toBeNull();
+  });
+
+  it('writes the description in its own element, so a phone can drop it', () => {
+    renderAlternatives(view({ state: 'results', answer: ANSWER }));
+
+    const description = rows()[1]?.querySelector('[data-role="result-description"]');
+
+    expect(description?.textContent).toBe(' · A second look at the same tools.');
+  });
+
   it('gives a row without an image the full width', () => {
     renderAlternatives(view({ state: 'results', answer: ANSWER }));
 
@@ -225,6 +259,7 @@ describe('the alternatives list', () => {
     renderAlternatives(view({ state: 'results', answer }));
 
     expect(rows()[1]?.querySelector('[data-role="result-meta"]')?.textContent).toBe('theverge.com');
+    expect(rows()[1]?.querySelector('[data-role="result-description"]')).toBeNull();
   });
 
   it('colours the tile of a domain the same way every time', () => {

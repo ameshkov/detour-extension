@@ -130,6 +130,7 @@ export function renderActions(view: ActionsView): void {
 
   stopMenuListeners();
   setHidden('scope-menu', true);
+  setHidden('open-group', original === null);
   setHidden('actions', original === null);
   setHidden('action-error', true);
   setText('open-site', openAnywayLabel(view.siteName ?? view.host ?? ''));

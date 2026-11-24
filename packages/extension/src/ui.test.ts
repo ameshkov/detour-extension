@@ -206,14 +206,14 @@ describe('the stylesheet', () => {
 
     expect(narrow).not.toBeNull();
     expect(
-      innerRule(narrow, '[data-role="list"] > li > img')?.style.getPropertyValue('display'),
+      innerRule(narrow, '[data-role="list"] > li > a > img')?.style.getPropertyValue('display'),
     ).toBe('none');
     expect(innerRule(narrow, '[data-role="headline"]')?.style.getPropertyValue('font-size')).toBe(
-      '24px',
+      '21px',
     );
   });
 
-  it('stacks the action row below 520 pixels', () => {
+  it('stacks the source bar and the footer below 520 pixels', () => {
     const narrow = mediaRule('(max-width: 520px)');
 
     expect(narrow).not.toBeNull();
@@ -221,15 +221,22 @@ describe('the stylesheet', () => {
       '1',
     );
     expect(
-      innerRule(narrow, '[data-role="actions"] [data-role="report"]')?.style.getPropertyValue(
-        'flex-basis',
-      ),
-    ).toBe('100%');
+      innerRule(narrow, '[data-role="source"]')?.style.getPropertyValue('grid-template-columns'),
+    ).toContain('1fr');
+    expect(
+      innerRule(narrow, '[data-role="actions"]')?.style.getPropertyValue('flex-direction'),
+    ).toBe('column');
     expect(
       innerRule(narrow, '[data-role="actions"] [data-role="report"]')?.style.getPropertyValue(
         'margin-left',
       ),
     ).toBe('0px');
+    expect(
+      innerRule(narrow, '[data-role="result-description"]')?.style.getPropertyValue('display'),
+    ).toBe('none');
+    expect(innerRule(narrow, '[data-role="list-head"]')?.style.getPropertyValue('display')).toBe(
+      'block',
+    );
   });
 
   it('keeps the popup footer inside its frame below 520 pixels', () => {
@@ -373,13 +380,21 @@ describe('the stylesheet', () => {
     ).toBe('var(--accent-deep)');
   });
 
-  it('joins the two halves of the open control', () => {
-    const gap = styleRule('[data-role="actions"]')?.style.getPropertyValue('gap') ?? '';
-    // The shorthand carries the row gap first and the column gap second.
-    const columnGap = gap.split(/\s+/)[1];
+  it('sets the open control beside the page it opens', () => {
+    const source = styleRule('[data-role="source"]');
+    const columns = source?.style.getPropertyValue('grid-template-columns') ?? '';
 
-    expect(columnGap).toBe('0');
-    expect(gap.split(/\s+/)[0]).toBe('20px');
+    expect(source?.style.getPropertyValue('display')).toBe('grid');
+    expect(columns).toContain('minmax');
+    expect(columns).toContain('auto');
+    expect(styleRule('[data-role="open-group"]')?.style.getPropertyValue('display')).toBe('flex');
+  });
+
+  it('keeps the report beside the privacy note at the foot of the page', () => {
+    const actions = styleRule('[data-role="actions"]');
+
+    expect(actions?.style.getPropertyValue('display')).toBe('flex');
+    expect(actions?.style.getPropertyValue('align-items')).toBe('flex-start');
 
     const report = styleRule('[data-role="report"]');
 
@@ -478,25 +493,43 @@ describe('the stylesheet', () => {
     ).toBe('var(--line-soft)');
   });
 
-  it('lifts a hovered row into a card of its own', () => {
-    const hover = styleRule('[data-role="list"] > li[data-variant="row"]:hover');
+  it('opens a row from every part of it and lifts it on hover', () => {
+    const card = styleRule('[data-role="list"] > li > a');
 
-    expect(hover?.style.getPropertyValue('border-radius')).toBe('var(--radius)');
+    expect(card?.style.getPropertyValue('display')).toBe('grid');
+    expect(card?.style.getPropertyValue('padding')).toBe('13px');
+    expect(card?.style.getPropertyValue('border-radius')).toBe('var(--radius)');
     expect(
-      styleRule('[data-role="list"] > li[data-variant="row"]:hover + li')?.style.getPropertyValue(
-        'border-top-color',
-      ),
+      styleRule('[data-role="list"] > li:hover > a')?.style.getPropertyValue('background'),
+    ).toBe('var(--surface)');
+    expect(
+      styleRule('[data-role="list"] > li:hover + li')?.style.getPropertyValue('border-top-color'),
     ).toBe('transparent');
   });
 
   it('keeps a row at two lines: the title, then the domain and the description', () => {
-    const meta = styleRule('[data-role="list"] > li > [data-role="result-meta"]');
+    const meta = styleRule('[data-role="list"] > li > a > [data-role="result-meta"]');
 
     expect(meta?.style.getPropertyValue('grid-row')).toBe('2');
     expect(meta?.style.getPropertyValue('margin')).toBe('0px');
+    // The environment drops the vendor property, so the sheet is read directly.
+    expect(CSS).toContain('-webkit-line-clamp: 2');
     expect(styleRule('[data-role="result-domain"]')?.style.getPropertyValue('color')).toBe(
       'var(--ink)',
     );
+  });
+
+  it('keeps the count on one line beside the heading', () => {
+    expect(styleRule('[data-role="count"]')?.style.getPropertyValue('white-space')).toBe('nowrap');
+  });
+
+  it('names the stopped page in sans, under a smaller headline', () => {
+    const title = styleRule('[data-role="source-title"]');
+    const headline = styleRule('[data-role="headline"]');
+
+    expect(title?.style.getPropertyValue('font-family')).toBe('var(--sans)');
+    expect(title?.style.getPropertyValue('font-size')).toBe('14.5px');
+    expect(headline?.style.getPropertyValue('font-size')).toBe('28px');
   });
 
   it('draws a wall as the category in ink, a middot, and the type in grey', () => {
@@ -518,7 +551,7 @@ describe('the stylesheet', () => {
   });
 
   it('reads the judgement in ink, under the width of the column', () => {
-    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('610px');
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('590px');
     expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('color')).toBe('var(--ink)');
     expect(styleRule('[data-role="explanation"]')).toBeNull();
     expect(styleRule('[data-role="practice"]')).toBeNull();
@@ -707,20 +740,17 @@ describe('the stylesheet', () => {
     expect(arrow?.style.getPropertyValue('content').replace(/["']/g, '')).toBe('↗');
   });
 
-  it('tightens the lede and the actions below 520 pixels', () => {
+  it('tightens the top of the page below 520 pixels', () => {
     const narrow = mediaRule('(max-width: 520px)');
 
     expect(innerRule(narrow, '[data-role="headline"]')?.style.getPropertyValue('margin')).toBe(
-      '14px 0px 12px',
+      '10px 0px',
     );
     expect(innerRule(narrow, '[data-role="lede"]')?.style.getPropertyValue('margin-bottom')).toBe(
-      '20px',
-    );
-    expect(innerRule(narrow, '[data-role="actions"]')?.style.getPropertyValue('gap')).toBe(
-      '12px 0',
+      '18px',
     );
     expect(innerRule(narrow, '[data-role="source"]')?.style.getPropertyValue('padding')).toBe(
-      '10px',
+      '12px',
     );
   });
 
