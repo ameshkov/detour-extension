@@ -2,7 +2,14 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/', '.sdd/', 'packages/*/dist/', 'packages/*/src/sites.json'],
+    ignores: [
+      'node_modules/',
+      '.sdd/',
+      'packages/*/dist/',
+      'packages/*/src/sites.json',
+      'store/dist/',
+      'website/dist/',
+    ],
   },
   {
     files: ['**/*.ts'],

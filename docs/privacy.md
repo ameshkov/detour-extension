@@ -16,6 +16,9 @@ device and is never part of that request. The backend builds a search query
 from the title and the URL. Nothing else about the page, and nothing about the
 rest of your browsing, leaves the browser.
 
+The policy took effect on 2026-11-25. Questions and requests go to the project's
+issue tracker at https://github.com/ameshkov/detour-extension/issues.
+
 The extension asks the backend for the site list as well. That request
 carries no page and no reader, and the answer is the same list for everyone.
 
@@ -81,6 +84,14 @@ a row comes from, and it tells the publisher nothing.
 
 The source card loads no image. Detour separately requests the blocked page
 for metadata without cookies.
+
+## Limited use
+
+Detour uses the data that leaves your browser for one purpose: to find the same
+story on a publisher that does not wall it. It does not use that data for
+advertising, it does not sell it, and it does not use it to decide
+creditworthiness or eligibility for credit. The backend keeps one answer per
+article, and it keeps no record per reader.
 
 ## What we do not do
 

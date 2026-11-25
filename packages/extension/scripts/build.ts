@@ -126,12 +126,15 @@ function outputFiles(): string[] {
 }
 
 /**
- * The manifest grants access to the backend that this build uses. The broad
- * page permission already covers it, and the explicit entry records the one
- * server the extension is built against and keeps the permission if the broad
- * rule is ever narrowed.
+ * The manifest that a build writes. The manifest grants access to the backend
+ * that this build uses: the broad page permission already covers it, and the
+ * explicit entry records the one server the extension is built against.
+ *
+ * The store grants an item its public key and refuses a package that carries
+ * one, so the release build drops the field. A development build keeps it,
+ * because the key fixes the id that the tests and the end-to-end run name.
  */
-export function manifestWithApiBase(text: string, apiBase: string): string {
+export function builtManifest(text: string, apiBase: string, dev: boolean): string {
   let manifest: unknown;
 
   try {
@@ -153,6 +156,10 @@ export function manifestWithApiBase(text: string, apiBase: string): string {
 
   record.host_permissions = hosts.includes(origin) ? hosts : [...hosts, origin];
 
+  if (!dev) {
+    delete record.key;
+  }
+
   return `${JSON.stringify(record, null, 2)}\n`;
 }
 
@@ -165,6 +172,7 @@ async function writeCopiedFiles(
   outDir: string,
   manifestPath: string,
   apiBase: string,
+  dev: boolean,
 ): Promise<void> {
   for (const file of COPIED_FILES) {
     await copyFile(join(root, 'src', file), join(outDir, file));
@@ -172,7 +180,7 @@ async function writeCopiedFiles(
 
   await writeFile(
     join(outDir, MANIFEST_FILE),
-    manifestWithApiBase(await readFile(manifestPath, 'utf8'), apiBase),
+    builtManifest(await readFile(manifestPath, 'utf8'), apiBase, dev),
   );
 }
 
@@ -221,7 +229,8 @@ export async function buildExtension(options: BuildOptions): Promise<BuildResult
   await rm(outDir, { recursive: true, force: true });
   await mkdir(outDir, { recursive: true });
 
-  const copy = (): Promise<void> => writeCopiedFiles(root, outDir, manifestPath, apiBase);
+  const copy = (): Promise<void> =>
+    writeCopiedFiles(root, outDir, manifestPath, apiBase, options.dev);
 
   // One save can raise two events, and a copy that starts before the previous
   // one ends truncates a page that copy is still writing. One chain keeps the

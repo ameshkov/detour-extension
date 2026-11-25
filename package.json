@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@11.25.0",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=26.0.0"
   },
   "scripts": {
     "build": "pnpm list:build && pnpm --filter @detour/extension build",
@@ -16,6 +16,12 @@
     "dummy-server": "tsx dev/dummy-server.ts",
     "test": "pnpm list:build && vitest run",
     "test:e2e": "pnpm build:dev && playwright test",
+    "site:build": "tsx website/build.ts",
+    "store:capture": "pnpm build:dev && tsx store/capture.ts",
+    "store:pack": "pnpm build && tsx store/pack.ts",
+    "store:sheet": "tsx store/listing.ts",
+    "store:status": "tsx store/release.ts --status",
+    "store:publish": "tsx store/release.ts",
     "typecheck": "pnpm list:build && tsc --noEmit && pnpm --filter @detour/extension typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -28,14 +34,18 @@
     "@detour/shared": "workspace:*",
     "@playwright/test": "1.65.1",
     "@types/node": "22.20.5",
+    "@types/yazl": "2.4.6",
+    "chrome-webstore-upload": "6.0.1",
     "eslint": "10.14.0",
     "happy-dom": "21.0.4",
+    "marked": "18.3.0",
     "prettier": "3.10.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
     "vite": "8.3.8",
     "vitest": "5.1.0",
-    "yaml": "2.9.1"
+    "yaml": "2.9.1",
+    "yazl": "3.3.1"
   }
 }

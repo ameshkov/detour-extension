@@ -28,7 +28,7 @@ backend is a separate service.
 
 ## Technical Context
 
-- **Language/Version**: TypeScript 6.0.3 in strict mode, Node.js 22.13 or
+- **Language/Version**: TypeScript 6.0.3 in strict mode, Node.js 26 or
   later, and pnpm 11 for the workspace. Chrome 120 or later for the extension.
 - **Primary Dependencies**: no runtime framework in the extension. esbuild
   builds the bundle. `tldts` provides the registrable domain and `zod` checks
@@ -58,7 +58,8 @@ tsconfig.json          strict TypeScript for the root program
 playwright.config.ts   the end-to-end run and its dummy server
 vitest.config.ts       the test runner
 eslint.config.js       the lint rules
-.github/workflows/     check.yml: install and pnpm check, plus the e2e job
+.github/workflows/     check.yml gates every change, publish.yml packs a tag and
+                       submits a manual run, and pages.yml publishes the site
 dev/                   dummy-server.ts, run-dev.ts, and their tests
 e2e/                   extension.spec.ts and fixtures.ts
 scripts/               check-docs.ts, documents.test.ts, brand.test.ts
@@ -67,6 +68,9 @@ sites/                 sites.release.json, sites.dev.yaml, build.ts, list-build.
                        sync.ts, and their tests
 sites/fixtures/pages/  three saved publisher pages for the metadata reader
 docs/                  architecture.md, brand.md, privacy.md
+store/                 meta/listing.json, meta/listing.md, assets/, the pack and
+                       release tools, their tests, and README.md
+website/               layout.ts, styles.css, build.ts, and its tests
 packages/shared/       list contract, matching, query cleaner, hash
 packages/extension/    manifest.json, the five bundles, the three pages, ui.css,
                        logo-mark.png, the four toolbar icons, the tests, and
@@ -91,6 +95,12 @@ helpers in `src/testing/`.
 - **Test**: `pnpm test`
 - **Test the extension alone**: `pnpm --filter @detour/extension test`
 - **Test the end-to-end flow**: `pnpm test:e2e`
+- **Capture the store images**: `pnpm store:capture`
+- **Build the website**: `pnpm site:build`
+- **Pack the store release**: `pnpm store:pack`
+- **Write the store listing sheet**: `pnpm store:sheet`
+- **Read the store status**: `pnpm store:status`
+- **Upload and publish**: `pnpm store:publish`, and `pnpm store:publish --mode=live`
 - **Install the end-to-end browser**: `pnpm exec playwright install chromium`
 - **Type check**: `pnpm typecheck`
 - **Type check the extension**: `pnpm --filter @detour/extension typecheck`
@@ -323,10 +333,12 @@ Extension configuration:
   `ui.css` always matches it. A narrow-screen rule that names a shared control
   is scoped to the block page's `[data-role='actions']`, or it widens the popup
   window past its frame.
-- The manifest carries one fixed public key. That key gives the provisional
-  development id `jcncblagncbpbamfnekhdkomffdpehpk`, and no private key is in
-  the repository. If the store issues another public key, one change replaces
-  the key, the id, and every origin check that names it.
+- The manifest carries one fixed public key, which gives the development id
+  `jcncblagncbpbamfnekhdkomffdpehpk`, and no private key is in the repository.
+  A store upload refuses a package that carries `key`, so the release build
+  drops the field, and the store grants the item its own id and key. After the
+  first upload, copy the store key into the manifest if the unpacked build
+  should share the published id.
 - The build reads `DETOUR_API_BASE`. The value is one origin with no path, no
   query, and no credentials. The release default is
   `https://detour-api.meshkov.info`, and the development default is
@@ -375,6 +387,33 @@ Local development configuration:
   browser profile maps `forbes.test` to `127.0.0.1`. `E2E_PORT` moves the run
   to a free port.
 
+Store configuration:
+
+- `store/` is the one directory of the release. It holds the listing, the images, the
+  package, the upload, and their tests. A store value lives nowhere else.
+- `store/meta/listing.json` is the source of every dashboard field, and
+  `store/meta/listing.md` is generated from it by `pnpm store:sheet`. Both are committed, and a test compares them.
+- The ZIP holds exactly the files that the release build writes, with `manifest.json` at
+  its root. `pnpm store:pack` refuses a development build, a stray file, and an icon of
+  the wrong size.
+- The manifest version is the release version. Every upload raises it, because the store
+  refuses a version that it already has.
+- The store grants the item id on the first upload, and `CWS_ITEM_ID` names it. The id
+  is not a secret. The publisher id, the OAuth client, and the refresh token come from
+  the `chrome-web-store` environment. Never commit one.
+- A `v*` tag packs and keeps the ZIP. A manual run submits it from the environment that
+  asks a reviewer for approval.
+- `pnpm store:capture` draws the images from the real pages and the local fixtures. The
+  PNGs stay in `store/assets`.
+
+Website configuration:
+
+- `website/` is the public page of the extension. `pnpm site:build` writes `website/dist`,
+  and the pages workflow publishes it to GitHub Pages.
+- The privacy page renders `docs/privacy.md`, so the policy has one source and the site
+  cannot state something that the document does not.
+- Every address of the site is relative, because Pages serves it from a subdirectory.
+
 Documents and their update triggers:
 
 | Document               | Update when                                                       |
@@ -385,6 +424,7 @@ Documents and their update triggers:
 | `docs/architecture.md` | The architecture, a storage key, a route, or a flow changes       |
 | `docs/privacy.md`      | Data that leaves the device, retention, or the provider changes   |
 | `docs/brand.md`        | The mark, the palette, or the license changes                     |
+| `store/README.md`      | The listing, the images, or the release steps change              |
 | `AGENTS.md`            | The structure, a command, or a convention changes                 |
 
 ### Other

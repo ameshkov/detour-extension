@@ -56,6 +56,25 @@ pnpm test
 pnpm check
 ```
 
+## Website
+
+The public page and the privacy policy are at
+<https://ameshkov.github.io/detour-extension/>. The site lives in `website/`, and
+`pnpm site:build` writes it from `docs/privacy.md` and the store images.
+
+## Publish
+
+The Chrome Web Store release lives in `store/`. One command packs the release
+build, and one uploads and publishes it.
+
+```sh
+pnpm store:pack
+pnpm store:publish --mode=live
+```
+
+[store/README.md](store/README.md) holds the listing text, the images, the
+secrets, and the workflow.
+
 ## Documentation
 
 - [DEVELOPMENT.md](DEVELOPMENT.md) — local setup, every script, and the
@@ -68,3 +87,5 @@ pnpm check
   licence.
 - [docs/privacy.md](docs/privacy.md) — what leaves the browser, what a backend
   keeps, and the search provider.
+- [store/README.md](store/README.md) — the store listing, the images, and the
+  release.

@@ -100,17 +100,13 @@ describe('the brand page', () => {
     expect(wordmarkTrackingOfDoc(brand)).toBe(wordmarkTrackingOfSheet(read(SHEET)));
   });
 
-  it('names the purchase date as pending', () => {
+  it('records the purchase date of the licence', () => {
     const licence = section(brand, 'License');
 
-    expect(licence).toContain(
-      'The mark requires a paid icons8 licence, whose purchase is pending.',
-    );
-    expect(licence).toContain('The project does not yet hold that licence.');
-    expect(licence).not.toContain('The mark is used under');
-    expect(licence).not.toContain('The project holds a paid icons8 licence');
-    expect(licence).toContain('- **Purchase date**: pending');
-    expect(licence).toMatch(/release cannot be prepared until a date replaces that word/i);
+    expect(licence).toContain('The mark requires a paid icons8 licence, which the project holds.');
+    expect(licence).toContain('- **Purchase date**: 2026-11-25');
+    expect(licence).not.toContain('pending');
+    expect(licence).not.toContain('cannot be prepared');
   });
 
   it('links no attribution page', () => {

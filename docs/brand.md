@@ -52,12 +52,14 @@ carries it.
 | ------------------------------------------------ | ------- | ------------------------------------------------------ |
 | Page mark, PNG                                   | Now     | `packages/extension/src/logo-mark.png`                 |
 | Manifest icon set, PNG at 16, 32, 48, and 128 px | Now     | `packages/extension/src/icon-16.png` to `icon-128.png` |
-| Store tile, 440 by 280 px                        | Release | The store listing                                      |
-| Source SVG, one colour                           | Release | `packages/extension/src/assets/logo/`                  |
+| Store icon, 96 px in a 128 px canvas             | Release | `store/assets/icon-128.png`                            |
+| Store screenshots, 1280 by 800 px                | Release | `store/assets/screenshot-*.png`                        |
+| Store tile, 440 by 280 px                        | Release | `store/assets/tile-440x280.png`                        |
+| Store marquee, 1400 by 560 px                    | Release | `store/assets/marquee-1400x560.png`                    |
 
 The page mark is the only image that the pages load. The manifest icon set is the tile of the
-header at four sizes, and the manifest names those four files. The store tile and the source SVG
-stay with the release.
+header at four sizes, and the manifest names those four files. The store icon is the 128 px tile,
+and the screenshots and the store tile come from `pnpm store:capture` over the real pages.
 
 ## Palette
 
@@ -181,13 +183,10 @@ above its text.
 
 ## License
 
-The mark requires a paid icons8 licence, whose purchase is pending. The product ships with
-no attribution link on a page, in the store listing, or in the source.
+The mark requires a paid icons8 licence, which the project holds. The product ships with no
+attribution link on a page, in the store listing, or in the source.
 
-- **Purchase date**: pending
+- **Purchase date**: 2026-11-25
 
-The release cannot be prepared until a date replaces that word. A licence review asks for the
-date and the invoice, and this page is where the date lives.
-
-The project does not yet hold that licence. A replacement mark needs its own record here
-before a page loads it.
+The invoice stays with the purchase record. A replacement mark needs its own record here before
+a page loads it.

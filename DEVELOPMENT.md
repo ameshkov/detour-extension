@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node.js 22.13 or later.
+- Node.js 26 or later. `.nvmrc` names the same version, so `nvm use` selects it.
 - pnpm 11, through `corepack enable`.
 - Google Chrome 120 or later, to load the unpacked build.
 - The Playwright Chromium build, for the end-to-end flow:
@@ -194,6 +194,25 @@ pnpm check
 
 `pnpm check` runs the list build, the type check, the lint, the format check,
 the document checks, and the tests.
+
+## Release
+
+`store/` holds everything that the Chrome Web Store takes. The listing text is
+`store/meta/listing.json`, and `pnpm store:sheet` writes the sheet that a person
+pastes into the dashboard.
+
+```sh
+pnpm site:build      # the website and its privacy page
+pnpm store:capture   # the images of the listing, from the local fixtures
+pnpm store:pack      # the release build and store/dist/detour-<version>.zip
+pnpm store:status    # the version that the store published
+pnpm store:publish   # upload the ZIP and stage it
+```
+
+The upload reads `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and
+`CWS_REFRESH_TOKEN`. A local run takes them from the environment, and the
+workflow takes them from the `chrome-web-store` environment.
+[store/README.md](store/README.md) has the setup and the failure modes.
 
 ## Documents
 

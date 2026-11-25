@@ -1,0 +1,103 @@
+name: publish
+
+# A tag packs the release and keeps it. A person submits it, from the
+# `chrome-web-store` environment that asks a reviewer for approval.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What the run does after the upload
+        type: choice
+        options:
+          - staged
+          - live
+          - none
+        default: staged
+
+# One release at a time. A second run waits instead of racing the first.
+concurrency:
+  group: chrome-web-store
+  cancel-in-progress: false
+
+jobs:
+  pack:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install the dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the gates
+        run: pnpm check
+
+      - name: Pack the release
+        run: pnpm store:pack
+
+      - name: Write the listing sheet
+        run: pnpm store:sheet
+
+      - name: Keep the package and the sheet
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-web-store
+          path: |
+            store/dist/
+            store/meta/listing.md
+          retention-days: 30
+
+  publish:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: chrome-web-store
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install the dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The tag path runs the gates before it packs. A submit runs them again,
+      # because a manual run can name a branch that never passed.
+      - name: Run the gates
+        run: pnpm check
+
+      - name: Pack the release
+        run: pnpm store:pack
+
+      # The token is exchanged for one use of the store API, and no step prints
+      # it. The values come from the environment secrets, never from the repo.
+      - name: Publish
+        env:
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: pnpm store:publish --mode=${{ inputs.mode }}

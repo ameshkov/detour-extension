@@ -12,3 +12,9 @@ playwright-report/
 
 # A store that pnpm keeps in the project when it crosses a file system.
 .pnpm-store/
+
+# The store package of the release build.
+store/dist/
+
+# The built site that the pages workflow publishes.
+website/dist/

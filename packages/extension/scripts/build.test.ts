@@ -12,7 +12,7 @@ import {
   apiBaseFor,
   buildExtension,
   definesFor,
-  manifestWithApiBase,
+  builtManifest,
   parseApiBase,
 } from './build';
 
@@ -173,17 +173,29 @@ describe('the api base', () => {
 
   it('adds the backend origin to the manifest host permissions', () => {
     const manifest = JSON.parse(
-      manifestWithApiBase('{"host_permissions":["*://*/*"]}', 'https://api.example.test'),
+      builtManifest('{"host_permissions":["*://*/*"]}', 'https://api.example.test', false),
     ) as { host_permissions: string[] };
 
     expect(manifest.host_permissions).toEqual(['*://*/*', 'https://api.example.test/*']);
+  });
+
+  it('drops the public key from the release manifest and keeps it in development', () => {
+    const source = '{"key":"abc","host_permissions":["*://*/*"]}';
+
+    expect(JSON.parse(builtManifest(source, 'https://api.example.test', false))).not.toHaveProperty(
+      'key',
+    );
+    expect(JSON.parse(builtManifest(source, 'https://api.example.test', true))).toHaveProperty(
+      'key',
+      'abc',
+    );
   });
 
   it('does not repeat a host permission', () => {
     const source = JSON.stringify({
       host_permissions: ['*://*/*', 'https://api.example.test/*'],
     });
-    const manifest = JSON.parse(manifestWithApiBase(source, 'https://api.example.test')) as {
+    const manifest = JSON.parse(builtManifest(source, 'https://api.example.test', false)) as {
       host_permissions: string[];
     };
 

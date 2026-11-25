@@ -17,6 +17,8 @@
     "packages/shared/src/**/*.ts",
     "sites/**/*.ts",
     "scripts/**/*.ts",
+    "store/**/*.ts",
+    "website/**/*.ts",
     "dev/**/*.ts",
     "e2e/**/*.ts",
     "playwright.config.ts",

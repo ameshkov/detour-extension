@@ -10,3 +10,8 @@ playwright-report/
 
 # The artifact copy is foreign data, kept as detour-list writes it.
 sites/sites.release.json
+
+# Generated from store/meta/listing.json, one sheet per dashboard field.
+store/meta/listing.md
+store/dist/
+website/dist/
