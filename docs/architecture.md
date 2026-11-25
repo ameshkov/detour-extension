@@ -320,7 +320,9 @@ browser restarts`, and a running pause replaces its label with the time it has
 left and a `Resume`. `Today` ends at the next local midnight, and `Until the
 browser restarts` writes `pauseSession` instead of a timestamp. The settings row
 opens the options page. The footer keeps two links, `How it works` and
-`Privacy`, and the popup never grants an allowance.
+`Privacy`, and both open the public site at
+`https://ameshkov.github.io/detour-extension/`, not the backend. The popup never
+grants an allowance.
 
 The options page is 640 px at most. It lists every entry of the three
 allowance stores with its scope and its `addedAt` date as a UTC `YYYY-MM-DD`,

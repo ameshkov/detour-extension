@@ -61,6 +61,14 @@ export const LIST_REFRESH_ALARM = 'list-refresh';
 export const LIST_STORAGE_VERSION = 2;
 export const REPORT_ISSUE_URL = 'https://github.com/ameshkov/detour-extension/issues/new';
 
+/**
+ * The public site. The popup opens it for the explanation and the policy, and
+ * the pages are built from this repository, so neither link depends on the
+ * backend.
+ */
+export const SITE_URL = 'https://ameshkov.github.io/detour-extension/';
+export const PRIVACY_URL = 'https://ameshkov.github.io/detour-extension/privacy.html';
+
 export const DEFAULT_SETTINGS = {
   enabled: true,
   autoOpenBest: false,

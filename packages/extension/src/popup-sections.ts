@@ -1,4 +1,4 @@
-import { MESSAGE } from './constants';
+import { MESSAGE, PRIVACY_URL, SITE_URL } from './constants';
 import {
   ENABLED_SWITCH_LABEL,
   HOW_IT_WORKS_LABEL,
@@ -230,8 +230,8 @@ function setLink(role: string, href: string, text: string): void {
   element.setAttribute('href', href);
 }
 
-/** The two links leave the extension. Reporting lives on the site block instead. */
-export function renderLinks(view: PopupView): void {
-  setLink('how-it-works', `${view.apiBase}/`, HOW_IT_WORKS_LABEL);
-  setLink('privacy', `${view.apiBase}/privacy`, PRIVACY_LABEL);
+/** The two links leave the extension for the public site. */
+export function renderLinks(): void {
+  setLink('how-it-works', SITE_URL, HOW_IT_WORKS_LABEL);
+  setLink('privacy', PRIVACY_URL, PRIVACY_LABEL);
 }

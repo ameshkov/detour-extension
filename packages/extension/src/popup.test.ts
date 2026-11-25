@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { LIST_STORAGE_VERSION, PAUSE_DURATION_MS, STORAGE } from './constants';
+import {
+  LIST_STORAGE_VERSION,
+  PAUSE_DURATION_MS,
+  PRIVACY_URL,
+  SITE_URL,
+  STORAGE,
+} from './constants';
 import {
   ENABLED_SWITCH_LABEL,
   HOW_IT_WORKS_LABEL,
@@ -29,7 +35,6 @@ import { mountShell, readShell, role } from './testing/shell';
 
 const SHELL = readShell('popup.html');
 
-const API_BASE = 'https://detour-api.invalid';
 const NOW = Date.UTC(2026, 10, 13, 12, 0);
 const LISTED_URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
 const UNLISTED_URL = 'https://example.com/a-story';
@@ -106,7 +111,7 @@ function answerWrites(): void {
 }
 
 async function start(): Promise<void> {
-  await startPopup({ apiBase: API_BASE, now: NOW });
+  await startPopup({ now: NOW });
 }
 
 beforeEach(() => {
@@ -461,9 +466,9 @@ describe('the popup footer', () => {
     const privacy = role('privacy');
 
     expect(how.textContent).toBe(HOW_IT_WORKS_LABEL);
-    expect(how.getAttribute('href')).toBe(`${API_BASE}/`);
+    expect(how.getAttribute('href')).toBe(SITE_URL);
     expect(privacy.textContent).toBe(PRIVACY_LABEL);
-    expect(privacy.getAttribute('href')).toBe(`${API_BASE}/privacy`);
+    expect(privacy.getAttribute('href')).toBe(PRIVACY_URL);
 
     for (const element of [how, privacy]) {
       expect(element.getAttribute('target')).toBe('_blank');

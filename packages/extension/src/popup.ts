@@ -33,14 +33,12 @@ export type PopupView = {
   /** The moment the timed pause ends, and 0 when nothing is counting down. */
   until: number;
   site: PopupSite | null;
-  apiBase: string;
   listId: string;
   now: number;
   reload: () => void;
 };
 
 export type PopupOptions = {
-  apiBase: string;
   now?: number;
 };
 
@@ -89,7 +87,7 @@ export function renderPopup(view: PopupView): void {
   renderSite(view);
   renderPause(view);
   renderSettings();
-  renderLinks(view);
+  renderLinks();
 }
 
 /**
@@ -120,7 +118,7 @@ function countdown(until: number): void {
  * Every write is a message, and the reload that follows reads what the service
  * worker stored.
  */
-export async function startPopup(options: PopupOptions): Promise<void> {
+export async function startPopup(options: PopupOptions = {}): Promise<void> {
   const now = options.now ?? Date.now();
 
   const load = async (): Promise<void> => {
@@ -139,7 +137,6 @@ export async function startPopup(options: PopupOptions): Promise<void> {
       remaining: paused ? remainingOf(pause.until, now) : null,
       until: paused ? pause.until : 0,
       site: tab === null ? null : siteFor(list, tab),
-      apiBase: options.apiBase,
       listId,
       now,
       reload: () => void load(),

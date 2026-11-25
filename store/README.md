@@ -6,10 +6,11 @@ the workflow that runs it and the manifest that it ships.
 
 ## What the store takes
 
-| Part    | Fields                                                                                                                                                                                                | How it is set                                                          |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Package | `name`, `version`, `description`, `icons`, `permissions`, `host_permissions`                                                                                                                          | `pnpm store:pack` builds the ZIP, and the release workflow uploads it. |
-| Listing | Detailed description, category, language, screenshots, store icon, promo tile, homepage, support URL, privacy URL, single purpose, permission justifications, remote code, data usage, content rating | The dashboard, once per item. `store/meta/listing.md` holds the text.  |
+| Part                  | Fields                                                                                                                              | How it is set                                                          |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Package               | `name`, `version`, `description`, `icons`, `permissions`, `host_permissions`                                                        | `pnpm store:pack` builds the ZIP, and the release workflow uploads it. |
+| Store listing tab     | Detailed description, category, language, screenshots, store icon, promo tiles, homepage, support URL, content rating               | The dashboard, once per item. `store/meta/listing.md` opens with this. |
+| Privacy practices tab | Single purpose description, privacy policy URL, one justification per permission, remote code, data usage, the three certifications | The same sheet, in its second half.                                    |
 
 The API uploads and publishes. It cannot create an item and it cannot set the listing,
 so the first upload and the whole listing go through the dashboard.

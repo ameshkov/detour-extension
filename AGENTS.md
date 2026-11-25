@@ -19,9 +19,12 @@
 ## Project Overview
 
 Detour is a Chrome extension that stops a visit to a publisher that walls a
-story from readers who use an ad blocker, and it shows the same story from
-publishers that do not. It reads a site list, finds the alternatives through
-one backend origin, and renders the block page. This repository holds the
+story, and it shows the same story from publishers that do not. A wall is an ad
+blocker, a paywall, a registration prompt, a consent dialog, a region check, a
+VPN check, or an age check, each hard, soft, or metered. The list records the
+walls that a site uses, and the settings choose which walls stop a page. The
+extension reads the list, finds the alternatives through one backend origin, and
+renders the block page. This repository holds the
 extension, the shared list contract, a bundled copy of the site list, and a
 local dummy backend. The list itself lives in `detour-list`, and the production
 backend is a separate service.

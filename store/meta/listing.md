@@ -5,10 +5,12 @@ The dashboard takes these values once per item. This file is generated from
 that command again. The `Assets` section of `store/README.md` names the images
 that go with it.
 
-## Store listing
+## Store listing tab
+
+Paste these on the Store listing tab of the dashboard.
 
 - Name: `Detour`, 6 of 75 characters
-- Summary: `Stops a visit to a publisher that walls readers who use an ad blocker, and shows the same story elsewhere.`, 106 of 132 characters
+- Summary: `Stops a page walled by an ad blocker, a paywall, a sign-in, a region check, or an age check, and shows the same story elsewhere.`, 128 of 132 characters
 - Category: `News & Weather`
 - Language: `en`
 - Homepage: https://github.com/ameshkov/detour-extension
@@ -17,16 +19,16 @@ that go with it.
 ## Detailed description
 
 ```text
-Detour stops a story that a publisher walls from readers who use an ad blocker, and it shows the same story from publishers that do not.
+Detour stops a story that a publisher walls, and shows the same story from publishers that do not.
 
-Many sites refuse the article when they detect an ad blocker. The page asks you to turn the blocker off or to pay. Detour recognizes that wall, stops the page before it draws, and looks for the same story elsewhere. You choose where to read it.
+A wall is any refusal of the article: an ad-blocker wall, a paywall, a registration prompt, a consent dialog, a region check, a VPN check, or an age check. The list records the walls that a publisher uses, and each wall has a type: hard, soft, or metered. The default stops the ad-blocker wall, the one that meets a reader who installed nothing but a blocker.
 
 What it does
 
-- Finds an ad-blocker wall on a list of publishers that use one.
-- Shows the same story from other publishers, with the title, the publisher, and a short description.
+- Names every wall that the list records for a site, on the block page and in the popup.
+- Shows the same story from publishers that do not wall it, with the title, the publisher, and a short description.
 - Opens a result from any part of its row.
-- Names the walls a publisher uses: ad blocker, paywall, hard, soft, or metered.
+- Stops a page only for the walls that you chose, one row per kind of wall and one column per type.
 - Opens the site anyway, for this tab only, or never, and remembers the choice.
 - Keeps the list and the last answers on the device, so the block page draws at once.
 
@@ -44,12 +46,15 @@ When Detour stops a page, it sends the address and the title of that page to the
 The list of publishers lives in a separate repository, so a wall can be added or removed without an extension update. You can report a missing wall from the block page.
 ```
 
-## Privacy practices
+## Privacy practices tab
 
-### Single purpose
+Paste these on the Privacy practices tab of the dashboard. The single purpose
+description is the first field of that tab.
+
+### Single purpose description
 
 ```text
-Detour stops a visit to a publisher that walls a story from readers who use an ad blocker, and it shows the same story from publishers that do not. It does nothing else.
+Detour stops a visit to a publisher that walls a story, whatever the wall, and shows the same story from publishers that do not. It does nothing else.
 ```
 
 ### Remote code

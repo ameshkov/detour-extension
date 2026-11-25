@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Detour",
   "version": "0.1.0",
-  "description": "Stops a visit to a publisher that walls readers who use an ad blocker, and shows the same story elsewhere.",
+  "description": "Stops a page walled by an ad blocker, a paywall, a sign-in, a region check, or an age check, and shows the same story elsewhere.",
   "icons": {
     "16": "icon-16.png",
     "32": "icon-32.png",

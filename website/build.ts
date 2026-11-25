@@ -26,8 +26,8 @@ export const FILES = [
 export function indexBody(): string {
   return `      <h1>Read the story, not the wall.</h1>
       <p class="lede">
-        Detour stops a page that walls a story from readers who use an ad blocker, and shows the
-        same story on a publisher that does not.
+        Detour stops a page that walls a story behind an ad blocker, a paywall, a sign-in, a
+        region check, or an age check, and shows the same story on a publisher that does not.
       </p>
       <p class="status">In preparation for the Chrome Web Store. The source is on GitHub.</p>
       <img
@@ -96,7 +96,7 @@ export async function buildSite(outDir: string = OUT): Promise<BuiltSite> {
     page({
       title: 'Detour — read the story, not the wall',
       description:
-        'Detour stops a page that walls a story from readers who use an ad blocker, and shows the same story on a publisher that does not.',
+        'Detour stops a page that walls a story, behind an ad blocker, a paywall, a sign-in, a region check, or an age check, and shows the same story on a publisher that does not.',
       body: indexBody(),
     }),
   );

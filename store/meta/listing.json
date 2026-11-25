@@ -1,14 +1,14 @@
 {
   "name": "Detour",
-  "summary": "Stops a visit to a publisher that walls readers who use an ad blocker, and shows the same story elsewhere.",
+  "summary": "Stops a page walled by an ad blocker, a paywall, a sign-in, a region check, or an age check, and shows the same story elsewhere.",
   "description": [
-    "Detour stops a story that a publisher walls from readers who use an ad blocker, and it shows the same story from publishers that do not.",
-    "Many sites refuse the article when they detect an ad blocker. The page asks you to turn the blocker off or to pay. Detour recognizes that wall, stops the page before it draws, and looks for the same story elsewhere. You choose where to read it.",
+    "Detour stops a story that a publisher walls, and shows the same story from publishers that do not.",
+    "A wall is any refusal of the article: an ad-blocker wall, a paywall, a registration prompt, a consent dialog, a region check, a VPN check, or an age check. The list records the walls that a publisher uses, and each wall has a type: hard, soft, or metered. The default stops the ad-blocker wall, the one that meets a reader who installed nothing but a blocker.",
     "What it does",
-    "- Finds an ad-blocker wall on a list of publishers that use one.",
-    "- Shows the same story from other publishers, with the title, the publisher, and a short description.",
+    "- Names every wall that the list records for a site, on the block page and in the popup.",
+    "- Shows the same story from publishers that do not wall it, with the title, the publisher, and a short description.",
     "- Opens a result from any part of its row.",
-    "- Names the walls a publisher uses: ad blocker, paywall, hard, soft, or metered.",
+    "- Stops a page only for the walls that you chose, one row per kind of wall and one column per type.",
     "- Opens the site anyway, for this tab only, or never, and remembers the choice.",
     "- Keeps the list and the last answers on the device, so the block page draws at once.",
     "What it does not do",
@@ -25,7 +25,7 @@
   "homepageUrl": "https://github.com/ameshkov/detour-extension",
   "supportUrl": "https://github.com/ameshkov/detour-extension/issues",
   "privacyPolicyUrl": "https://ameshkov.github.io/detour-extension/privacy.html",
-  "singlePurpose": "Detour stops a visit to a publisher that walls a story from readers who use an ad blocker, and it shows the same story from publishers that do not. It does nothing else.",
+  "singlePurpose": "Detour stops a visit to a publisher that walls a story, whatever the wall, and shows the same story from publishers that do not. It does nothing else.",
   "remoteCode": {
     "used": false,
     "explanation": "Every script ships in the package, and the extension never evaluates a string and never loads a script from the network."
