@@ -8,6 +8,9 @@ import { RELEASE_API_BASE } from './listing';
 import { DIST, OUT } from './pack';
 import { compareVersions, versionProblem } from './version';
 
+/** The item that the store created for this extension. */
+export const DEFAULT_ITEM_ID = 'gjmlbmcaklcbificepnkpenfhelngklo';
+
 /** How long the upload may stay IN_PROGRESS before the run gives up. */
 export const UPLOAD_WAIT_SECONDS = 120;
 
@@ -274,16 +277,12 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const env = process.env;
   const publisherId = env.CWS_PUBLISHER_ID?.trim() ?? '';
-  const itemId = env.CWS_ITEM_ID?.trim() ?? '';
+  const itemId = env.CWS_ITEM_ID?.trim() || DEFAULT_ITEM_ID;
   const clientId = env.CWS_CLIENT_ID?.trim() ?? '';
   const refreshToken = env.CWS_REFRESH_TOKEN?.trim() ?? '';
 
   if (publisherId === '') {
     throw new Error('CWS_PUBLISHER_ID is not set; it is the id of the Publisher, not of the item');
-  }
-
-  if (itemId === '') {
-    throw new Error('CWS_ITEM_ID is not set; the dashboard shows it on the Package tab');
   }
 
   if (clientId === '' || refreshToken === '') {

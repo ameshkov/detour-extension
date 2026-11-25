@@ -239,6 +239,18 @@ describe('the alternatives list', () => {
     expect(tile?.textContent).toBe('T');
   });
 
+  it('drops a preview image that does not load', () => {
+    renderAlternatives(view({ state: 'results', answer: ANSWER }));
+
+    const hero = rows()[0];
+    const image = hero?.querySelector('img');
+
+    image?.dispatchEvent(new Event('error'));
+
+    expect(hero?.querySelector('img')).toBeNull();
+    expect(hero?.dataset.layout).toBe('text');
+  });
+
   it('writes the domain and the description on the row line', () => {
     renderAlternatives(view({ state: 'results', answer: ANSWER }));
 

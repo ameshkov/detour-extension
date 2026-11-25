@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ReleaseOptions, StoreClient, StatusView } from './release';
-import { highest, parseArgs, refusal, runRelease, statusView } from './release';
+import { DEFAULT_ITEM_ID, highest, parseArgs, refusal, runRelease, statusView } from './release';
 
 const ITEM = 'jcncblagncbpbamfnekhdkomffdpehpk';
+
+describe('the store item', () => {
+  it('names the item from the store, which is 32 letters from a to p', () => {
+    expect(DEFAULT_ITEM_ID).toMatch(/^[a-p]{32}$/);
+  });
+});
 
 function revision(state: string, version: string | null): Record<string, unknown> {
   return {

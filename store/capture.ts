@@ -7,6 +7,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { chromium } from '@playwright/test';
 
 import { startDummyServer } from '../dev/dummy-server';
+import { RELEASE_API_BASE } from './listing';
 
 export const ROOT = resolve(import.meta.dirname, '..');
 export const ASSETS = join(ROOT, 'store', 'assets');
@@ -131,8 +132,99 @@ async function launch(
   });
 }
 
+/**
+ * The address of a real article that the list walls. The run builds the release
+ * extension, so the block page asks the production backend for the answers.
+ */
+export function liveUrl(argv: readonly string[]): string | null {
+  const flag = argv.find((arg) => arg.startsWith('--live='));
+
+  if (flag === undefined) {
+    return null;
+  }
+
+  const value = flag.slice('--live='.length).trim();
+
+  if (!value.startsWith('https://')) {
+    throw new Error('--live takes the https address of an article that the list walls');
+  }
+
+  return value;
+}
+
+/** The dist directory must be the release build, which names the backend. */
+async function requireReleaseBuild(): Promise<void> {
+  const manifest = JSON.parse(await readFile(join(DIST, 'manifest.json'), 'utf8')) as {
+    host_permissions?: string[];
+  };
+
+  if (!(manifest.host_permissions ?? []).includes(`${RELEASE_API_BASE}/*`)) {
+    throw new Error('this build does not name the release backend; run pnpm store:shot');
+  }
+}
+
 async function ready(context: BrowserContext): Promise<void> {
   await (context.serviceWorkers()[0] ?? context.waitForEvent('serviceworker'));
+}
+
+/** The block page of one guarded address, after the answers arrive. */
+async function shootBlocked(context: BrowserContext, url: string): Promise<Buffer> {
+  const page = await context.newPage();
+
+  try {
+    await page.setViewportSize(SHOT);
+    await page.goto(url).catch((error: unknown) => {
+      if (!(error instanceof Error) || !ABORTED.test(error.message)) {
+        throw error;
+      }
+    });
+    await page.waitForURL(BLOCK_PAGE, { timeout: 20_000 });
+
+    const answers = page.locator('[data-role="alternatives"]');
+
+    try {
+      await answers.and(page.locator('[data-state="results"]')).waitFor({ timeout: 30_000 });
+    } catch {
+      const state = await answers.getAttribute('data-state');
+
+      throw new Error(`the block page ended as "${state ?? 'unknown'}" and not "results"`);
+    }
+    await page
+      .waitForFunction(
+        () => [...document.images].every((image) => image.complete && image.naturalWidth > 0),
+        undefined,
+        { timeout: 15_000 },
+      )
+      .catch(() => undefined);
+
+    return await page.screenshot({ fullPage: false });
+  } finally {
+    await page.close();
+  }
+}
+
+/**
+ * One shot of a real article. The page, the title, and the answers are the ones
+ * that a reader meets, so the listing shows no fixture text.
+ */
+async function captureLive(url: string): Promise<void> {
+  await requireReleaseBuild();
+
+  const profile = await mkdtemp(join(tmpdir(), 'detour-store-'));
+  const context = await launch(profile, SHOT, 1);
+
+  try {
+    await ready(context);
+    await mkdir(ASSETS, { recursive: true });
+
+    const path = join(ASSETS, 'screenshot-block.png');
+
+    await writeFile(path, await shootBlocked(context, url));
+    process.stdout.write(`${path}\n`);
+  } finally {
+    await context.close();
+    await rm(profile, { recursive: true, force: true });
+  }
 }
 
 /**
@@ -141,6 +233,14 @@ async function ready(context: BrowserContext): Promise<void> {
  * cannot show a page that no longer exists.
  */
 async function main(): Promise<void> {
+  const live = liveUrl(process.argv.slice(2));
+
+  if (live !== null) {
+    await captureLive(live);
+
+    return;
+  }
+
   const server = await startDummyServer({ port: PORT }).catch((error: unknown) => {
     throw new Error(
       `the dummy server did not start on ${ORIGIN}: ${error instanceof Error ? error.message : String(error)}`,
@@ -163,30 +263,7 @@ async function main(): Promise<void> {
   try {
     await Promise.all([ready(page), ready(crisp)]);
 
-    const blocked = await page.newPage();
-
-    await blocked.goto(BLOCK_URL).catch((error: unknown) => {
-      if (!(error instanceof Error) || !ABORTED.test(error.message)) {
-        throw error;
-      }
-    });
-    await blocked.waitForURL(BLOCK_PAGE, { timeout: 15_000 });
-    await blocked.locator('[data-role="alternatives"][data-state="results"]').waitFor({
-      timeout: 20_000,
-    });
-    await blocked
-      .waitForFunction(
-        () => [...document.images].every((image) => image.complete && image.naturalWidth > 0),
-        undefined,
-        { timeout: 10_000 },
-      )
-      .catch(() => undefined);
-
-    await writeFile(
-      join(ASSETS, 'screenshot-block.png'),
-      await blocked.screenshot({ fullPage: false }),
-    );
-    await blocked.close();
+    await writeFile(join(ASSETS, 'screenshot-block.png'), await shootBlocked(page, BLOCK_URL));
 
     const settings = await page.newPage();
 

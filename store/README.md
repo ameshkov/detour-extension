@@ -32,13 +32,20 @@ so the first upload and the whole listing go through the dashboard.
    images from `store/assets`.
 7. Add the secrets to the repository: `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`,
    `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN`. Put them in the environment
-   `chrome-web-store`, and require a reviewer for it. Add `CWS_ITEM_ID` beside
-   them: the dashboard shows it on the Package tab, and it is not a secret.
+   `chrome-web-store`, and require a reviewer for it.
 
-The store grants the item its id and its public key on the first upload. The release
-build drops the `key` field, because a package that carries one is refused. To give the
-unpacked development build the published id, copy the public key from the Package tab
-into `packages/extension/manifest.json`.
+The store created the item with the id `gjmlbmcaklcbificepnkpenfhelngklo`. It is not a secret, and
+`store/release.ts` names it in `DEFAULT_ITEM_ID`. Set `CWS_ITEM_ID` only to work on another
+item.
+
+The production backend allows this id and the pinned development id
+`jcncblagncbpbamfnekhdkomffdpehpk`. A build without the key takes its id from its directory,
+and that id is neither of the two, so only a keyed build and the published package speak
+with an identity that the backend knows.
+
+The release build drops the `key` field, because a package that carries one is refused.
+To give the unpacked development build the published id, copy the public key from the
+Package tab into `packages/extension/manifest.json`.
 
 ## The listing sheet
 
@@ -68,12 +75,21 @@ JSON and run the command again.
 pnpm store:capture
 ```
 
-The command builds the development extension, starts the dummy server, and draws the
-images from the real pages. It needs the Chromium that `pnpm exec playwright install chromium`
-installs. The screenshots show the local fixtures, so the page names
-read `Local fixture` and the address reads `127.0.0.1`. Replace a screenshot with a real
-page before the first upload if the listing should name a publisher. The PNGs are
-committed, and a test checks their size.
+The command builds the development extension, starts the dummy server, and draws every
+image from the real pages, with the local fixtures as their data. It needs the Chromium
+that `pnpm exec playwright install chromium` installs.
+
+One shot of a real article replaces the block page image:
+
+```bash
+pnpm store:shot --live=https://www.cnet.com/tech/services-and-software/best-ai-image-generators/
+```
+
+It builds the development extension against the production backend, stops that page, and
+waits for the real answers. The run uses the development build, because the development id
+is one of the two ids that the backend allows, and a build without the key has neither.
+
+The PNGs are committed, and a test checks their size.
 
 ## The release
 
@@ -96,8 +112,7 @@ pnpm store:publish --dry-run
 - `--mode=none` uploads without a submission, so a person can submit from the dashboard.
 - `--dry-run` reads the status and stops before the upload.
 
-Every run needs `CWS_ITEM_ID`. It names the item, and the dashboard shows it on the
-Package tab after the first upload.
+The run names the item id `gjmlbmcaklcbificepnkpenfhelngklo`. `CWS_ITEM_ID` overrides it.
 
 The run compares the manifest version with every version that the store published, and it
 stops when the version is not higher. It also stops when the item is taken down or

@@ -67,11 +67,13 @@ The extension does not request `tabs`. `chrome.tabs.update`,
 `chrome.tabs.onRemoved`, and `sender.tab.openerTabId` work without it, and
 `*://*/*` already gives the guard its page access.
 
-The manifest carries one fixed public key, and no private key is in the
-repository. The SHA-256 of that key, with each digit mapped to the letters `a`
-to `p`, gives the extension id `jcncblagncbpbamfnekhdkomffdpehpk`. That key
-and id are the provisional development identity. A backend that checks the
-caller origin must allow `chrome-extension://` followed by that id.
+The manifest carries one fixed public key for development, and no private key is
+in the repository. The SHA-256 of that key, with each digit mapped to the letters
+`a` to `p`, gives the development id `jcncblagncbpbamfnekhdkomffdpehpk`. The
+release build drops the key, because a store upload refuses a package that
+carries one, and the store grants the published item its own id and key:
+`gjmlbmcaklcbificepnkpenfhelngklo`. A backend that checks the caller origin must
+allow `chrome-extension://` followed by both ids.
 
 `pnpm build` writes the release build, and `pnpm build:dev` writes the
 development build. Both write `packages/extension/dist`: the bundles

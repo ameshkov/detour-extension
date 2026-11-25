@@ -204,6 +204,7 @@ pastes into the dashboard.
 ```sh
 pnpm site:build      # the website and its privacy page
 pnpm store:capture   # the images of the listing, from the local fixtures
+pnpm store:shot --live=<url>   # one real article in the block page shot
 pnpm store:pack      # the release build and store/dist/detour-<version>.zip
 pnpm store:status    # the version that the store published
 pnpm store:publish   # upload the ZIP and stage it

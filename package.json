@@ -18,6 +18,7 @@
     "test:e2e": "pnpm build:dev && playwright test",
     "site:build": "tsx website/build.ts",
     "store:capture": "pnpm build:dev && tsx store/capture.ts",
+    "store:shot": "pnpm list:build && DETOUR_API_BASE=${DETOUR_API_BASE:-https://detour-api.meshkov.info} pnpm --filter @detour/extension build:dev && tsx store/capture.ts",
     "store:pack": "pnpm build && tsx store/pack.ts",
     "store:sheet": "tsx store/listing.ts",
     "store:status": "tsx store/release.ts --status",

@@ -104,12 +104,18 @@ function tileElement(alternative: Alternative, imagesEnabled: boolean): HTMLSpan
   return tile;
 }
 
-function imageElement(url: string): HTMLImageElement {
+/**
+ * The preview image of a row. The backend serves it and a publisher may refuse
+ * that request, so a failed image leaves the row without one and not with a
+ * broken picture.
+ */
+function imageElement(url: string, onFail: () => void): HTMLImageElement {
   const image = document.createElement('img');
 
   image.alt = '';
   image.setAttribute('referrerpolicy', 'no-referrer');
   image.setAttribute('loading', 'lazy');
+  image.addEventListener('error', onFail);
   image.src = url;
 
   return image;
@@ -128,7 +134,12 @@ function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean)
   const row = document.createElement('li');
   const link = document.createElement('a');
   const preview =
-    imagesEnabled && typeof alternative.image === 'string' ? imageElement(alternative.image) : null;
+    imagesEnabled && typeof alternative.image === 'string'
+      ? imageElement(alternative.image, () => {
+          preview?.remove();
+          row.dataset.layout = 'text';
+        })
+      : null;
 
   row.dataset.variant = hero ? 'hero' : 'row';
 

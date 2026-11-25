@@ -96,6 +96,7 @@ helpers in `src/testing/`.
 - **Test the extension alone**: `pnpm --filter @detour/extension test`
 - **Test the end-to-end flow**: `pnpm test:e2e`
 - **Capture the store images**: `pnpm store:capture`
+- **Capture one real page**: `pnpm store:shot --live=<url>`
 - **Build the website**: `pnpm site:build`
 - **Pack the store release**: `pnpm store:pack`
 - **Write the store listing sheet**: `pnpm store:sheet`
@@ -398,9 +399,10 @@ Store configuration:
   the wrong size.
 - The manifest version is the release version. Every upload raises it, because the store
   refuses a version that it already has.
-- The store grants the item id on the first upload, and `CWS_ITEM_ID` names it. The id
-  is not a secret. The publisher id, the OAuth client, and the refresh token come from
-  the `chrome-web-store` environment. Never commit one.
+- The store item id is `gjmlbmcaklcbificepnkpenfhelngklo`, `store/release.ts` names it in
+  `DEFAULT_ITEM_ID`, and `CWS_ITEM_ID` overrides it. The id is not a secret. The publisher
+  id, the OAuth client, and the refresh token come from the `chrome-web-store`
+  environment. Never commit one.
 - A `v*` tag packs and keeps the ZIP. A manual run submits it from the environment that
   asks a reviewer for approval.
 - `pnpm store:capture` draws the images from the real pages and the local fixtures. The

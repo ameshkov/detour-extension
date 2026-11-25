@@ -11,6 +11,7 @@ import {
   SHOT,
   STORE_ICON,
   TILE,
+  liveUrl,
   marqueePage,
   stagePage,
   storeIconPage,
@@ -127,6 +128,13 @@ describe('the store images', () => {
     expect(html).toContain(`height: ${SHOT.height}px`);
     expect(html).toContain('#FBFAF8');
     expect(html).toContain(LOGO);
+  });
+
+  it('takes the address of a real article and refuses anything else', () => {
+    expect(liveUrl([])).toBeNull();
+    expect(liveUrl(['--live=https://www.cnet.com/a'])).toBe('https://www.cnet.com/a');
+    expect(() => liveUrl(['--live=http://www.cnet.com/a'])).toThrow('https');
+    expect(() => liveUrl(['--live='])).toThrow('https');
   });
 
   it('keeps the popup at the width of its frame', () => {
