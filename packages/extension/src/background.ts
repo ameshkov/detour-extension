@@ -1,4 +1,4 @@
-import { LIST_REFRESH_ALARM, LIST_REFRESH_PERIOD_MINUTES } from './constants';
+import { LIST_REFRESH_ALARM, LIST_REFRESH_PERIOD_MINUTES, STORAGE } from './constants';
 import { devLog } from './log';
 import type { FetchLike } from './net';
 import type { ServiceWorkerDeps } from './service-worker';
@@ -8,6 +8,7 @@ import {
   prunePass,
   pruneTabAllowances,
   refreshList,
+  refreshToolbar,
 } from './service-worker';
 
 export type BackgroundOptions = {
@@ -33,6 +34,18 @@ export function registerBackground(options: BackgroundOptions): void {
     void refreshList(deps);
   };
 
+  const paintToolbar = (): void => {
+    void refreshToolbar(deps.now);
+  };
+
+  // The badge answers for the page in front of the reader, so every event that
+  // changes that page repaints it: a new tab, a navigation, and a window that
+  // takes the focus. The settings, the pause, and the list repaint it too.
+  const TOOLBAR_KEYS: Readonly<Record<string, readonly string[]>> = {
+    local: [STORAGE.list, STORAGE.settings, STORAGE.pauseUntil],
+    session: [STORAGE.pauseSession],
+  };
+
   // Chrome may drop an alarm when it restarts, so both the install and the
   // startup register it again before they ask for a fresh list.
   const scheduleRefresh = (): void => {
@@ -42,16 +55,38 @@ export function registerBackground(options: BackgroundOptions): void {
   chrome.runtime.onInstalled.addListener(() => {
     scheduleRefresh();
     refresh();
+    paintToolbar();
   });
 
   chrome.runtime.onStartup.addListener(() => {
     scheduleRefresh();
     refresh();
+    paintToolbar();
   });
 
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === LIST_REFRESH_ALARM) {
       refresh();
+    }
+  });
+
+  chrome.tabs.onActivated.addListener(() => {
+    paintToolbar();
+  });
+
+  chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+    if (changeInfo.url !== undefined || changeInfo.status === 'complete') {
+      paintToolbar();
+    }
+  });
+
+  chrome.windows.onFocusChanged.addListener(() => {
+    paintToolbar();
+  });
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if ((TOOLBAR_KEYS[areaName] ?? []).some((key) => key in changes)) {
+      paintToolbar();
     }
   });
 

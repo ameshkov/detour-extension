@@ -20,6 +20,10 @@ export const REQUIRED_FILES = [
   'icon-16.png',
   'icon-32.png',
   'icon-48.png',
+  'icon-off-128.png',
+  'icon-off-16.png',
+  'icon-off-32.png',
+  'icon-off-48.png',
   'logo-mark.png',
   'manifest.json',
   'options.html',
@@ -31,9 +35,13 @@ export const REQUIRED_FILES = [
 
 const ICONS: ReadonlyArray<readonly [string, number]> = [
   ['icon-16.png', 16],
+  ['icon-off-16.png', 16],
   ['icon-32.png', 32],
+  ['icon-off-32.png', 32],
   ['icon-48.png', 48],
+  ['icon-off-48.png', 48],
   ['icon-128.png', 128],
+  ['icon-off-128.png', 128],
 ];
 
 const VERSION = /^\d{1,5}(\.\d{1,5}){0,3}$/;

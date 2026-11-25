@@ -31,6 +31,7 @@ export { pruneCapability } from './capabilities';
 export { prunePass } from './passes';
 export { metadataFor } from './metadata-fetch';
 export { refreshList };
+export { refreshToolbar } from './toolbar';
 export type { RefreshResult } from './refresh';
 
 const KNOWN_TYPES: ReadonlySet<string> = new Set(Object.values(MESSAGE));

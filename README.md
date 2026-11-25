@@ -7,7 +7,9 @@ paywall, a registration prompt, a consent dialog, a region check, a VPN check,
 or an age check, each with a hard, soft, or metered type. The settings page
 holds a table of the walls that stop a page, one category per row and one type
 per column. The extension reads the site list, finds the alternatives, and
-shows the block page. A backend server does the search and serves the list.
+shows the block page. The toolbar icon turns gray while Detour is off or
+paused, and carries a badge on a site that the list names. A backend server
+does the search and serves the list.
 This repository holds the extension and a dummy backend for local work. The
 production backend is a separate service.
 

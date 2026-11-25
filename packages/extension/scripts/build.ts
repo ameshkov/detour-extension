@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -15,10 +16,18 @@ export const API_BASE_ENV = 'DETOUR_API_BASE';
 export const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8787';
 export const DEFAULT_RELEASE_API_BASE = 'https://detour-api.meshkov.info';
 
+export type ExtensionId = {
+  /** The 32 letters that chrome://extensions shows for the folder. */
+  id: string;
+  /** A manifest key decides the id, and an absolute folder path decides it. */
+  source: 'key' | 'path';
+};
+
 export type BuildResult = {
   outDir: string;
   files: string[];
   apiBase: string;
+  extensionId: ExtensionId;
   stop?: () => Promise<void>;
 };
 
@@ -43,6 +52,10 @@ const ENTRIES = [
 const COPIED_FILES = [
   'block.html',
   'icon-16.png',
+  'icon-off-128.png',
+  'icon-off-16.png',
+  'icon-off-32.png',
+  'icon-off-48.png',
   'icon-32.png',
   'icon-48.png',
   'icon-128.png',
@@ -53,6 +66,47 @@ const COPIED_FILES = [
 ];
 
 const MANIFEST_FILE = 'manifest.json';
+
+const ID_ALPHABET = 'abcdefghijklmnop';
+
+/** Chrome maps each hexadecimal digit of a SHA-256 to the letters a to p. */
+function idOf(bytes: Buffer): string {
+  let id = '';
+
+  for (const byte of bytes.subarray(0, 16)) {
+    id += ID_ALPHABET.charAt(byte >> 4) + ID_ALPHABET.charAt(byte & 0x0f);
+  }
+
+  return id;
+}
+
+/**
+ * The id that Chrome gives an unpacked build. A manifest key fixes it, and the
+ * absolute path of the folder fixes it when the key is absent, so the same
+ * folder keeps an id between builds but changes it when the key comes or goes.
+ */
+export function extensionIdOf(manifestText: string, outDir: string): ExtensionId {
+  let manifest: unknown;
+
+  try {
+    manifest = JSON.parse(manifestText);
+  } catch {
+    throw new Error(`${MANIFEST_FILE} is not valid JSON`);
+  }
+
+  const key =
+    typeof manifest === 'object' && manifest !== null
+      ? (manifest as { key?: unknown }).key
+      : undefined;
+
+  if (typeof key === 'string' && key !== '') {
+    const der = Buffer.from(key, 'base64');
+
+    return { id: idOf(createHash('sha256').update(der).digest()), source: 'key' };
+  }
+
+  return { id: idOf(createHash('sha256').update(outDir).digest()), source: 'path' };
+}
 
 /**
  * One origin and nothing after it: the extension builds every request from this
@@ -115,14 +169,20 @@ function esbuildOptions(
     bundle: true,
     minify: false,
     minifySyntax: true,
-    sourcemap: dev ? 'inline' : false,
+    // A linked map sits in its own file, so a page load reads the bundle alone
+    // and DevTools reads the map only while it is open. An inline map makes
+    // every popup open parse several megabytes.
+    sourcemap: dev ? 'linked' : false,
     define: definesFor(dev, apiBase),
     logLevel: 'warning',
   };
 }
 
-function outputFiles(): string[] {
-  return [...ENTRIES.map((entry) => `${entry.out}.js`), ...COPIED_FILES, MANIFEST_FILE].sort();
+function outputFiles(dev: boolean): string[] {
+  const bundles = ENTRIES.map((entry) => `${entry.out}.js`);
+  const maps = dev ? ENTRIES.map((entry) => `${entry.out}.js.map`) : [];
+
+  return [...bundles, ...maps, ...COPIED_FILES, MANIFEST_FILE].sort();
 }
 
 /**
@@ -263,8 +323,9 @@ export async function buildExtension(options: BuildOptions): Promise<BuildResult
 
     return {
       outDir,
-      files: outputFiles(),
+      files: outputFiles(options.dev),
       apiBase,
+      extensionId: extensionIdOf(await readFile(join(outDir, MANIFEST_FILE), 'utf8'), outDir),
       stop: async () => {
         for (const watcher of watchers) {
           watcher.close();
@@ -280,7 +341,12 @@ export async function buildExtension(options: BuildOptions): Promise<BuildResult
   await build(esbuildOptions(root, outDir, options.dev, apiBase));
   await copy();
 
-  return { outDir, files: outputFiles(), apiBase };
+  return {
+    outDir,
+    files: outputFiles(options.dev),
+    apiBase,
+    extensionId: extensionIdOf(await readFile(join(outDir, MANIFEST_FILE), 'utf8'), outDir),
+  };
 }
 
 async function main(): Promise<void> {
@@ -289,8 +355,17 @@ async function main(): Promise<void> {
 
   try {
     const result = await buildExtension({ dev, watch: watching });
+    const { extensionId } = result;
+    const source =
+      extensionId.source === 'key' ? 'from the manifest key' : 'from the folder, which has no key';
 
-    process.stdout.write(`${result.outDir}\nbackend: ${result.apiBase}\n`);
+    process.stdout.write(
+      `${result.outDir}\nbackend: ${result.apiBase}\nextension id: ${extensionId.id} (${source})\n`,
+    );
+
+    if (!dev) {
+      process.stdout.write('hint: pnpm build:dev keeps the key that fixes the id\n');
+    }
   } catch (error) {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(1);

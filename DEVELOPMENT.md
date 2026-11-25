@@ -41,6 +41,12 @@ The development build writes `http://127.0.0.1:8787` as its backend origin.
 The dummy server answers the list, the alternatives, the signed images, the
 two popup pages, and the fixture articles on that one origin.
 
+The development build writes a `.js.map` file beside each bundle, and the last
+line of the bundle names it. Chrome reads a map only while DevTools is open, so
+a page does not parse one when it loads. An inline map, which the build wrote
+before, made every popup open parse several megabytes. The release build writes
+no map, and the store package carries none.
+
 If port 8787 is not free, move the server and the build together:
 
 ```sh
@@ -77,6 +83,52 @@ change the value.
 4. Open http://127.0.0.1:8787/walled/nvidia-custom-silicon.
 
 A press of Reload on the extension card runs the new bundle.
+
+The development build keeps the `key` of the manifest, so the card shows the id
+`jcncblagncbpbamfnekhdkomffdpehpk`. A release build drops the key, because the
+store refuses a package that carries one. Without a key, Chrome derives the id
+of an unpacked build from the absolute path of its folder. A release build in
+`dist` shows a different id for that reason. It cannot read the settings and the
+allowances that the development id stored.
+
+Run `pnpm dev` or `pnpm build:dev` again after `pnpm build`, `pnpm store:pack`,
+or `pnpm store:capture` to restore the development id. If you move the folder,
+Chrome derives a different id again. The backend allows the development id and
+the store id, and no other id.
+
+## Debug the extension
+
+A local run needs the development build. The release build drops the manifest
+key, so an unpacked release build takes an id from its folder, and the backend
+refuses that id with 403. The build prints the id that it wrote:
+
+```text
+extension id: jcncblagncbpbamfnekhdkomffdpehpk (from the manifest key)
+```
+
+To reproduce a real page against the live backend, build the development
+extension and name that backend:
+
+```sh
+DETOUR_API_BASE=https://detour-api.meshkov.info pnpm build:dev
+```
+
+Reload the extension card, then open the article. To work without the network,
+run `pnpm dev` and open a fixture page instead.
+
+Each context has its own console:
+
+- The block page and the options page are normal pages. Open DevTools on the
+  tab and read the Network panel for `/v1/alternatives`.
+- The service worker stops when it is idle. On `chrome://extensions`, press
+  `service worker` under Inspect views, then read the console and
+  `chrome.storage`.
+- The popup closes when it loses focus. Right-click it and choose Inspect to
+  keep its console open.
+
+A 403 from the backend means that the server refused the caller origin. The
+origin carries the id of the loaded build, so compare the id line of the build
+output with the id on the extension card.
 
 ## The cache
 

@@ -193,6 +193,18 @@ export function pausedRowLabel(remaining: number | null): string {
 export const HOW_IT_WORKS_LABEL = 'How it works';
 export const PRIVACY_LABEL = 'Privacy';
 
+// The toolbar
+export const TOOLBAR_TITLE = 'Detour';
+export const TOOLBAR_OFF_TITLE = 'Detour is off';
+export const TOOLBAR_PAUSED_TITLE = 'Detour is paused';
+
+/** One exclamation mark marks a site that the list carries. The tooltip names the site. */
+export const LISTED_BADGE = '!';
+
+export function listedTitle(domain: string): string {
+  return `Detour — ${domain} is on the list`;
+}
+
 // The options page
 export const OPTIONS_HEADING = 'Settings';
 export const ALLOWED_SITES = 'Allowed sites';

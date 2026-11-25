@@ -11,6 +11,7 @@ import {
 import {
   ENABLED_SWITCH_LABEL,
   HOW_IT_WORKS_LABEL,
+  LISTED_BADGE,
   PAUSE_DURATION_LABELS,
   PAUSE_ROW_LABEL,
   POPUP_OFF,
@@ -133,6 +134,9 @@ describe('the site block', () => {
 
     expect(role('site').hidden).toBe(false);
     expect(role('site-text').textContent).toBe('cnet.com is on the list');
+    expect(role('site-badge').hidden).toBe(false);
+    expect(role('site-badge').textContent).toBe(LISTED_BADGE);
+    expect(role('site-badge').getAttribute('aria-hidden')).toBe('true');
     expect(role('site-row').dataset.listed).toBe('true');
     expect(role('site-walls').hidden).toBe(false);
     expect(role('site-walls').textContent).toBe('Ad blocker·Soft');
@@ -173,6 +177,7 @@ describe('the site block', () => {
 
     expect(role('site').hidden).toBe(false);
     expect(role('site-text').textContent).toBe('example.com is not on the list');
+    expect(role('site-badge').hidden).toBe(true);
     expect(role('site-row').dataset.listed).toBe('false');
     expect(role('site-walls').hidden).toBe(true);
     expect(role('site-alternatives').hidden).toBe(true);
@@ -180,14 +185,6 @@ describe('the site block', () => {
     expect(role('site-report').textContent).toBe(SITE_REPORT_HINT);
     expect(role('site-report').getAttribute('href')).toContain('example.com');
     expect(document.querySelector('[data-role="site-report-label"]')).toBeNull();
-  });
-
-  it('draws the verdict without a dot', async () => {
-    expect(document.querySelector('[data-role="site-mark"]')).toBeNull();
-
-    await start();
-
-    expect(document.querySelector('[data-role="site-mark"]')).toBeNull();
   });
 
   it('hides the block on a page that names no site', async () => {
@@ -488,6 +485,7 @@ describe('the popup shell', () => {
     for (const name of [
       'site',
       'site-row',
+      'site-badge',
       'site-text',
       'site-walls',
       'site-report',

@@ -138,6 +138,26 @@ export class FakeChrome {
   readonly storage = {
     local: new FakeStorageArea(),
     session: new FakeStorageArea(),
+    onChanged: new FakeEvent(),
+  };
+
+  /** The toolbar calls, recorded in the order that the code makes them. */
+  readonly action = {
+    setIcon: async (details: { path?: Record<number, string> }): Promise<void> => {
+      this.calls.icons.push(details.path ?? {});
+    },
+    setBadgeText: async (details: { text: string }): Promise<void> => {
+      this.calls.badges.push(details.text);
+    },
+    setBadgeBackgroundColor: async (details: { color: string }): Promise<void> => {
+      this.calls.badgeColors.push(details.color);
+    },
+    setBadgeTextColor: async (details: { color: string }): Promise<void> => {
+      this.calls.badgeTextColors.push(details.color);
+    },
+    setTitle: async (details: { title: string }): Promise<void> => {
+      this.calls.titles.push(details.title);
+    },
   };
 
   readonly runtime = {
@@ -190,7 +210,14 @@ export class FakeChrome {
     query: async (): Promise<Array<{ id: number; url: string }>> => [
       { id: this.currentTabId, url: this.activeTabUrl },
     ],
+    onActivated: new FakeEvent(),
     onRemoved: new FakeEvent(),
+    onUpdated: new FakeEvent(),
+  };
+
+  readonly windows = {
+    WINDOW_ID_NONE: -1,
+    onFocusChanged: new FakeEvent(),
   };
 
   readonly alarms = {
@@ -205,6 +232,11 @@ export class FakeChrome {
     createdAlarms: [] as Array<{ name: string; periodInMinutes?: number }>,
     messages: [] as unknown[],
     openedOptionsPage: 0,
+    icons: [] as Array<Record<number, string>>,
+    badges: [] as string[],
+    badgeColors: [] as string[],
+    badgeTextColors: [] as string[],
+    titles: [] as string[],
   };
 
   sender: { tab?: { id?: number; openerTabId?: number } } = {};

@@ -212,7 +212,8 @@ guard (guard-entry.ts)  →  service worker (background.ts)  →  block page (bl
   module-level marker for the document, and it draws at most one anchor, only
   for a failed navigation that carries `blockPageUrl`.
 - The service worker owns the list, the allowances, the one-time passes, the
-  metadata cache, the stopped-tab capability record, and the tab navigation.
+  metadata cache, the stopped-tab capability record, the tab navigation, and the
+  toolbar icon and badge.
   It writes every storage key except `alt:<sha256(url)>`. It records
   `sha256(url)` under `capability:<tabId>` in the session store before the
   block navigation and prunes it on tab close. It answers metadata,
@@ -329,10 +330,12 @@ Extension configuration:
   and `*://*/*` covers page access.
 - The manifest carries `action` with `popup.html`, `default_title` `Detour`,
   and `default_icon`, `options_ui` with `options.html` and `open_in_tab`
-  `true`, and the `icons` set `icon-16.png` to `icon-128.png`.
+  `true`, and the `icons` set `icon-16.png` to `icon-128.png`. The action sets a
+  second, gray icon set while Detour stops no page.
 - The three pages share one stylesheet, `ui.css`, and one page mark,
   `src/logo-mark.png`. The build copies both beside the bundles, with the four
-  toolbar icons `src/icon-16.png` to `src/icon-128.png`.
+  toolbar icons `src/icon-16.png` to `src/icon-128.png` and the gray set
+  `src/icon-off-16.png` to `src/icon-off-128.png`.
 - The popup is a fixed 340 pixels wide, so the `max-width: 520px` block of
   `ui.css` always matches it. A narrow-screen rule that names a shared control
   is scoped to the block page's `[data-role='actions']`, or it widens the popup
@@ -348,7 +351,9 @@ Extension configuration:
   `https://detour-api.meshkov.info`, and the development default is
   `http://127.0.0.1:8787`.
 - The build defines `API_BASE` and `DEV`. The release build drops every
-  `[detour]` log line.
+  `[detour]` log line. The development build writes linked source maps beside
+  the bundles, and the release build writes none, so a page load never parses a
+  map.
 - The build adds the backend origin to the manifest `host_permissions`. The
   broad page permission already covers it, and the explicit entry records the
   server that this build uses.

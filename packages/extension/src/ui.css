@@ -14,14 +14,27 @@
   --notice-ink: #6b5322;
   --notice-surface: #fdf6e7;
   --notice-line: #efdfbc;
-  --serif: ui-serif, Georgia, 'Iowan Old Style', serif;
-  --sans: -apple-system, 'Segoe UI', system-ui, sans-serif;
-  --radius: 12px;
+  --serif: 'Iowan Old Style', Georgia, 'Palatino Linotype', Palatino, ui-serif, serif;
+  --sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    'Helvetica Neue', Arial, sans-serif;
+  --radius: 14px;
+
+  /* Depth is mixed from the ink, so the palette keeps one colour source. A card
+     sits a hair above the paper, and a lifted row floats over it. */
+  --shadow-card: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
+  --shadow-lift:
+    0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent),
+    0 18px 40px -24px color-mix(in srgb, var(--ink) 34%, transparent);
 }
 
 /* The attribute closes an author display rule, which wins on specificity. */
 [hidden] {
   display: none !important;
+}
+
+html {
+  color-scheme: light;
 }
 
 html,
@@ -30,12 +43,24 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 a {
   color: var(--accent);
   text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-deep);
 }
 
 button {
@@ -48,51 +73,64 @@ button {
   cursor: pointer;
 }
 
+/* The header follows a long list of results and stays glassy over it, so the
+   wordmark is never scrolled away. */
 [data-role='header'] {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 52px;
-  padding: 0 28px;
+  gap: 12px;
+  height: 60px;
+  padding: 0 32px;
   border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
 }
 
 [data-role='mark'] {
   display: grid;
   place-items: center;
   flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 24%;
+  width: 30px;
+  height: 30px;
+  border-radius: 30%;
   background: var(--accent);
 }
 
 [data-role='mark'] img {
   display: block;
-  width: 15px;
-  height: 15px;
+  width: 19px;
+  height: 19px;
   filter: brightness(0) invert(1);
 }
 
 [data-role='wordmark'] {
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 650;
   letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 main {
-  max-width: 700px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 34px 28px 24px;
+  padding: 44px 32px 36px;
 }
 
+/* The page title is the one display line: a fluid serif that fills the column
+   on a wide screen and keeps its weight on a phone. */
 [data-role='headline'] {
-  margin: 10px 0 12px;
+  max-width: 660px;
+  margin: 0 0 14px;
   font-family: var(--serif);
-  font-size: 28px;
+  font-size: 40px;
+  font-size: clamp(32px, 4.4vw, 44px);
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 /* The one pill that names a wall: the category in ink, a middot, and the type in
@@ -100,21 +138,21 @@ main {
 [data-role='walls'] {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  max-width: 610px;
-  margin: 0 0 13px;
+  gap: 8px;
+  max-width: 660px;
+  margin: 0 0 18px;
 }
 
 [data-role='wall'] {
   display: inline-flex;
   align-items: baseline;
-  gap: 5px;
-  padding: 5px 11px;
+  gap: 6px;
+  padding: 6px 13px;
   border: 1px solid var(--control-line);
   border-radius: 99px;
   background: var(--surface);
-  font-size: 11.5px;
-  line-height: 1.3;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 [data-role='wall-category'] {
@@ -130,14 +168,15 @@ main {
   color: var(--muted);
 }
 
-/* The judgement is the only paragraph left, so it takes the ink and keeps the
-   weight of the body it used to share. */
+/* The judgement is the only paragraph left, so it takes the ink and the size of
+   a paragraph a reader reads rather than scans. */
 [data-role='lede'] {
-  max-width: 590px;
-  margin: 0 0 20px;
+  max-width: 620px;
+  margin: 0 0 24px;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 19px;
   line-height: 1.55;
+  letter-spacing: -0.003em;
 }
 
 /* The page the reader tried to open, with the control that opens it anyway
@@ -146,27 +185,29 @@ main {
 [data-role='source'] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 18px;
-  row-gap: 8px;
+  column-gap: 20px;
+  row-gap: 10px;
   align-items: center;
-  padding: 13px 14px;
+  padding: 18px 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 [data-role='source-text'] {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
 }
 
 [data-role='source-label'] {
   margin: 0;
   color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -175,9 +216,10 @@ main {
 [data-role='source-title'] {
   margin: 0;
   font-family: var(--sans);
-  font-size: 14.5px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 /* The host and the path on one line. A longer address ends in an ellipsis, and
@@ -187,7 +229,7 @@ main {
   max-width: 100%;
   overflow: hidden;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 13.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -196,57 +238,59 @@ main {
   grid-column: 1 / -1;
   margin: 0;
   color: var(--blocked);
-  font-size: 12px;
+  font-size: 13.5px;
   line-height: 1.5;
 }
 
 [data-role='list-head'] {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  margin: 36px 0 16px;
+  gap: 12px;
+  margin: 44px 0 18px;
 }
 
 [data-role='alternatives-heading'] {
   margin: 0;
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: 27px;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 [data-role='count'] {
   margin-left: auto;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 13px;
   white-space: nowrap;
 }
 
 [data-role='status'] {
   margin: 0;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 [data-role='detail'] {
-  max-width: 610px;
-  margin: 6px 0 0;
+  max-width: 620px;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 13.5px;
+  font-size: 15px;
   line-height: 1.6;
 }
 
 [data-role='alternatives'][data-state='error'] [data-role='status'] {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 12px 14px;
   border: 1px solid var(--notice-line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--notice-surface);
   color: var(--notice-ink);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.55;
 }
@@ -258,17 +302,17 @@ main {
   display: grid;
   place-items: center;
   flex: none;
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   margin-top: 1px;
   border: 1.5px solid var(--notice-ink);
   border-radius: 50%;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 [data-role='list'] {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -278,16 +322,17 @@ main {
    item is only the slot that carries the divider. */
 [data-role='list'] > li > a {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 104px;
-  column-gap: 13px;
+  grid-template-columns: 30px minmax(0, 1fr) 128px;
+  column-gap: 16px;
   align-items: start;
-  padding: 13px;
+  padding: 16px 14px;
   border: 1px solid transparent;
   border-radius: var(--radius);
   color: var(--ink);
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 [data-role='list'] > li + li {
@@ -300,6 +345,7 @@ main {
 [data-role='list'] > li:focus-within > a {
   border-color: var(--line);
   background: var(--surface);
+  box-shadow: var(--shadow-lift);
 }
 
 [data-role='list'] > li:hover + li,
@@ -309,22 +355,25 @@ main {
 
 /* The hero is a card already, so it answers with its edge and not with a fill. */
 [data-role='list'] > li[data-variant='hero'] > a {
-  grid-template-columns: 216px minmax(0, 1fr);
-  column-gap: 17px;
+  grid-template-columns: 264px minmax(0, 1fr);
+  column-gap: 22px;
   align-items: center;
+  padding: 16px;
   border-color: var(--line);
-  border-radius: 13px;
+  border-radius: 16px;
   background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 [data-role='list'] > li[data-variant='hero']:hover > a,
 [data-role='list'] > li[data-variant='hero']:focus-within > a {
   border-color: var(--control-line);
   background: var(--surface);
+  box-shadow: var(--shadow-lift);
 }
 
 [data-role='list'] > li[data-layout='text'] > a {
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr);
 }
 
 [data-role='list'] > li[data-variant='hero'][data-layout='text'] > a {
@@ -336,38 +385,38 @@ main {
   grid-column: 1;
   grid-row: 1 / span 2;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   margin-top: 2px;
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--surface);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 
 /* The favicon the backend serves is the tile: it fills the box, and the letter
    tile takes over only when the answer carries none or the image fails. */
 [data-role='list'] > li > a > [data-role='tile'] img {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   object-fit: cover;
 }
 
 [data-role='list'] > li > a > [data-role='result-title'] {
   grid-column: 2;
   grid-row: 1;
-  font-size: 14.5px;
+  font-size: 17.5px;
   font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.006em;
+  line-height: 1.35;
+  letter-spacing: -0.011em;
 }
 
 [data-role='list'] > li[data-variant='hero'] > a > [data-role='result-title'] {
   font-family: var(--serif);
-  font-size: 18.5px;
-  line-height: 1.3;
-  letter-spacing: -0.015em;
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 [data-role='list'] > li[data-variant='hero'][data-layout='text'] > a > [data-role='result-title'],
@@ -383,7 +432,7 @@ main {
   margin: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14.5px;
   line-height: 1.55;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -397,70 +446,71 @@ main {
 [data-role='list'] > li > a > img {
   grid-column: 3;
   grid-row: 1 / span 2;
-  width: 104px;
-  height: 66px;
-  border-radius: 8px;
+  width: 128px;
+  height: 80px;
+  border-radius: 10px;
   object-fit: cover;
 }
 
 [data-role='list'] > li[data-variant='hero'] > a > img {
   grid-column: 1;
   grid-row: 1 / span 2;
-  width: 216px;
-  height: 122px;
-  border-radius: 9px;
+  width: 264px;
+  height: 148px;
+  border-radius: 12px;
 }
 
 [data-role='fallback'] {
-  margin-top: 16px;
-  padding: 14px;
+  margin-top: 18px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
 }
 
 [data-role='fallback-heading'] {
-  margin: 0 0 10px;
-  font-size: 12.5px;
+  margin: 0 0 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 [data-role='query-label'] {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 [data-role='query'] {
   box-sizing: border-box;
   width: 100%;
-  padding: 8px 11px;
+  padding: 10px 12px;
   border: 1px solid var(--control-line);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--paper);
   color: var(--ink);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 14.5px;
 }
 
 [data-role='engines'] {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 [data-role='engines'] a {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 11px;
+  gap: 7px;
+  padding: 9px 13px;
   border: 1px solid var(--control-line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 500;
   transition: background-color 120ms ease;
 }
@@ -469,31 +519,33 @@ main {
 [data-role='engines'] a::after {
   content: '↗';
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 [data-role='engines'] a:hover {
   background: var(--paper);
+  color: var(--ink);
 }
 
 [data-role='fallback-note'] {
-  margin: 11px 0 0;
+  margin: 12px 0 0;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 [data-role='slow-note'] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 10px 12px;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 12px 14px;
   border: 1px solid var(--accent);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--accent);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 [data-role='slow-text'] {
@@ -504,35 +556,35 @@ main {
 [data-role='keep-waiting'],
 [data-role='countdown-cancel'] {
   color: var(--accent);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
 [data-role='countdown'] {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 18px 0 12px;
-  padding: 12px 14px;
+  margin: 20px 0 14px;
+  padding: 14px 16px;
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--accent);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 [data-role='countdown-number'] {
   display: grid;
   place-items: center;
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--accent);
   color: var(--surface);
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 
@@ -547,18 +599,18 @@ main {
 [data-role='retry-row'] {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
   border-top: 1px solid var(--line);
 }
 
 [data-role='retry'] {
-  padding: 8px 13px;
+  padding: 11px 18px;
   border: 1px solid var(--ink);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--ink);
   color: var(--surface);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 550;
 }
 
@@ -570,9 +622,9 @@ main {
 [data-role='actions'] {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  margin-top: 24px;
-  padding-top: 14px;
+  gap: 18px;
+  margin-top: 30px;
+  padding-top: 18px;
   border-top: 1px solid var(--line-soft);
 }
 
@@ -585,13 +637,13 @@ main {
 }
 
 [data-role='open-site'] {
-  padding: 8px 12px;
+  padding: 11px 16px;
   border: 1px solid var(--control-line);
-  border-radius: 8px 0 0 8px;
+  border-radius: 10px 0 0 10px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 550;
+  font-size: 14px;
+  font-weight: 600;
   transition: background-color 120ms ease;
 }
 
@@ -600,14 +652,14 @@ main {
   align-self: stretch;
   align-items: center;
   justify-content: center;
-  width: 30px;
+  width: 36px;
   margin-left: -1px;
   padding: 0;
   border: 1px solid var(--control-line);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 10px 10px 0;
   background: var(--surface);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 14px;
   transition: background-color 120ms ease;
 }
 
@@ -645,14 +697,15 @@ main {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 2;
+  z-index: 4;
   display: flex;
   flex-direction: column;
-  min-width: 220px;
+  min-width: 260px;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
+  box-shadow: var(--shadow-lift);
 }
 
 /* The action row sits at the foot of the page, so a menu that would leave the
@@ -663,10 +716,10 @@ main {
 }
 
 [data-role='scope-menu'] button {
-  padding: 9px 11px;
-  border-radius: 7px;
+  padding: 10px 12px;
+  border-radius: 8px;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 14px;
   text-align: left;
   transition: background-color 120ms ease;
 }
@@ -679,7 +732,7 @@ main {
   margin-left: auto;
   padding-left: 20px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 [data-role='report']:hover {
@@ -687,10 +740,10 @@ main {
 }
 
 [data-role='footnote'] {
-  max-width: 520px;
+  max-width: 540px;
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.6;
 }
 
@@ -704,30 +757,35 @@ body[data-page='popup'] main {
   padding: 0;
 }
 
+/* A popup never scrolls its header away, and a blur over the paper would only
+   cost a layer, so the popup header is plain paper. */
 body[data-page='popup'] [data-role='header'] {
-  height: 46px;
-  padding: 0 15px;
-  gap: 9px;
+  position: static;
+  height: 52px;
+  padding: 0 16px;
+  gap: 10px;
+  background: var(--paper);
+  backdrop-filter: none;
 }
 
 body[data-page='popup'] [data-role='mark'] {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 body[data-page='popup'] [data-role='mark'] img {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 body[data-page='popup'] [data-role='wordmark'] {
-  font-size: 12.5px;
+  font-size: 14.5px;
 }
 
 body[data-page='popup'] [data-role='state'] {
   margin-left: auto;
   color: var(--accent);
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
 }
 
@@ -749,8 +807,8 @@ body[data-page='popup'] [data-role='state'][data-state='on'] {
 
 body[data-page='popup'] [data-role='state'][data-state='on']::before {
   content: '';
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--accent);
 }
@@ -758,8 +816,8 @@ body[data-page='popup'] [data-role='state'][data-state='on']::before {
 body[data-page='popup'] [data-role='enabled'] {
   position: relative;
   flex: none;
-  width: 32px;
-  height: 18px;
+  width: 36px;
+  height: 20px;
   margin: 0;
   appearance: none;
   border-radius: 99px;
@@ -787,8 +845,8 @@ body[data-page='popup'] [data-role='enabled']::after {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--surface);
   transition: transform 120ms ease;
@@ -799,7 +857,7 @@ body[data-page='popup'] [data-role='enabled']:checked {
 }
 
 body[data-page='popup'] [data-role='enabled']:checked::after {
-  transform: translateX(14px);
+  transform: translateX(16px);
 }
 
 /* The site block answers for the page in front of the reader, so it leads the
@@ -809,9 +867,26 @@ body[data-page='popup'] [data-role='site-row'] {
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 12px 15px 0;
-  font-size: 12.5px;
+  padding: 14px 16px 0;
+  font-size: 13.5px;
   font-weight: 600;
+}
+
+/* The popup repeats the toolbar badge beside the verdict, so the mark on the
+   toolbar and the mark here are one sign. The verdict words say the same thing,
+   and the badge is hidden when the list does not carry the site. */
+body[data-page='popup'] [data-role='site-badge'] {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* The verdict is the one thing the eye needs here, so the site the list carries
@@ -826,30 +901,30 @@ body[data-page='popup'] [data-role='site-row'][data-listed='false'] [data-role='
 }
 
 /* The pills under the verdict name the walls, and they are the last line of the
-   block: two of them fit the 340 px frame, and more wrap. The 12 px above and
+   block: two of them fit the 340 px frame, and more wrap. The 14 px above and
    below the pair are the same, so the block reads as one centred group. */
 body[data-page='popup'] [data-role='site-walls'] {
-  gap: 5px;
-  margin: 7px 0 0;
-  padding: 0 15px 12px;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0 16px 14px;
 }
 
 body[data-page='popup'] [data-role='wall'] {
-  padding: 3px 8px;
-  font-size: 10px;
+  padding: 4px 9px;
+  font-size: 11.5px;
 }
 
 /* The report is the sentence the block already says, so it reads as a line that
    happens to be a link and not as one more row. */
 body[data-page='popup'] [data-role='site-report'] {
   display: block;
-  margin: 2px 0 0;
-  padding: 0 15px 12px;
+  margin: 0;
+  padding: 0 16px 14px;
   color: var(--accent);
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
 body[data-page='popup'] [data-role='site-report']:hover {
@@ -866,15 +941,15 @@ body[data-page='popup'] [data-role='durations'] button {
   align-items: center;
   gap: 4px;
   width: 100%;
-  min-height: 36px;
+  min-height: 46px;
   margin: 0;
-  padding: 0 15px;
+  padding: 0 16px;
   border: 0;
   border-top: 1px solid var(--line-soft);
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -913,12 +988,12 @@ body[data-page='popup'] [data-role='pause'] {
 }
 
 body[data-page='popup'] [data-role='resume'] {
-  padding: 0 15px 0 6px;
+  padding: 0 16px 0 6px;
   border: 0;
   background: none;
   color: var(--accent);
   font-family: var(--sans);
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 550;
   cursor: pointer;
 }
@@ -933,7 +1008,7 @@ body[data-page='popup'] [data-role='resume']:hover {
 body[data-page='popup'] .chevron {
   margin-left: auto;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
 }
 
@@ -945,7 +1020,7 @@ body[data-page='popup'] [data-role='pause-chevron'] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 11px;
+  width: 12px;
   transform: rotate(90deg);
   transition: transform 120ms ease;
 }
@@ -961,7 +1036,7 @@ body[data-page='popup'] [data-role='pause-label'] {
 }
 
 body[data-page='popup'] [data-role='durations'] button {
-  padding-left: 15px;
+  padding-left: 16px;
   font-weight: 400;
 }
 
@@ -971,19 +1046,19 @@ body[data-page='popup'] [data-role='duration-today'] {
 
 body[data-page='popup'] [data-role='duration-today-note'] {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 body[data-page='popup'] footer {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 10px 15px;
+  gap: 14px;
+  padding: 12px 16px;
 }
 
 body[data-page='popup'] footer a {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 body[data-page='popup'] footer a:hover {
@@ -992,17 +1067,17 @@ body[data-page='popup'] footer a:hover {
 
 body[data-page='options'] main {
   max-width: 640px;
-  padding: 22px 22px 24px;
+  padding: 28px 24px 28px;
 }
 
 body[data-page='options'] [data-role='header'] {
-  padding: 0 22px;
+  padding: 0 24px;
 }
 
 body[data-page='options'] [data-role='options-heading'] {
   margin: 0 0 4px;
   font-family: var(--serif);
-  font-size: 27px;
+  font-size: 30px;
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -1015,9 +1090,9 @@ body[data-page='options'] [data-role='allowed-heading'],
 body[data-page='options'] [data-role='reading-heading'],
 body[data-page='options'] [data-role='walls-heading'],
 body[data-page='options'] [data-role='cache-heading'] {
-  margin: 26px 0 12px;
+  margin: 30px 0 12px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1029,7 +1104,7 @@ body[data-page='options'] [data-role='walls-intro'] {
   max-width: 520px;
   margin: 0 0 16px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
@@ -1039,9 +1114,9 @@ body[data-page='options'] [data-role='allowance-table'] {
 }
 
 body[data-page='options'] th {
-  padding: 0 0 9px;
+  padding: 0 0 10px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-align: left;
@@ -1049,9 +1124,9 @@ body[data-page='options'] th {
 }
 
 body[data-page='options'] td {
-  padding: 11px 0;
+  padding: 13px 0;
   border-top: 1px solid var(--line-soft);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 body[data-page='options'] th[data-role='th-added'] {
@@ -1070,10 +1145,10 @@ body[data-page='options'] [data-role='walls-table'] {
 }
 
 body[data-page='options'] [data-role='walls-table'] tbody th {
-  padding: 11px 0;
+  padding: 13px 0;
   border-top: 1px solid var(--line-soft);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 550;
   letter-spacing: normal;
   text-align: left;
@@ -1082,15 +1157,15 @@ body[data-page='options'] [data-role='walls-table'] tbody th {
 
 body[data-page='options'] [data-role='wall-name'] {
   display: block;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 550;
 }
 
 body[data-page='options'] [data-role='wall-detail'] {
   display: block;
-  margin-top: 1px;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
 }
 
@@ -1103,7 +1178,7 @@ body[data-page='options'] [data-role='walls-table'] th[data-role='th-metered'] {
 
 body[data-page='options'] [data-role='wall-cell'] {
   width: 82px;
-  padding: 11px 0;
+  padding: 13px 0;
   text-align: center;
 }
 
@@ -1112,10 +1187,10 @@ body[data-page='options'] [data-role='wall-cell'] {
 body[data-page='options'] [data-role='wall-cell'][data-empty='true']::after {
   content: '';
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border: 1px dashed var(--line);
-  border-radius: 5px;
+  border-radius: 6px;
 }
 
 body[data-page='options'] [data-role='wall-cell'] [data-role='wall-check'] {
@@ -1130,9 +1205,9 @@ body[data-page='options'] [data-role='wall-cell']:hover [data-role='wall-check']
 
 body[data-page='options'] [data-role='metered-note'],
 body[data-page='options'] [data-role='no-wall-note'] {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 
@@ -1144,9 +1219,9 @@ body[data-page='options'] [data-role='allowance-table'] td:last-child {
 
 body[data-page='options'] [data-role='allowance-rows'] button {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13.5px;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
   transition: color 120ms ease;
 }
 
@@ -1162,25 +1237,25 @@ body[data-page='options'] [data-role='images-row'] {
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: 14px;
   align-items: start;
-  padding: 13px 0;
+  padding: 14px 0;
   border-top: 1px solid var(--line-soft);
   cursor: pointer;
 }
 
 /* The platform draws a blue box of its own size. The sheet draws the one the
-   product uses: 16 px, a quiet edge, and the accent with a white check when on. */
+   product uses: 18 px, a quiet edge, and the accent with a white check when on. */
 body[data-page='options'] [data-role='auto-open'],
 body[data-page='options'] [data-role='images'],
 body[data-page='options'] [data-role='wall-check'] {
   position: relative;
   grid-row: 1 / span 2;
   box-sizing: border-box;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   margin: 1px 0 0;
   appearance: none;
   border: 1px solid var(--control-line);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--surface);
   cursor: pointer;
   transition:
@@ -1193,17 +1268,18 @@ body[data-page='options'] [data-role='images']::after,
 body[data-page='options'] [data-role='wall-check']::after {
   content: '';
   position: absolute;
-  top: 1px;
-  left: 5px;
-  width: 4px;
-  height: 8px;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 9px;
   border: solid var(--surface);
-  border-width: 0 1.5px 1.5px 0;
+  border-width: 0 2px 2px 0;
 
-  /* The two strokes that make the check sit half a pixel right of their box, and
-     a half pixel is what centring them needs. A translate keeps that half pixel,
-     where `left` rounds to the next whole one. */
-  transform: translateX(-0.5px) rotate(45deg);
+  /* The box centres on its own middle, and the turn is about that same point,
+     but the drawn L hangs below it. Its 5 px content width puts the check
+     5 / 2√2, or 1.77 px, under the middle, and the shift lifts the drawing onto
+     the centre of the control. */
+  transform: translate(-50%, calc(-50% - 1.77px)) rotate(45deg);
 }
 
 body[data-page='options'] [data-role='auto-open']:not(:checked)::after,
@@ -1243,7 +1319,7 @@ body[data-page='options'] [data-role='auto-open-row'] {
 body[data-page='options'] [data-role='auto-open-label'],
 body[data-page='options'] [data-role='images-label'] {
   grid-column: 2;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -1253,25 +1329,25 @@ body[data-page='options'] [data-role='images-detail'] {
   max-width: 400px;
   margin-top: 3px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
 body[data-page='options'] [data-role='cache-detail'] {
   max-width: 520px;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
 body[data-page='options'] [data-role='clear-cache'] {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border: 1px solid var(--control-line);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 550;
   transition:
     background-color 120ms ease,
@@ -1290,7 +1366,7 @@ body[data-page='options'] [data-role='clear-cache']:active {
 body[data-page='options'] [data-role='cache-status'] {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 :focus-visible {
@@ -1300,26 +1376,27 @@ body[data-page='options'] [data-role='cache-status'] {
 
 @media (max-width: 520px) {
   [data-role='header'] {
-    padding: 0 18px;
+    padding: 0 20px;
   }
 
   main {
-    padding: 26px 18px 22px;
+    padding: 30px 20px 28px;
   }
 
   [data-role='headline'] {
-    margin: 10px 0;
-    font-size: 21px;
+    margin: 12px 0;
+    font-size: 32px;
   }
 
   [data-role='lede'] {
-    margin-bottom: 18px;
+    margin-bottom: 20px;
+    font-size: 18px;
   }
 
   /* The bar stacks, and the open control takes the row under the address. */
   [data-role='source'] {
     grid-template-columns: minmax(0, 1fr);
-    padding: 12px;
+    padding: 16px;
   }
 
   [data-role='open-group'] {
@@ -1337,11 +1414,12 @@ body[data-page='options'] [data-role='cache-status'] {
   /* The count moves under the heading, so neither of them wraps. */
   [data-role='list-head'] {
     display: block;
+    margin-top: 36px;
   }
 
   [data-role='count'] {
     display: block;
-    margin: 4px 0 0;
+    margin: 6px 0 0;
   }
 
   /* A phone shows the domain alone: the title carries the story, and the
@@ -1369,8 +1447,8 @@ body[data-page='options'] [data-role='cache-status'] {
   [data-role='list'] > li[data-variant='hero'] > a > img {
     display: block;
     width: 100%;
-    height: 160px;
-    margin-bottom: 11px;
+    height: 180px;
+    margin-bottom: 14px;
   }
 
   /* The foot stacks: the report link leaves the note for its own line. */
@@ -1384,7 +1462,7 @@ body[data-page='options'] [data-role='cache-status'] {
      this breakpoint always matches the 340 pixel popup, where a link of the
      whole row would push its neighbour out of the frame. */
   [data-role='actions'] [data-role='report'] {
-    margin: 10px 0 0;
+    margin: 12px 0 0;
     padding-left: 0;
   }
 }

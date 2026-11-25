@@ -5,6 +5,7 @@ import { registerBackground } from './background';
 import { STORAGE } from './constants';
 import type { FetchLike } from './net';
 import { BUNDLED_LIST } from './storage';
+import { LISTED_BADGE, TOOLBAR_OFF_TITLE, TOOLBAR_PAUSED_TITLE } from './copy';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 
@@ -50,8 +51,93 @@ function triggerMessage(
   return (listener as (...args: unknown[]) => unknown)(message, sender, sendResponse);
 }
 
+/** A tick of the event loop, for an event handler that repaints in the background. */
+function tick(): Promise<void> {
+  return new Promise((done) => setTimeout(done, 0));
+}
+
 afterEach(() => {
   resetFakeChrome();
+});
+
+describe('the toolbar', () => {
+  function registered(): FakeChrome {
+    const fake = installFakeChrome();
+    const { fetchImpl } = recordingFetch(() => listResponse(BUNDLED_LIST));
+
+    registerBackground({ apiBase: API_BASE, now: () => NOW, fetchImpl });
+
+    return fake;
+  }
+
+  it('registers every event that repaints it', () => {
+    const fake = registered();
+
+    expect(fake.tabs.onActivated.listeners).toHaveLength(1);
+    expect(fake.tabs.onUpdated.listeners).toHaveLength(1);
+    expect(fake.windows.onFocusChanged.listeners).toHaveLength(1);
+    expect(fake.storage.onChanged.listeners).toHaveLength(1);
+  });
+
+  it('badges the site when a tab takes the focus', async () => {
+    const fake = registered();
+
+    fake.tabs.onActivated.trigger({ tabId: 11, windowId: 1 });
+
+    await vi.waitFor(() => {
+      expect(fake.calls.badges).toContain(LISTED_BADGE);
+    });
+    expect(fake.calls.titles.at(-1)).toContain('cnet.com');
+  });
+
+  it('repaints on a navigation and not on the other updates of a tab', async () => {
+    const fake = registered();
+
+    fake.tabs.onUpdated.trigger(11, { status: 'loading' }, {});
+    await tick();
+
+    expect(fake.calls.badges).toEqual([]);
+
+    fake.tabs.onUpdated.trigger(11, { url: 'https://www.cnet.com/tech/' }, {});
+    await vi.waitFor(() => {
+      expect(fake.calls.badges).toContain(LISTED_BADGE);
+    });
+  });
+
+  it('grays the mark when the settings switch Detour off', async () => {
+    const fake = registered();
+
+    fake.storage.local.values[STORAGE.settings] = { enabled: false };
+    fake.storage.onChanged.trigger(
+      { [STORAGE.settings]: { newValue: { enabled: false } } },
+      'local',
+    );
+
+    await vi.waitFor(() => {
+      expect(fake.calls.titles.at(-1)).toBe(TOOLBAR_OFF_TITLE);
+    });
+    expect(fake.calls.icons.at(-1)?.[16]).toBe('icon-off-16.png');
+  });
+
+  it('repaints when the session pause changes', async () => {
+    const fake = registered();
+
+    fake.storage.session.values[STORAGE.pauseSession] = true;
+    fake.storage.onChanged.trigger({ [STORAGE.pauseSession]: { newValue: true } }, 'session');
+
+    await vi.waitFor(() => {
+      expect(fake.calls.titles.at(-1)).toBe(TOOLBAR_PAUSED_TITLE);
+    });
+  });
+
+  it('ignores a write that the toolbar does not read', async () => {
+    const fake = registered();
+
+    fake.storage.onChanged.trigger({ 'alt:abc': { newValue: {} } }, 'local');
+    await tick();
+
+    expect(fake.calls.badges).toEqual([]);
+  });
 });
 
 describe('the background registration', () => {

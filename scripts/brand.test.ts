@@ -7,6 +7,7 @@ const ROOT = resolve(import.meta.dirname, '..');
 const BRAND_DOC = 'docs/brand.md';
 const PAGE_MARK = 'packages/extension/src/logo-mark.png';
 const SHEET = 'packages/extension/src/ui.css';
+const SITE_SHEET = 'website/styles.css';
 
 const PAGES = [
   'packages/extension/src/block.html',
@@ -36,6 +37,18 @@ function section(markdown: string, heading: string): string {
   const body = end === -1 ? markdown.slice(start) : markdown.slice(start, end);
 
   return body;
+}
+
+/** One custom property, with the newlines of a wrapped value joined. */
+function property(sheet: string, name: string): string {
+  const value = new RegExp(`${name}\\s*:\\s*([^;]*);`).exec(sheet)?.[1] ?? '';
+
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+/** A font stack as its families, without the quotes of a family with spaces. */
+function families(value: string): string[] {
+  return value.split(',').map((part) => part.trim().replace(/^['"]|['"]$/g, ''));
 }
 
 function wordmarkTrackingOfDoc(markdown: string): string | null {
@@ -92,6 +105,26 @@ describe('the brand page', () => {
         height: Number(size),
       });
     }
+  });
+
+  it('keeps the site on the palette, the radius, and the type of the sheet', () => {
+    const sheet = read(SHEET);
+    const site = read(SITE_SHEET);
+
+    for (const name of ['--paper', '--surface', '--ink', '--muted', '--line', '--accent']) {
+      expect(property(site, name), name).toBe(property(sheet, name));
+    }
+
+    for (const name of ['--accent-deep', '--radius']) {
+      expect(property(site, name), name).toBe(property(sheet, name));
+    }
+
+    // An empty read would compare two empty stacks and pass, so the sheet's
+    // own stacks are named first.
+    expect(families(property(sheet, '--serif'))[0]).toBe('Iowan Old Style');
+    expect(families(property(sheet, '--sans'))[0]).toBe('-apple-system');
+    expect(families(property(site, '--display'))).toEqual(families(property(sheet, '--serif')));
+    expect(families(property(site, '--sans'))).toEqual(families(property(sheet, '--sans')));
   });
 
   it('keeps the wordmark tracking in step with the sheet', () => {

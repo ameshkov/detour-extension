@@ -209,7 +209,7 @@ describe('the stylesheet', () => {
       innerRule(narrow, '[data-role="list"] > li > a > img')?.style.getPropertyValue('display'),
     ).toBe('none');
     expect(innerRule(narrow, '[data-role="headline"]')?.style.getPropertyValue('font-size')).toBe(
-      '21px',
+      '32px',
     );
   });
 
@@ -308,12 +308,12 @@ describe('the stylesheet', () => {
       styleRule('body[data-page="options"] [data-role="allowed-heading"]')?.style.getPropertyValue(
         'margin-top',
       ),
-    ).toBe('26px');
+    ).toBe('30px');
     expect(
       styleRule('body[data-page="options"] [data-role="cache-heading"]')?.style.getPropertyValue(
         'margin-top',
       ),
-    ).toBe('26px');
+    ).toBe('30px');
     expect(
       styleRule('body[data-page="options"] [data-role="clear-cache"]')?.style.getPropertyValue(
         'border-color',
@@ -325,12 +325,12 @@ describe('the stylesheet', () => {
     const title = styleRule('body[data-page="options"] [data-role="options-heading"]');
 
     expect(title?.style.getPropertyValue('font-family')).toBe('var(--serif)');
-    expect(title?.style.getPropertyValue('font-size')).toBe('27px');
+    expect(title?.style.getPropertyValue('font-size')).toBe('30px');
 
     for (const role of ['allowed-heading', 'reading-heading', 'cache-heading']) {
       const label = styleRule(`body[data-page="options"] [data-role="${role}"]`);
 
-      expect(label?.style.getPropertyValue('font-size'), role).toBe('11px');
+      expect(label?.style.getPropertyValue('font-size'), role).toBe('11.5px');
       expect(label?.style.getPropertyValue('text-transform'), role).toBe('uppercase');
       expect(label?.style.getPropertyValue('letter-spacing'), role).toBe('0.1em');
     }
@@ -340,9 +340,9 @@ describe('the stylesheet', () => {
     const box = styleRule('body[data-page="options"] [data-role="auto-open"]');
 
     expect(box?.style.getPropertyValue('appearance')).toBe('none');
-    expect(box?.style.getPropertyValue('width')).toBe('16px');
-    expect(box?.style.getPropertyValue('height')).toBe('16px');
-    expect(box?.style.getPropertyValue('border-radius')).toBe('5px');
+    expect(box?.style.getPropertyValue('width')).toBe('18px');
+    expect(box?.style.getPropertyValue('height')).toBe('18px');
+    expect(box?.style.getPropertyValue('border-radius')).toBe('6px');
     expect(box?.style.getPropertyValue('border-color')).toBe('var(--control-line)');
     expect(box?.style.getPropertyValue('background')).toBe('var(--surface)');
     expect(
@@ -354,7 +354,7 @@ describe('the stylesheet', () => {
       styleRule('body[data-page="options"] [data-role="auto-open"]::after')?.style.getPropertyValue(
         'transform',
       ),
-    ).toBe('translateX(-0.5px) rotate(45deg)');
+    ).toBe('translate(-50%, calc(-50% - 1.77px)) rotate(45deg)');
   });
 
   it('answers the pointer on the page controls', () => {
@@ -439,7 +439,7 @@ describe('the stylesheet', () => {
   it('sets the list heading above the titles it introduces', () => {
     const heading = styleRule('[data-role="alternatives-heading"]');
 
-    expect(heading?.style.getPropertyValue('font-size')).toBe('20px');
+    expect(heading?.style.getPropertyValue('font-size')).toBe('27px');
     expect(heading?.style.getPropertyValue('font-family')).toBe('var(--serif)');
   });
 
@@ -497,7 +497,7 @@ describe('the stylesheet', () => {
     const card = styleRule('[data-role="list"] > li > a');
 
     expect(card?.style.getPropertyValue('display')).toBe('grid');
-    expect(card?.style.getPropertyValue('padding')).toBe('13px');
+    expect(card?.style.getPropertyValue('padding')).toBe('16px 14px');
     expect(card?.style.getPropertyValue('border-radius')).toBe('var(--radius)');
     expect(
       styleRule('[data-role="list"] > li:hover > a')?.style.getPropertyValue('background'),
@@ -528,8 +528,42 @@ describe('the stylesheet', () => {
     const headline = styleRule('[data-role="headline"]');
 
     expect(title?.style.getPropertyValue('font-family')).toBe('var(--sans)');
-    expect(title?.style.getPropertyValue('font-size')).toBe('14.5px');
-    expect(headline?.style.getPropertyValue('font-size')).toBe('28px');
+    expect(title?.style.getPropertyValue('font-size')).toBe('18px');
+    expect(headline?.style.getPropertyValue('font-size')).toBe('40px');
+    expect(CSS).toContain('font-size: clamp(32px, 4.4vw, 44px)');
+  });
+
+  it('names a serif face before the generic family', () => {
+    const families = token('--serif')
+      .split(',')
+      .map((value) => value.trim().replace(/^['"]|['"]$/g, ''));
+    const generic = families.indexOf('ui-serif');
+
+    // `ui-serif` is Times on Windows, so a generic first would win there and
+    // the named faces would never load. The first face is the one the page
+    // uses, and Georgia is the stand-in on Windows.
+    expect(families[0]).toBe('Iowan Old Style');
+    expect(families).toContain('Georgia');
+    expect(families.indexOf('Georgia')).toBeLessThan(generic);
+  });
+
+  it('sets the reading text at a page scale', () => {
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('font-size')).toBe('19px');
+    expect(
+      styleRule('[data-role="list"] > li > a > [data-role="result-title"]')?.style.getPropertyValue(
+        'font-size',
+      ),
+    ).toBe('17.5px');
+    expect(
+      styleRule('[data-role="list"] > li > a > [data-role="result-meta"]')?.style.getPropertyValue(
+        'font-size',
+      ),
+    ).toBe('14.5px');
+    expect(
+      styleRule('body[data-page="popup"] [data-role="settings"]')?.style.getPropertyValue(
+        'font-size',
+      ),
+    ).toBe('14px');
   });
 
   it('draws a wall as the category in ink, a middot, and the type in grey', () => {
@@ -538,7 +572,7 @@ describe('the stylesheet', () => {
     expect(pill?.style.getPropertyValue('display')).toBe('inline-flex');
     expect(pill?.style.getPropertyValue('border-radius')).toBe('99px');
     expect(pill?.style.getPropertyValue('background')).toBe('var(--surface)');
-    expect(pill?.style.getPropertyValue('font-size')).toBe('11.5px');
+    expect(pill?.style.getPropertyValue('font-size')).toBe('13px');
     expect(styleRule('[data-role="wall-category"]')?.style.getPropertyValue('font-weight')).toBe(
       '600',
     );
@@ -551,7 +585,7 @@ describe('the stylesheet', () => {
   });
 
   it('reads the judgement in ink, under the width of the column', () => {
-    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('590px');
+    expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('max-width')).toBe('620px');
     expect(styleRule('[data-role="lede"]')?.style.getPropertyValue('color')).toBe('var(--ink)');
     expect(styleRule('[data-role="explanation"]')).toBeNull();
     expect(styleRule('[data-role="practice"]')).toBeNull();
@@ -560,12 +594,12 @@ describe('the stylesheet', () => {
   it('centres the site block between the header and the first row', () => {
     const row = styleRule('body[data-page="popup"] [data-role="site-row"]');
 
-    expect(row?.style.getPropertyValue('padding')).toBe('12px 15px 0px');
+    expect(row?.style.getPropertyValue('padding')).toBe('14px 16px 0px');
     expect(
       styleRule('body[data-page="popup"] [data-role="site-walls"]')?.style.getPropertyValue(
         'padding',
       ),
-    ).toBe('0px 15px 12px');
+    ).toBe('0px 16px 14px');
     // The action row carries no margin of its own, so the 12 px under the pills
     // is the only space between them and the hairline of that row.
     expect(
@@ -578,13 +612,13 @@ describe('the stylesheet', () => {
   it('draws the popup pills smaller than the block page ones', () => {
     const pill = styleRule('body[data-page="popup"] [data-role="wall"]');
 
-    expect(pill?.style.getPropertyValue('font-size')).toBe('10px');
-    expect(pill?.style.getPropertyValue('padding')).toBe('3px 8px');
+    expect(pill?.style.getPropertyValue('font-size')).toBe('11.5px');
+    expect(pill?.style.getPropertyValue('padding')).toBe('4px 9px');
     expect(
       styleRule('body[data-page="popup"] [data-role="site-walls"]')?.style.getPropertyValue(
         'padding',
       ),
-    ).toBe('0px 15px 12px');
+    ).toBe('0px 16px 14px');
   });
 
   it('draws the walls table as a grid of category rows and type columns', () => {
@@ -615,7 +649,7 @@ describe('the stylesheet', () => {
     expect(dot?.style.getPropertyValue('border-radius')).toBe('50%');
   });
 
-  it('tones the verdict as text and draws no dot', () => {
+  it('tones the verdict as text and repeats the toolbar badge', () => {
     expect(
       styleRule('body[data-page="popup"] [data-role="site-text"]')?.style.getPropertyValue('color'),
     ).toBe('var(--accent)');
@@ -624,14 +658,22 @@ describe('the stylesheet', () => {
         'body[data-page="popup"] [data-role="site-row"][data-listed="false"] [data-role="site-text"]',
       )?.style.getPropertyValue('color'),
     ).toBe('var(--muted)');
-    expect(styleRule('body[data-page="popup"] [data-role="site-mark"]')).toBeNull();
+
+    const badge = styleRule('body[data-page="popup"] [data-role="site-badge"]');
+
+    expect(badge?.style.getPropertyValue('display')).toBe('inline-grid');
+    expect(badge?.style.getPropertyValue('width')).toBe('18px');
+    expect(badge?.style.getPropertyValue('height')).toBe('18px');
+    expect(badge?.style.getPropertyValue('border-radius')).toBe('6px');
+    expect(badge?.style.getPropertyValue('background')).toBe('var(--accent)');
+    expect(badge?.style.getPropertyValue('color')).toBe('var(--surface)');
   });
 
   it('carries the report as a sentence link, not as a row', () => {
     const link = styleRule('body[data-page="popup"] [data-role="site-report"]');
 
     expect(link?.style.getPropertyValue('color')).toBe('var(--accent)');
-    expect(link?.style.getPropertyValue('font-size')).toBe('11.5px');
+    expect(link?.style.getPropertyValue('font-size')).toBe('12.5px');
     expect(link?.style.getPropertyValue('text-decoration')).toBe('underline');
     expect(
       styleRule('body[data-page="popup"] [data-role="site-report"]:hover')?.style.getPropertyValue(
@@ -692,7 +734,7 @@ describe('the stylesheet', () => {
 
       // The environment keeps a `var()` colour out of the width it reads back,
       // so the colour and the height are what this contract can hold.
-      expect(row?.style.getPropertyValue('min-height'), role).toBe('36px');
+      expect(row?.style.getPropertyValue('min-height'), role).toBe('46px');
       expect(row?.style.getPropertyValue('border-top-color'), role).toBe('var(--line-soft)');
       expect(row?.style.getPropertyValue('border-radius'), role).toBe('');
       expect(row?.style.getPropertyValue('background'), role).toBe('var(--paper)');
@@ -744,13 +786,13 @@ describe('the stylesheet', () => {
     const narrow = mediaRule('(max-width: 520px)');
 
     expect(innerRule(narrow, '[data-role="headline"]')?.style.getPropertyValue('margin')).toBe(
-      '10px 0px',
+      '12px 0px',
     );
     expect(innerRule(narrow, '[data-role="lede"]')?.style.getPropertyValue('margin-bottom')).toBe(
-      '18px',
+      '20px',
     );
     expect(innerRule(narrow, '[data-role="source"]')?.style.getPropertyValue('padding')).toBe(
-      '12px',
+      '16px',
     );
   });
 
@@ -763,7 +805,7 @@ describe('the stylesheet', () => {
     );
 
     expect(styleRule('body[data-page="options"] main')?.style.getPropertyValue('padding')).toBe(
-      '22px 22px 24px',
+      '28px 24px',
     );
     expect(rows?.style.getPropertyValue('column-gap')).toBe('14px');
     expect(detail?.style.getPropertyValue('max-width')).toBe('400px');

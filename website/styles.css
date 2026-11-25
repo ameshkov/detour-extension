@@ -1,3 +1,6 @@
+/* The site mirrors the palette and the families of the extension sheet, and a
+   test compares the two files, so the public page cannot drift from the
+   product. */
 :root {
   --paper: #fbfaf8;
   --surface: #ffffff;
@@ -6,8 +9,11 @@
   --line: #e8e4dd;
   --accent: #0b6b57;
   --accent-deep: #0a5f4e;
-  --display: ui-serif, Georgia, 'Iowan Old Style', serif;
-  --sans: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --display: 'Iowan Old Style', Georgia, 'Palatino Linotype', Palatino, ui-serif, serif;
+  --sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    'Helvetica Neue', Arial, sans-serif;
+  --radius: 14px;
 }
 
 * {
@@ -137,9 +143,9 @@ code {
   width: 100%;
   height: auto;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: 0 18px 44px rgba(22, 22, 26, 0.08);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 ul {

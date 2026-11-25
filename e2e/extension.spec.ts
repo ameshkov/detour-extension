@@ -95,8 +95,6 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
   const menu = page.locator('[data-role="scope-menu"]');
 
   await expect(menu).toBeVisible();
-  // The control sits under the headline now, so this window has room below it.
-  await expect(menu).not.toHaveAttribute('data-side', 'top');
 
   const box = await menu.boundingBox();
   const viewport = page.viewportSize();
@@ -108,10 +106,16 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
   expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
 
-  // The menu hangs off the control itself, so the gap is the 6 pixels of the
-  // sheet and not the padding of the row above it.
-  const gap = box!.y - (caretBox!.y + caretBox!.height);
+  // The menu hangs off the control on whichever side has room. A window this
+  // short leaves less than four items below the control, so the menu opens
+  // above it, and the gap stays the 6 pixels of the sheet either way.
+  const side = await menu.getAttribute('data-side');
+  const gap =
+    side === 'top'
+      ? caretBox!.y - (box!.y + box!.height)
+      : box!.y - (caretBox!.y + caretBox!.height);
 
+  expect(side, 'the menu flips above the control in a short window').toBe('top');
   expect(gap).toBeGreaterThanOrEqual(4);
   expect(gap).toBeLessThanOrEqual(9);
 

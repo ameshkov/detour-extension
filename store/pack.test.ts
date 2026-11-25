@@ -27,7 +27,7 @@ function png(size: number): Buffer {
 }
 
 function pngOf(name: string): Buffer {
-  const size = Number(/icon-(\d+)\.png/.exec(name)?.[1] ?? 16);
+  const size = Number(/(\d+)\.png$/.exec(name)?.[1] ?? 16);
 
   return png(name === 'logo-mark.png' ? 96 : size);
 }

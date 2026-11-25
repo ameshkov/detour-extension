@@ -12,6 +12,7 @@ import {
   PRIVACY_LABEL,
   RESUME_LABEL,
   SETTINGS_LABEL,
+  LISTED_BADGE,
   SHOW_ALTERNATIVES_LABEL,
   SITE_LISTED,
   SITE_REPORT_HINT,
@@ -83,6 +84,8 @@ export function renderSite(view: PopupView): void {
   }
 
   setText('site-text', `${site.host} ${site.listed ? SITE_LISTED : SITE_UNLISTED}`);
+  setText('site-badge', LISTED_BADGE);
+  setHidden('site-badge', !site.listed);
   renderWalls('site-walls', site.listed ? site.walls : []);
 
   const row = roleElement('site-row');

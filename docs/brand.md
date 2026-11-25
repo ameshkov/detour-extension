@@ -1,8 +1,8 @@
 # Brand
 
 Detour is the working name of the extension. This page holds its name, its mark, its wordmark,
-its palette, its type, its sizes, and its licence. Both the extension pages and the store listing
-draw from this page.
+its palette, its type, its sizes, and its licence. The extension pages, the public site, and the
+store listing draw from this page.
 
 ## Name
 
@@ -20,9 +20,9 @@ the header:
 
 | Page         | Image size | Tile size |
 | ------------ | ---------- | --------- |
-| Block page   | 15 px      | 24 px     |
-| Options page | 15 px      | 24 px     |
-| Popup        | 12 px      | 20 px     |
+| Block page   | 19 px      | 30 px     |
+| Options page | 19 px      | 30 px     |
+| Popup        | 14 px      | 22 px     |
 
 The image is white on the tile, and the sheet makes it white with
 `filter: brightness(0) invert(1)`.
@@ -32,15 +32,19 @@ The manifest carries the same tile as `icon-16.png`, `icon-32.png`, `icon-48.png
 icon is the whole tile and not the bare glyph, because the browser draws it on a surface the page
 does not control.
 
+The toolbar also carries the same artwork on a `--muted` tile, as `icon-off-16.png` to
+`icon-off-128.png`. The action shows this gray set while Detour stops no page, so the color of the
+toolbar says whether the product works before the reader opens anything.
+
 The mark never appears inside the explanation. It marks the product in a header and in the
 toolbar, and it marks nothing else.
 
 ## Wordmark
 
-- **Typeface**: the interface sans, `-apple-system, "Segoe UI", system-ui, sans-serif`
+- **Typeface**: the interface sans, `-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif`
 - **Weight**: 650
 - **Letter spacing**: -0.01em
-- **Size**: 14 px on the block page, and 12.5 px in the popup
+- **Size**: 15.5 px on the block page, and 14.5 px in the popup
 
 The sheet sets the wordmark in `ui.css`, and this page and the sheet carry the same tracking
 value. The block page, the popup, and the options page write the wordmark as text, so no image
@@ -48,14 +52,15 @@ carries it.
 
 ## Asset set
 
-| Asset                                            | Ships   | Location                                               |
-| ------------------------------------------------ | ------- | ------------------------------------------------------ |
-| Page mark, PNG                                   | Now     | `packages/extension/src/logo-mark.png`                 |
-| Manifest icon set, PNG at 16, 32, 48, and 128 px | Now     | `packages/extension/src/icon-16.png` to `icon-128.png` |
-| Store icon, 96 px in a 128 px canvas             | Release | `store/assets/icon-128.png`                            |
-| Store screenshots, 1280 by 800 px                | Release | `store/assets/screenshot-*.png`                        |
-| Store tile, 440 by 280 px                        | Release | `store/assets/tile-440x280.png`                        |
-| Store marquee, 1400 by 560 px                    | Release | `store/assets/marquee-1400x560.png`                    |
+| Asset                                            | Ships   | Location                                                       |
+| ------------------------------------------------ | ------- | -------------------------------------------------------------- |
+| Page mark, PNG                                   | Now     | `packages/extension/src/logo-mark.png`                         |
+| Manifest icon set, PNG at 16, 32, 48, and 128 px | Now     | `packages/extension/src/icon-16.png` to `icon-128.png`         |
+| Gray toolbar set, PNG at the same four sizes     | Now     | `packages/extension/src/icon-off-16.png` to `icon-off-128.png` |
+| Store icon, 96 px in a 128 px canvas             | Release | `store/assets/icon-128.png`                                    |
+| Store screenshots, 1280 by 800 px                | Release | `store/assets/screenshot-*.png`                                |
+| Store tile, 440 by 280 px                        | Release | `store/assets/tile-440x280.png`                                |
+| Store marquee, 1400 by 560 px                    | Release | `store/assets/marquee-1400x560.png`                            |
 
 The page mark is the only image that the pages load. The manifest icon set is the tile of the
 header at four sizes, and the manifest names those four files. The store icon is the 128 px tile,
@@ -66,6 +71,9 @@ and the screenshots and the store tile come from `pnpm store:capture` over the r
 The sheet declares every colour once, on `:root`, and no other colour is written in it. Prettier
 lowercases each hexadecimal value in the sheet, so `ui.css` holds `#fbfaf8` where this table
 holds `#FBFAF8`. The two spellings are one colour.
+
+The public site carries the same palette and the same corner radius in `website/styles.css`. A test
+compares the two files, so the site cannot drift from the sheet.
 
 | Token              | Value                     | Use                                                                    |
 | ------------------ | ------------------------- | ---------------------------------------------------------------------- |
@@ -87,6 +95,9 @@ holds `#FBFAF8`. The two spellings are one colour.
 | `--notice-ink`     | `#6B5322`                 | The text of a notice                                                   |
 | `--notice-surface` | `#FDF6E7`                 | The background of a notice                                             |
 | `--notice-line`    | `#EFDFBC`                 | The border of a notice                                                 |
+
+The depth of a card and of a lifted row is mixed from `--ink` with `color-mix`, so the sheet writes
+no second shadow colour and the palette stays one source.
 
 The tile of a result row takes one colour from a fixed set of nine, chosen by the domain, so the
 same domain keeps the same tile. Its letter is white on that colour:
@@ -123,12 +134,18 @@ The pointer on its row gives the box an `--accent` edge, and a checked box deepe
 under the pointer, and a `remove` link turns `--blocked`.
 
 The popup names the verdict of the page in colour as well as in words: the site the list carries
-takes `--accent` and the site it does not takes `--muted`. No dot stands in for either answer.
+takes `--accent` and the site it does not takes `--muted`. It also repeats the toolbar badge beside
+the verdict of a listed site, so the mark on the toolbar and the mark in the popup are one sign. An
+unlisted site carries no badge.
+
+The toolbar carries a badge on a page that the list names. The badge is one exclamation mark,
+takes an `--accent` background and white text, and a title names the site. The badge
+is absent while Detour is off or paused, because the stop it promises will not come.
 
 A wall is one pill on the block page and in the popup: the category in `--ink` at 600, a middot in
 `--control-line`, and the type in `--muted`. The pill is a `--surface` fill with a
 `--control-line` edge and a 99 px radius, so it reads as a word and not as a control. The block
-page sets it to 11.5 px and the popup to 10 px. The pills wrap rather than clip, and the sentence
+page sets it to 13 px and the popup to 11.5 px. The pills wrap rather than clip, and the sentence
 that judges an ad-blocker wall follows them in ink.
 
 The settings page draws the same 16 px checkbox as its reading rows in a grid: seven category rows
@@ -137,49 +154,54 @@ a box, so the reader sees that the choice does not exist rather than that it is 
 
 ## Type
 
-The table gives the block page sizes. The popup sets the wordmark to 12.5 px, its rows to
-12.5 px at 600, and its wall pills to 10 px. The options page sets its title to 27 px serif and
-its sections to 11 px uppercase at 0.1em, so the page and its parts never share a size.
+The table gives the block page sizes. The headline is fluid: it takes 44 px at most, 4.4 vw of the
+window, and 32 px at the floor, so a wide page and a phone keep the same weight. The popup sets the
+wordmark to 14.5 px, its rows to 14 px at 600, and its wall pills to 11.5 px. The options page sets
+its title to 30 px serif and its sections to 11.5 px uppercase at 0.1em, so the page and its parts
+never share a size.
 
-| Role          | Family | Size                            | Weight                 | Tracking |
-| ------------- | ------ | ------------------------------- | ---------------------- | -------- |
-| Page title    | Serif  | 27 px                           | 600                    | -0.02em  |
-| Headline      | Serif  | 33 px, and 24 px below 520 px   | 600                    | -0.02em  |
-| Section head  | Serif  | 20 px                           | 600                    | -0.015em |
-| Source title  | Serif  | 17 px                           | 600                    | -0.01em  |
-| Hero title    | Serif  | 18.5 px                         | 600                    | -0.015em |
-| Row title     | Sans   | 14.5 px                         | 600                    | -0.006em |
-| Wall pill     | Sans   | 11.5 px, and 10 px in the popup | 600 for the category   | —        |
-| Judgement     | Sans   | 15 px, in ink                   | 550                    | —        |
-| Row meta      | Sans   | 12.5 px                         | 400, the domain at 550 | —        |
-| Popup row     | Sans   | 12.5 px                         | 600                    | —        |
-| Report link   | Sans   | 11.5 px, underlined             | 400                    | —        |
-| Section label | Sans   | 11 px, uppercase                | 600                    | 0.1em    |
-| Wordmark      | Sans   | 14 px, and 12.5 px in the popup | 650                    | -0.01em  |
+| Role          | Family | Size                              | Weight                 | Tracking |
+| ------------- | ------ | --------------------------------- | ---------------------- | -------- |
+| Page title    | Serif  | 30 px                             | 600                    | -0.02em  |
+| Headline      | Serif  | 44 px, and 32 px below 520 px     | 600                    | -0.025em |
+| Section head  | Serif  | 27 px                             | 600                    | -0.02em  |
+| Source title  | Sans   | 18 px                             | 600                    | -0.01em  |
+| Hero title    | Serif  | 24 px                             | 600                    | -0.02em  |
+| Row title     | Sans   | 17.5 px                           | 600                    | -0.011em |
+| Wall pill     | Sans   | 13 px, and 11.5 px in the popup   | 600 for the category   | —        |
+| Judgement     | Sans   | 19 px, in ink                     | 400                    | -0.003em |
+| Row meta      | Sans   | 14.5 px                           | 400, the domain at 550 | —        |
+| Popup row     | Sans   | 14 px                             | 600                    | —        |
+| Report link   | Sans   | 12.5 px, underlined               | 400                    | —        |
+| Section label | Sans   | 11.5 px, uppercase                | 600                    | 0.1em    |
+| Wordmark      | Sans   | 15.5 px, and 14.5 px in the popup | 650                    | -0.01em  |
 
-The display family is `ui-serif, Georgia, "Iowan Old Style", serif`. The interface family is
-`-apple-system, "Segoe UI", system-ui, sans-serif`. The corner radius is 12 px.
+The display family is `"Iowan Old Style", Georgia, "Palatino Linotype", Palatino, ui-serif, serif`. A named face comes before `ui-serif`, because the generic family is Times on Windows and would win there. Georgia is the stand-in on Windows, and the generic covers the platforms that carry neither face.
+The interface family is
+`-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif`.
+The corner radius is 14 px. The public site uses the same two families and the same radius, and
+the same test compares them.
 
 ## Sizes
 
-| Part              | Size                                              |
-| ----------------- | ------------------------------------------------- |
-| Block page header | 52 px tall, with 28 px of horizontal padding      |
-| Popup header      | 46 px tall, with 15 px of horizontal padding      |
-| Options header    | 52 px tall, with 22 px of horizontal padding      |
-| Main column       | 700 px at most, with 40 px 28 px 26 px of padding |
-| Source card       | 12 px of padding and a 1 px `--line` border       |
-| Hero image        | 216 by 122 px                                     |
-| Row tile          | 24 px square                                      |
-| Row thumbnail     | 96 by 60 px                                       |
-| Popup             | 340 px wide, with 36 px rows                      |
-| Options page      | 640 px at most, with 22 px of padding             |
-| Reading checkbox  | 16 px square, with a 5 px radius                  |
-| Wall pill         | 5 px 11 px of padding, and 3 px 8 px in the popup |
-| Menu caret        | a 12 px path in a 34 px button                    |
+| Part              | Size                                                               |
+| ----------------- | ------------------------------------------------------------------ |
+| Block page header | 60 px tall, with 32 px of horizontal padding, sticky over the list |
+| Popup header      | 52 px tall, with 16 px of horizontal padding                       |
+| Options header    | 60 px tall, with 24 px of horizontal padding                       |
+| Main column       | 760 px at most, with 44 px 32 px 36 px of padding                  |
+| Source card       | 18 px 20 px of padding, a 1 px `--line` border, a card shadow      |
+| Hero image        | 264 by 148 px                                                      |
+| Row tile          | 30 px square                                                       |
+| Row thumbnail     | 128 by 80 px                                                       |
+| Popup             | 340 px wide, with 46 px rows                                       |
+| Options page      | 640 px at most, with 28 px 24 px of padding                        |
+| Reading checkbox  | 18 px square, with a 6 px radius                                   |
+| Wall pill         | 6 px 13 px of padding, and 4 px 9 px in the popup                  |
+| Menu caret        | a 12 px path in a 36 px button                                     |
 
-Below 520 px the headline drops to 24 px, the row thumbnails drop out, and the hero image stacks
-above its text.
+Below 520 px the headline drops to 32 px, the judgement to 18 px, the row thumbnails drop out, and
+the hero image stacks above its text.
 
 ## License
 

@@ -13,6 +13,7 @@ import {
   buildExtension,
   definesFor,
   builtManifest,
+  extensionIdOf,
   parseApiBase,
 } from './build';
 
@@ -30,6 +31,10 @@ const PAGE_FILES = [
   'icon-32.png',
   'icon-48.png',
   'icon-128.png',
+  'icon-off-128.png',
+  'icon-off-16.png',
+  'icon-off-32.png',
+  'icon-off-48.png',
   'logo-mark.png',
   'options.html',
   'popup.html',
@@ -45,6 +50,10 @@ const OUTPUT_FILES = [
   'icon-16.png',
   'icon-32.png',
   'icon-48.png',
+  'icon-off-128.png',
+  'icon-off-16.png',
+  'icon-off-32.png',
+  'icon-off-48.png',
   'logo-mark.png',
   'manifest.json',
   'options.html',
@@ -203,6 +212,26 @@ describe('the api base', () => {
   });
 });
 
+describe('the extension id', () => {
+  it('reads the id from the manifest key', async () => {
+    const manifest = JSON.parse(
+      await readFile(join(import.meta.dirname, '..', 'manifest.json'), 'utf8'),
+    ) as { key: string };
+
+    expect(
+      extensionIdOf(JSON.stringify({ key: manifest.key }), '/Users/me/detour-extension/dist'),
+    ).toEqual({ id: 'jcncblagncbpbamfnekhdkomffdpehpk', source: 'key' });
+  });
+
+  it('derives the id of a keyless build from the folder', () => {
+    expect(extensionIdOf('{"manifest_version":3}', '/Users/me/detour-extension/dist')).toEqual({
+      id: 'iljkmicbpcfabilciccdigjddgdgadnm',
+      source: 'path',
+    });
+    expect(extensionIdOf('{"key":""}', '/Users/me/detour-extension/dist').source).toBe('path');
+  });
+});
+
 describe('the extension build', () => {
   it('writes the five scripts and the copied files', async () => {
     const outDir = await temporaryOutDir();
@@ -282,6 +311,45 @@ describe('the extension build', () => {
     expect(await readFile(join(outDir, 'background.js'), 'utf8')).toContain(
       'https://api.example.test',
     );
+  });
+
+  it('reports the id of the build it wrote', async () => {
+    const developmentDir = await temporaryOutDir();
+    const releaseDir = await temporaryOutDir();
+
+    const development = await buildExtension({ dev: true, outDir: developmentDir });
+    const release = await buildExtension({ dev: false, outDir: releaseDir });
+
+    expect(development.extensionId).toEqual({
+      id: 'jcncblagncbpbamfnekhdkomffdpehpk',
+      source: 'key',
+    });
+    expect(release.extensionId).toEqual({
+      id: extensionIdOf('{"manifest_version":3}', releaseDir).id,
+      source: 'path',
+    });
+    expect(release.extensionId.id).toMatch(/^[a-p]{32}$/);
+    expect(release.extensionId.id).not.toBe(development.extensionId.id);
+  });
+
+  it('links the development source maps instead of embedding them', async () => {
+    const developmentDir = await temporaryOutDir();
+    const development = await buildExtension({ dev: true, outDir: developmentDir });
+    const popup = await readFile(join(developmentDir, 'popup.js'), 'utf8');
+
+    // A page load must not carry the map: the popup parses this file every time
+    // it opens, and an inline map makes it megabytes larger.
+    expect(popup).not.toContain('sourceMappingURL=data:');
+    expect(popup).toContain('//# sourceMappingURL=popup.js.map');
+    expect(existsSync(join(developmentDir, 'popup.js.map'))).toBe(true);
+    expect(development.files).toContain('popup.js.map');
+
+    const releaseDir = await temporaryOutDir();
+
+    await buildExtension({ dev: false, outDir: releaseDir });
+
+    expect(existsSync(join(releaseDir, 'popup.js.map'))).toBe(false);
+    expect(await readFile(join(releaseDir, 'popup.js'), 'utf8')).not.toContain('sourceMappingURL');
   });
 
   it('removes the output of an earlier build', async () => {

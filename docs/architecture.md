@@ -23,17 +23,24 @@ implementation of that contract.
 ## Extension
 
 The extension has three contexts and three pages. The guard decides and stops
-the load. The service worker owns the list, the allowances, the metadata, and
-the navigation. The block page owns presentation, and the popup and the
-options page show what the service worker stored.
+the load. The service worker owns the list, the allowances, the metadata, the
+navigation, and the toolbar state. The block page owns presentation, and the
+popup and the options page show what the service worker stored.
 
-| Surface        | Responsibility                                                                | Files                                                                                                                                                         | Talks to                |
-| -------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Guard          | Decide fast, stop the load, report the URL.                                   | `guard.ts`, `guard-entry.ts`                                                                                                                                  | Service worker          |
-| Service worker | Own the list, the allowances, the metadata, and the navigation.               | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts` | Storage, backend API    |
-| Block page     | Name the site and its walls, show the source, load the alternatives.          | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                               | Storage, service worker |
-| Popup          | Show the state, the page's verdict and walls, the pause, and settings.        | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                               | Storage, service worker |
-| Options page   | List the allowances, set the walls and the reading settings, clear the cache. | `options.html`, `options-entry.ts`, `options.ts`                                                                                                              | Storage, service worker |
+The toolbar answers for the page in front of the reader. It takes the gray set
+of icons while Detour is off or paused, and the colored set otherwise. A site
+that the list carries adds an exclamation mark as its badge, in the accent
+color, and the title names the site. The popup repeats that mark beside the
+verdict of a listed site. A new tab, a navigation, a window that takes the focus,
+and a write of the settings, the pause, or the list repaint the toolbar.
+
+| Surface        | Responsibility                                                                | Files                                                                                                                                                                       | Talks to                |
+| -------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Guard          | Decide fast, stop the load, report the URL.                                   | `guard.ts`, `guard-entry.ts`                                                                                                                                                | Service worker          |
+| Service worker | Own the list, the allowances, the metadata, the navigation, and the toolbar.  | `background.ts`, `service-worker.ts`, `handlers.ts`, `allowance-handlers.ts`, `alternatives-handler.ts`, `capabilities.ts`, `refresh.ts`, `metadata-fetch.ts`, `toolbar.ts` | Storage, backend API    |
+| Block page     | Name the site and its walls, show the source, load the alternatives.          | `block.html`, `block-entry.ts`, `block-page.ts`                                                                                                                             | Storage, service worker |
+| Popup          | Show the state, the page's verdict and walls, the pause, and settings.        | `popup.html`, `popup-entry.ts`, `popup.ts`, `popup-sections.ts`                                                                                                             | Storage, service worker |
+| Options page   | List the allowances, set the walls and the reading settings, clear the cache. | `options.html`, `options-entry.ts`, `options.ts`                                                                                                                            | Storage, service worker |
 
 The source files sit in `packages/extension/src`. The guard keeps one
 module-level marker for the document and draws at most one anchor, only for a
