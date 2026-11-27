@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Detour",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stops a page walled by an ad blocker, a paywall, a sign-in, a region check, or an age check, and shows the same story elsewhere.",
   "icons": {
     "16": "icon-16.png",
