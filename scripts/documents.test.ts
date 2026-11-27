@@ -28,30 +28,35 @@ function section(markdown: string, heading: string): string {
 describe('the architecture page', () => {
   const architecture = read('docs/architecture.md');
 
-  it('gives the block page its storage as well as the service worker', () => {
+  it('sends the block page to the service worker alone', () => {
     const row = architecture.split('\n').find((line) => line.startsWith('| Block page'));
 
     expect(row).toBeDefined();
-    expect(row).toContain('Storage');
-    expect(row).toContain('service worker');
+    expect(row).toContain('Service worker');
+    expect(row).not.toContain('Storage');
     expect(row).not.toContain('Worker API');
   });
 
-  it('orders the popup page as verdict, pause, settings, links', () => {
+  it('orders the popup page as card, routes, then the footer links', () => {
     const popup = collapse(section(architecture, 'Popup and options page'));
-    const verdict = popup.indexOf('whether the list carries it');
-    const pause = popup.indexOf('the pause and the settings');
+    const card = popup.indexOf('the source card names the page');
+    const routes = popup.indexOf('routes follow the card');
     const links = popup.indexOf('How it works');
 
-    expect(verdict).toBeGreaterThan(-1);
-    expect(pause).toBeGreaterThan(-1);
+    expect(card).toBeGreaterThan(-1);
+    expect(routes).toBeGreaterThan(-1);
     expect(links).toBeGreaterThan(-1);
-    expect(verdict).toBeLessThan(pause);
-    expect(pause).toBeLessThan(links);
+    expect(card).toBeLessThan(routes);
+    expect(routes).toBeLessThan(links);
   });
 
-  it('names the message the popup sends for the alternatives', () => {
-    expect(collapse(architecture)).toContain('showAlternatives');
+  it('names the two state messages the surfaces send', () => {
+    const contract = collapse(architecture);
+
+    expect(contract).toContain('`popupState`');
+    expect(contract).toContain('`pageState`');
+    expect(contract).toContain('`openRoute`');
+    expect(contract).not.toContain('showAlternatives');
   });
 
   it('names the three backend routes the extension uses', () => {
@@ -101,7 +106,8 @@ describe('the privacy policy', () => {
     expect(policy).not.toContain('Detour does not store the query');
   });
 
-  it('describes the image fetch when the row renders', () => {
-    expect(policy).toContain('as the row renders');
+  it('describes the favicon as the only image request', () => {
+    expect(policy).toContain('the block page does not draw that image');
+    expect(policy).toContain('reuses it as the row tile');
   });
 });

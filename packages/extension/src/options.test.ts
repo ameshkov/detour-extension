@@ -7,10 +7,12 @@ import {
   ALLOWED_SITES_INTRO,
   AUTO_OPEN_SETTING_DETAIL,
   AUTO_OPEN_SETTING_LABEL,
+  APPEARANCE_HEADING,
   CACHE_CONFIRM,
   CACHE_DETAIL,
   CACHE_HEADING,
   CLEAR_CACHE_LABEL,
+  CLEARING_LABEL,
   COLUMN_ADDED,
   COLUMN_SCOPE,
   COLUMN_SITE,
@@ -27,6 +29,9 @@ import {
   WALL_CATEGORY_DETAIL,
   WALL_CATEGORY_LABEL,
   WALL_TYPE_LABEL,
+  THEME_CHOICES,
+  THEME_SETTING_DETAIL,
+  THEME_SETTING_LABEL,
   WALLS_HEADING,
   WALLS_INTRO,
   cacheCleared,
@@ -80,6 +85,10 @@ function press(name: string, checked: boolean): void {
 
   element.checked = checked;
   element.dispatchEvent(new Event('change'));
+}
+
+function clickRole(name: string): void {
+  role(name).dispatchEvent(new MouseEvent('click', { bubbles: true }));
 }
 
 function pressClear(): void {
@@ -190,6 +199,9 @@ describe('the options page copy', () => {
     expect(role('allowed-heading').textContent).toBe(ALLOWED_SITES);
     expect(role('allowed-intro').textContent).toBe(ALLOWED_SITES_INTRO);
     expect(role('reading-heading').textContent).toBe(READING_HEADING);
+    expect(role('appearance-heading').textContent).toBe(APPEARANCE_HEADING);
+    expect(role('theme-label').textContent).toBe(THEME_SETTING_LABEL);
+    expect(role('theme-detail').textContent).toBe(THEME_SETTING_DETAIL);
     expect(role('th-site').textContent).toBe(COLUMN_SITE);
     expect(role('th-scope').textContent).toBe(COLUMN_SCOPE);
     expect(role('th-added').textContent).toBe(COLUMN_ADDED);
@@ -382,6 +394,7 @@ describe('the walls table', () => {
             enabled: true,
             autoOpenBest: false,
             imagesEnabled: true,
+            theme: 'system',
             walls: { hard: ['adblock', 'paywall'], soft: ['adblock'], metered: [] },
           },
         },
@@ -401,6 +414,7 @@ describe('the walls table', () => {
             enabled: true,
             autoOpenBest: false,
             imagesEnabled: true,
+            theme: 'system',
             walls: { hard: ['adblock'], soft: [], metered: [] },
           },
         },
@@ -423,6 +437,7 @@ describe('the walls table', () => {
         enabled: true,
         autoOpenBest: false,
         imagesEnabled: true,
+        theme: 'system',
         walls: { hard: [], soft: [], metered: ['paywall'] },
       };
 
@@ -447,6 +462,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: true,
       imagesEnabled: false,
+      theme: 'system',
       walls: defaultWalls(),
     };
 
@@ -465,6 +481,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      theme: 'system',
       walls: defaultWalls(),
     };
 
@@ -479,6 +496,7 @@ describe('the reading settings', () => {
             enabled: true,
             autoOpenBest: true,
             imagesEnabled: true,
+            theme: 'system',
             walls: defaultWalls(),
           },
         },
@@ -488,6 +506,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: true,
       imagesEnabled: true,
+      theme: 'system',
       walls: defaultWalls(),
     });
   });
@@ -497,6 +516,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      theme: 'system',
       walls: defaultWalls(),
     };
 
@@ -511,6 +531,7 @@ describe('the reading settings', () => {
             enabled: true,
             autoOpenBest: false,
             imagesEnabled: false,
+            theme: 'system',
             walls: defaultWalls(),
           },
         },
@@ -523,6 +544,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      theme: 'system',
       walls: defaultWalls(),
     };
     // The responder stores a value the page did not send, so a page that keeps
@@ -547,6 +569,7 @@ describe('the reading settings', () => {
       enabled: true,
       autoOpenBest: true,
       imagesEnabled: false,
+      theme: 'system',
       walls: defaultWalls(),
     });
   });
@@ -562,6 +585,7 @@ describe('a message that fails', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: false,
+      theme: 'system',
       walls: defaultWalls(),
     };
     // Both writes reject, so the page renders again from storage alone: the
@@ -627,6 +651,35 @@ describe('the cache', () => {
     expect(role('cache-status').hidden).toBe(false);
   });
 
+  it('waits for the answer before it takes another press', async () => {
+    vi.stubGlobal('confirm', () => true);
+
+    let settle!: (value: unknown) => void;
+
+    fake.respond(
+      'clearCache',
+      () =>
+        new Promise((resolve) => {
+          settle = resolve;
+        }),
+    );
+
+    await startOptionsPage();
+    pressClear();
+
+    await vi.waitFor(() => {
+      expect(role('cache-status').textContent).toBe(CLEARING_LABEL);
+    });
+    expect((role('clear-cache') as HTMLButtonElement).disabled).toBe(true);
+
+    settle({ ok: true, cleared: 2 });
+
+    await vi.waitFor(() => {
+      expect(role('cache-status').textContent).toBe(cacheCleared(2));
+    });
+    expect((role('clear-cache') as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('says so when nothing was cached', async () => {
     vi.stubGlobal('confirm', () => true);
     fake.respond('clearCache', () => ({ ok: true, cleared: 0 }));
@@ -648,6 +701,46 @@ describe('the cache', () => {
     await vi.waitFor(() => {
       expect(messagesOfType('clearCache')).toHaveLength(1);
     });
-    expect(role('cache-status').hidden).toBe(true);
+    await vi.waitFor(() => {
+      expect(role('cache-status').hidden).toBe(true);
+    });
+    expect((role('clear-cache') as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
+describe('the theme choice', () => {
+  it('names the three choices and presses the stored one', async () => {
+    await startOptionsPage();
+
+    for (const choice of ['system', 'light', 'dark'] as const) {
+      expect(role(`theme-${choice}`).textContent).toBe(THEME_CHOICES[choice]);
+      expect(role(`theme-${choice}`).getAttribute('aria-pressed')).toBe(
+        String(choice === 'system'),
+      );
+    }
+  });
+
+  it('stores the choice it paints', async () => {
+    await startOptionsPage();
+    clickRole('theme-dark');
+
+    await vi.waitFor(() => {
+      expect(document.documentElement.dataset.theme).toBe('dark');
+    });
+    expect(messagesOfType('setSettings')).toEqual([
+      {
+        type: 'setSettings',
+        settings: {
+          enabled: true,
+          autoOpenBest: false,
+          imagesEnabled: true,
+          theme: 'dark',
+          walls: defaultWalls(),
+        },
+      },
+    ]);
+    await vi.waitFor(() => {
+      expect(role('theme-dark').getAttribute('aria-pressed')).toBe('true');
+    });
   });
 });

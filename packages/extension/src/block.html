@@ -6,71 +6,202 @@
     <title>Detour</title>
     <link rel="stylesheet" href="ui.css" />
   </head>
-  <body>
-    <header data-role="header">
-      <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
-      <span data-role="wordmark">Detour</span>
-    </header>
-    <main>
-      <h1 data-role="headline"></h1>
-      <p data-role="walls" hidden></p>
-      <p data-role="lede" hidden></p>
-      <section data-role="source">
-        <div data-role="source-text">
-          <p data-role="source-label"></p>
-          <p data-role="source-title"></p>
-          <a data-role="source-link" target="_blank" rel="noreferrer noopener"></a>
-        </div>
-        <div data-role="open-group" hidden>
-          <button data-role="open-site" type="button"></button>
-          <button data-role="open-menu" type="button" aria-haspopup="menu" aria-expanded="false">
-            <span data-role="open-menu-caret" aria-hidden="true">
-              <svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
+  <body data-page="block">
+    <div data-role="canvas">
+      <section data-role="card">
+        <header data-role="header">
+          <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
+          <span data-role="wordmark">Detour</span>
+          <span data-role="wall-status" hidden>
+            <span data-role="header-sep" aria-hidden="true"></span>
+            <span data-role="wall-status-dot" aria-hidden="true"></span>
+            <span data-role="wall-status-text"></span>
+          </span>
+          <button data-role="theme" type="button">
+            <span data-role="theme-icon" aria-hidden="true">
+              <svg data-icon="moon" viewBox="0 0 24 24">
+                <path
+                  d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+                />
+              </svg>
+              <svg data-icon="sun" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="m4.93 4.93 1.41 1.41" />
+                <path d="m17.66 17.66 1.41 1.41" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+                <path d="m6.34 17.66-1.41 1.41" />
+                <path d="m19.07 4.93-1.41 1.41" />
+              </svg>
             </span>
           </button>
-          <div data-role="scope-menu" role="menu" hidden>
-            <button data-role="scope-once" type="button" role="menuitem"></button>
-            <button data-role="scope-tab" type="button" role="menuitem"></button>
-            <button data-role="scope-session" type="button" role="menuitem"></button>
-            <button data-role="scope-always" type="button" role="menuitem"></button>
+        </header>
+        <main>
+          <h1 data-role="headline"></h1>
+          <p data-role="lede" hidden></p>
+          <section data-role="source">
+            <span data-role="source-tile" aria-hidden="true"></span>
+            <div data-role="source-text">
+              <div data-role="source-line">
+                <p data-role="source-address"></p>
+                <button data-role="copy" type="button" hidden>
+                  <svg data-role="copy-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="9" y="9" width="12" height="12" rx="2" />
+                    <path d="M5 15V5a2 2 0 0 1 2-2h8" />
+                  </svg>
+                  <svg data-role="copy-check" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m5 12 5 5 9-10" />
+                  </svg>
+                </button>
+                <span data-role="copy-status" role="status"></span>
+              </div>
+              <p data-role="source-title"></p>
+              <p data-role="source-description" hidden></p>
+            </div>
+            <div data-role="walls-row" hidden>
+              <span data-role="walls-label"></span>
+              <p data-role="walls" hidden></p>
+              <span data-role="walls-hint"></span>
+            </div>
+            <div data-role="walls-detail" id="walls-detail" hidden></div>
+          </section>
+          <p data-role="notice" hidden>
+            <span data-role="notice-icon" aria-hidden="true">i</span>
+            <span data-role="notice-body"></span>
+          </p>
+          <section data-role="alternatives" data-state="loading">
+            <div data-role="list-head">
+              <h2 data-role="alternatives-heading"></h2>
+              <span data-role="count" hidden></span>
+            </div>
+            <div data-role="countdown" hidden>
+              <span data-role="countdown-number"></span>
+              <span data-role="countdown-text"></span>
+              <button data-role="countdown-cancel" type="button"></button>
+            </div>
+            <p data-role="status"></p>
+            <p data-role="detail"></p>
+            <ul data-role="list"></ul>
+            <button data-role="search" type="button" hidden>
+              <span data-role="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </span>
+              <span data-role="search-body">
+                <span data-role="search-title"></span>
+                <span data-role="search-detail"></span>
+              </span>
+              <span data-role="search-action">
+                <kbd data-role="search-key"></kbd>
+                <span data-role="search-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M7 7h10v10" />
+                    <path d="M7 17 17 7" />
+                  </svg>
+                </span>
+              </span>
+            </button>
+            <p data-role="keyboard-hint" hidden></p>
+            <div data-role="fallback" hidden>
+              <h2 data-role="fallback-heading"></h2>
+              <label data-role="query-label" for="query"></label>
+              <input
+                data-role="query"
+                id="query"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <div data-role="engines"></div>
+            </div>
+            <p data-role="fallback-note" hidden></p>
+            <aside data-role="slow-note" hidden>
+              <p data-role="slow-text"></p>
+              <button data-role="open-instead" type="button"></button>
+              <button data-role="keep-waiting" type="button"></button>
+            </aside>
+            <div data-role="retry-row" hidden>
+              <button data-role="retry" type="button"></button>
+            </div>
+          </section>
+        </main>
+        <div data-role="actions" hidden>
+          <p data-role="action-error" role="alert" hidden></p>
+          <div data-role="actions-start">
+            <button data-role="back" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m12 19-7-7 7-7" />
+                <path d="M19 12H5" />
+              </svg>
+              <span data-role="back-label"></span>
+              <kbd data-role="back-key"></kbd>
+            </button>
+          </div>
+          <div data-role="actions-end">
+            <button data-role="open-site" type="button">
+              <span data-role="open-site-label"></span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </button>
+            <div data-role="open-group" hidden>
+              <button
+                data-role="open-menu"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded="false"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+                  />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+                <span data-role="open-menu-label"></span>
+                <span data-role="open-menu-caret" aria-hidden="true">
+                  <svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
+                </span>
+              </button>
+              <div data-role="scope-menu" role="menu" hidden>
+                <button
+                  data-role="scope-once"
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked="false"
+                ></button>
+                <button
+                  data-role="scope-tab"
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked="false"
+                ></button>
+                <button
+                  data-role="scope-session"
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked="false"
+                ></button>
+                <button
+                  data-role="scope-always"
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked="false"
+                ></button>
+              </div>
+            </div>
           </div>
         </div>
-        <p data-role="action-error" role="alert" hidden></p>
       </section>
-      <section data-role="alternatives" data-state="loading">
-        <div data-role="list-head">
-          <h2 data-role="alternatives-heading"></h2>
-          <span data-role="count"></span>
-        </div>
-        <div data-role="countdown" hidden>
-          <span data-role="countdown-number"></span>
-          <span data-role="countdown-text"></span>
-          <button data-role="countdown-cancel" type="button"></button>
-        </div>
-        <p data-role="status"></p>
-        <p data-role="detail"></p>
-        <ul data-role="list"></ul>
-        <div data-role="fallback" hidden>
-          <h2 data-role="fallback-heading"></h2>
-          <label data-role="query-label" for="query"></label>
-          <input data-role="query" id="query" type="text" autocomplete="off" spellcheck="false" />
-          <div data-role="engines"></div>
-          <p data-role="fallback-note"></p>
-        </div>
-        <aside data-role="slow-note" hidden>
-          <p data-role="slow-text"></p>
-          <button data-role="open-instead" type="button"></button>
-          <button data-role="keep-waiting" type="button"></button>
-        </aside>
-        <div data-role="retry-row" hidden>
-          <button data-role="retry" type="button"></button>
-        </div>
-      </section>
-      <div data-role="actions" hidden>
+      <div data-role="note" hidden>
         <p data-role="footnote"></p>
         <a data-role="report" target="_blank" rel="noreferrer noopener"></a>
       </div>
-    </main>
+    </div>
     <script src="block.js"></script>
   </body>
 </html>

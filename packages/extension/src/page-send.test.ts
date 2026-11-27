@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MESSAGE } from './constants';
-import type { PauseMessage } from './messages';
+import { DEFAULT_SETTINGS, MESSAGE } from './constants';
+import type { SetSettingsMessage } from './messages';
 import { createPageSender } from './page-send';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 
-const NOW = Date.UTC(2026, 10, 13, 12, 0);
-const PAUSE: PauseMessage = { type: MESSAGE.pause, until: NOW, session: false };
+const SETTINGS = { ...DEFAULT_SETTINGS, enabled: false };
+const MESSAGE_TO_SEND: SetSettingsMessage = { type: MESSAGE.setSettings, settings: SETTINGS };
 
 let fake: FakeChrome;
 
@@ -26,9 +26,9 @@ describe('the page sender', () => {
     const sender = createPageSender('popup');
     const reload = vi.fn();
 
-    sender.send(PAUSE, reload);
+    sender.send(MESSAGE_TO_SEND, reload);
 
-    expect(fake.calls.messages).toEqual([PAUSE]);
+    expect(fake.calls.messages).toEqual([MESSAGE_TO_SEND]);
     expect(reload).not.toHaveBeenCalled();
 
     await vi.waitFor(() => {
@@ -43,8 +43,8 @@ describe('the page sender', () => {
     const reload = vi.fn();
 
     vi.stubGlobal('DEV', true);
-    fake.respond('pause', () => Promise.reject(error));
-    sender.send(PAUSE, reload);
+    fake.respond('setSettings', () => Promise.reject(error));
+    sender.send(MESSAGE_TO_SEND, reload);
 
     await vi.waitFor(() => {
       expect(reload).toHaveBeenCalledTimes(1);
@@ -63,7 +63,7 @@ describe('the page sender', () => {
     fake.runtime.sendMessage = (): Promise<unknown> => {
       throw error;
     };
-    sender.send(PAUSE, reload);
+    sender.send(MESSAGE_TO_SEND, reload);
 
     expect(reload).toHaveBeenCalledTimes(1);
     expect(log).toHaveBeenCalledWith('[detour] popup: the message failed', error);

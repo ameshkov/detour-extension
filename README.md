@@ -6,10 +6,11 @@ not. The list names every wall that a page carries: an ad-blocker wall, a
 paywall, a registration prompt, a consent dialog, a region check, a VPN check,
 or an age check, each with a hard, soft, or metered type. The settings page
 holds a table of the walls that stop a page, one category per row and one type
-per column. The extension reads the site list, finds the alternatives, and
-shows the block page. The toolbar icon turns gray while Detour is off or
-paused, and carries a badge on a site that the list names. A backend server
-does the search and serves the list.
+per column. The pages follow the system theme, and the settings page also
+holds a theme choice. The extension reads the site list, finds the alternatives, and
+shows the block page. The toolbar icon carries the coloured route on a page
+that Detour will stop, a faint route on a page it lets load, and a gray mark
+while Detour is off. A backend server does the search and serves the list.
 This repository holds the extension and a dummy backend for local work. The
 production backend is a separate service.
 

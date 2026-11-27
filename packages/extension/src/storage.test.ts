@@ -4,16 +4,14 @@ import { DEFAULT_SETTINGS, LIST_STORAGE_VERSION } from './constants';
 import { BUNDLED_LIST_ID } from './sites-id';
 import {
   BUNDLED_LIST,
-  isPaused,
+  isSettings,
   readAllowance,
   readAllowances,
   readList,
   readListId,
-  readPause,
   readSettings,
   readStoredList,
   writeAllowance,
-  writePause,
   writeStoredList,
 } from './storage';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
@@ -29,6 +27,14 @@ describe('the settings store', () => {
     await expect(readSettings()).resolves.toEqual(DEFAULT_SETTINGS);
   });
 
+  it('accepts the settings shape and nothing else', () => {
+    expect(isSettings(DEFAULT_SETTINGS)).toBe(true);
+    expect(isSettings({ ...DEFAULT_SETTINGS, theme: 'sepia' })).toBe(false);
+    expect(isSettings({ ...DEFAULT_SETTINGS, enabled: 'yes' })).toBe(false);
+    expect(isSettings({ enabled: true })).toBe(false);
+    expect(isSettings(null)).toBe(false);
+  });
+
   it('merges a stored setting over the defaults', async () => {
     const fake = installFakeChrome();
 
@@ -38,8 +44,21 @@ describe('the settings store', () => {
       enabled: false,
       autoOpenBest: false,
       imagesEnabled: true,
+      theme: 'system',
       walls: { hard: ['adblock'], soft: ['adblock'], metered: [] },
     });
+  });
+
+  it('reads a stored theme back and falls back to the system', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values.settings = { theme: 'dark' };
+
+    await expect(readSettings()).resolves.toMatchObject({ theme: 'dark' });
+
+    fake.storage.local.values.settings = { theme: 'sepia' };
+
+    await expect(readSettings()).resolves.toMatchObject({ theme: 'system' });
   });
 
   it('reads a stored wall choice back', async () => {
@@ -54,6 +73,7 @@ describe('the settings store', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      theme: 'system',
       walls: {
         hard: ['adblock', 'paywall'],
         soft: [],
@@ -74,6 +94,7 @@ describe('the settings store', () => {
       enabled: true,
       autoOpenBest: false,
       imagesEnabled: true,
+      theme: 'system',
       walls: { hard: ['adblock'], soft: ['adblock'], metered: [] },
     });
   });
@@ -178,48 +199,6 @@ describe('the list store', () => {
   });
 });
 
-describe('the pause store', () => {
-  it('reports a pause in the future', async () => {
-    const fake = installFakeChrome();
-
-    fake.storage.local.values.pauseUntil = 2_000;
-
-    expect(isPaused(await readPause(), 1_000)).toBe(true);
-  });
-
-  it('clears a pause at its own time and after it', async () => {
-    installFakeChrome();
-
-    await writePause({ until: 2_000, session: false });
-    const pause = await readPause();
-
-    expect(isPaused(pause, 2_000)).toBe(false);
-    expect(isPaused(pause, 2_001)).toBe(false);
-  });
-
-  it('keeps a session pause until the browser drops the store', async () => {
-    const fake = installFakeChrome();
-
-    await writePause({ until: 0, session: true });
-
-    expect(fake.storage.session.values.pauseSession).toBe(true);
-    expect(fake.storage.local.values.pauseUntil).toBe(0);
-    expect(isPaused(await readPause(), 2_000_000)).toBe(true);
-  });
-
-  it('drops the session flag when a timed pause replaces it', async () => {
-    const fake = installFakeChrome();
-
-    fake.storage.session.values.pauseSession = true;
-
-    await writePause({ until: 3_000, session: false });
-
-    expect(fake.storage.session.values.pauseSession).toBe(false);
-    expect(fake.storage.local.values.pauseUntil).toBe(3_000);
-    expect(isPaused(await readPause(), 1_000)).toBe(true);
-  });
-});
-
 describe('the allowance stores', () => {
   it('writes an always allowance to the local store', async () => {
     const fake = installFakeChrome();
@@ -273,6 +252,5 @@ describe('the allowance stores', () => {
       allowTabs: [],
     });
     await expect(readStoredList()).resolves.toBeNull();
-    await expect(readPause()).resolves.toEqual({ until: 0, session: false });
   });
 });

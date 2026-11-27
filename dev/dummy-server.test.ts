@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SitesJsonSchema } from '@detour/shared';
 
 import type { DummyServer } from './dummy-server';
-import { startDummyServer } from './dummy-server';
+import { DUMMY_TOPIC, startDummyServer } from './dummy-server';
 
 const LIST = SitesJsonSchema.parse({
   disabled: false,
@@ -99,6 +99,7 @@ describe('the dummy server alternatives route', () => {
       query: string;
       degraded: boolean;
       provider: string;
+      topic?: string;
       alternatives: Array<{
         url: string;
         title: string;
@@ -106,6 +107,8 @@ describe('the dummy server alternatives route', () => {
         domain: string;
         image?: string;
         favicon?: string;
+        match?: string;
+        best?: true;
       }>;
     };
 
@@ -117,6 +120,29 @@ describe('the dummy server alternatives route', () => {
     expect(answer.alternatives[0]?.image).toMatch(/[?&]sig=[0-9a-f]{16}$/);
     expect(answer.alternatives[0]?.favicon).toContain('/v1/img?u=');
     expect(answer.alternatives[0]?.favicon).toMatch(/[?&]sig=[0-9a-f]{16}$/);
+  });
+
+  it('names the story and the match of every row', async () => {
+    const answer = (await (
+      await alternativesFor({ url: walledUrl(), title: '', lang: 'en' })
+    ).json()) as {
+      topic?: string;
+      alternatives: Array<{ match?: string; best?: true }>;
+    };
+
+    expect(answer.topic).toBe(DUMMY_TOPIC);
+    expect(answer.alternatives.map((row) => row.match)).toEqual([
+      'same_story',
+      'same_event',
+      'same_topic',
+      'different',
+    ]);
+    expect(answer.alternatives.map((row) => row.best === true)).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
   });
 
   it('signs a favicon link for every row it answers', async () => {

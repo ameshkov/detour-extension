@@ -65,19 +65,20 @@ eslint.config.js       the lint rules
                        submits a manual run, and pages.yml publishes the site
 dev/                   dummy-server.ts, run-dev.ts, and their tests
 e2e/                   extension.spec.ts and fixtures.ts
-scripts/               check-docs.ts, documents.test.ts, brand.test.ts
+scripts/               icons.ts, check-docs.ts, documents.test.ts, brand.test.ts
 scripts/docs/          the link, anchor, and command checks
 sites/                 sites.release.json, sites.dev.yaml, build.ts, list-build.ts,
                        sync.ts, and their tests
 sites/fixtures/pages/  three saved publisher pages for the metadata reader
-docs/                  architecture.md, brand.md, privacy.md
+docs/                  architecture.md, brand.md, manual-testing.md, privacy.md
+qa/                    README.md and features/, the Gherkin plan of the behaviors
 store/                 meta/listing.json, meta/listing.md, assets/, the pack and
                        release tools, their tests, and README.md
 website/               layout.ts, styles.css, build.ts, and its tests
 packages/shared/       list contract, matching, query cleaner, hash
 packages/extension/    manifest.json, the five bundles, the three pages, ui.css,
-                       logo-mark.png, the four toolbar icons, the tests, and
-                       scripts/build.ts
+                       logo-mark.png, inter.woff2 and its licence, the four
+                       toolbar icons, the tests, and scripts/build.ts
 ```
 
 The extension sources sit flat in `packages/extension/src`, with the test
@@ -92,6 +93,7 @@ helpers in `src/testing/`.
 - **Build the extension**: `pnpm build`
 - **Build against the local dummy server**: `pnpm build:dev`
 - **Build against another backend**: `DETOUR_API_BASE=<origin> pnpm build`
+- **Draw the mark and the toolbar icons**: `pnpm icons`
 - **Start the local stack**: `pnpm dev`
 - **Start the dummy server alone**: `pnpm dummy-server`
 - **Watch the development build**: `pnpm --filter @detour/extension watch:dev`
@@ -121,6 +123,9 @@ helpers in `src/testing/`.
   you report a task as done.
 - You MUST update the tests for changed behavior. Write the test first, watch
   it fail, then write the code.
+- You MUST update the Gherkin scenario that names the behavior, in `qa/features`,
+  and tag it with what covers it. A scenario that nothing covers is `@manual`,
+  and `docs/manual-testing.md` gains the steps that reach it.
 - You MUST run `pnpm test` and make every test pass.
 - You MUST update the document that a change touches, in the same pull request.
   A change to behavior, a command, an endpoint, a storage key, a user-visible
@@ -147,18 +152,23 @@ The extension runs in a sandbox with a small API surface:
   permission without a written reason.
 - Keep the bundle small. No UI framework. esbuild only. Every dependency slows
   the browser start.
-- Separate the contexts. The guard decides and stops the load. The service
-  worker owns the list, the allowances, and the navigation. The block page
-  owns presentation. A content script never holds business logic.
+- Separate the contexts. The guard decides and stops the load, and reads the
+  head of the document it stops. The service worker owns the list, the
+  allowances, the navigation, and the state of both surfaces. The block page
+  and the popup own presentation. A content script never holds business logic.
 - The service worker stops at any time. Keep state in `chrome.storage`, never
   in a module variable. Treat every message as the first one.
 - Use message passing between contexts. Never share mutable state.
-- Two writers. The service worker writes every storage key except
-  `alt:<sha256(url)>`. The block page writes that one key, and only a finished
-  backend answer. The reader's `clearCache` is the one removal: the service
-  worker drops `list`, every `alt:` key, and every `meta:` key, and it never
-  writes an `alt:` entry. The settings, the allowances, and the tab records
+- One writer. The service worker writes every storage key, `alt:<sha256(url)>`
+  included, because an answer can settle after the surface that asked for it
+  has closed. The reader's `clearCache` is the one removal: the service worker
+  drops `list`, every `alt:` key, and every `meta:` key, then downloads the list
+  again. The settings, the allowances, the scope defaults, and the tab records
   stay.
+- One state per surface. The worker builds a `PopupState` and a `PageState`
+  with a pure function, the page paints it, and neither page reads
+  `chrome.storage` or `chrome.tabs`. A state carries every datum a render
+  reads, and `state-guard.ts` checks it before a page paints it.
 - Fail open. A guard error, a timeout, a missing list, or a `disabled` list
   lets the page load.
 - Design for updates. The list carries a storage version, and an envelope of
@@ -203,45 +213,53 @@ The extension has five surfaces, from the browser event to the screen:
 
 ```text
 guard (guard-entry.ts)  →  service worker (background.ts)  →  block page (block-entry.ts)
+                                        ↑                          popup (popup-entry.ts)
                                         ↓
-                                  chrome.storage  ←  popup (popup-entry.ts)
-                                                  ←  options page (options-entry.ts)
+                                  chrome.storage  ←  options page (options-entry.ts)
 ```
 
-- The guard answers one question and stops one load. It keeps one
-  module-level marker for the document, and it draws at most one anchor, only
-  for a failed navigation that carries `blockPageUrl`.
+- The guard answers one question, stops one load, and reads the head of the
+  document it stops. It waits for `document.body` with a `MutationObserver`
+  bounded by `META_HEAD_WAIT_MS`, calls `window.stop()`, reads the head, and
+  sends it with `blocked`. It keeps one module-level marker for the document,
+  and it draws at most one anchor, only for a failed navigation that carries
+  `blockPageUrl`.
 - The service worker owns the list, the allowances, the one-time passes, the
-  metadata cache, the stopped-tab capability record, the tab navigation, and the
-  toolbar icon and badge.
-  It writes every storage key except `alt:<sha256(url)>`. It records
-  `sha256(url)` under `capability:<tabId>` in the session store before the
-  block navigation and prunes it on tab close. It answers metadata,
-  alternatives, and an allowance only for the sender's own tab and the URL it
-  recorded, and it writes the pass that opens one page once. It stops a page
-  only when one of the entry's walls is a wall that the reader chose, so a site
-  whose walls are all switched off loads.
-- The block page renders state and sends messages. It never reads a page, and
-  it writes only `alt:<sha256(url)>`, from a finished backend answer. It reads
-  the list, the settings, and its `alt:` entry from storage directly. It runs
-  only in a top-level document. Its four states, `loading`, `results`,
-  `empty`, and `error`, are the whole state set. It names the site, counts its
-  walls, and draws one pill per wall. The judgement sentence appears only for
-  an ad-blocker wall.
-- The popup renders the state, the verdict on the page of the active tab with
-  the pills of its walls and the action that fits it, the pause, and the
-  settings.
+  scope that the reader chose for each domain, the metadata cache, the answer
+  cache, the stopped-tab capability record, the tab navigation, and the toolbar
+  icon.
+  It writes every storage key, `alt:<sha256(url)>` included. It records
+  `sha256(url)` under `capability:<tabId>` in the session store and writes the
+  metadata before the block navigation, then prunes the record on tab close. It
+  answers `popupState` for an extension page, and `pageState` and an allowance
+  only for the sender's own tab and the URL it recorded. It writes the pass
+  that opens one page once. It stops a page only when one of the entry's walls
+  is a wall that the reader chose, so a site whose walls are all switched off
+  loads.
+- The block page paints one `PageState` and sends messages. It reads no
+  storage, writes none, and never reads a page. It runs only in a top-level
+  document. Its four answer states, `loading`, `results`, `empty`, and
+  `error`, are the whole set, and it asks for the state again on a retry. It
+  names the site, counts its walls, and draws one pill per wall. The judgement
+  sentence appears only for an ad-blocker wall.
+- The popup paints one `PopupState`. Its header carries the state word and the
+  switch, its card names the page and draws the pills of its walls, its routes
+  carry the digits and arrows, and the search card closes the list. An unlisted
+  site carries the report row and the search instead. A digit opens its row,
+  the arrows move a selection, and the footer carries the two links, the theme,
+  and the gear.
 - The options page lists every allowance, holds the walls table and the two
   reading settings, and clears the cache after a confirmation. The table has
   one category per row and one type per column; a metered cell outside the
   paywall row has no box.
-- The popup and the options page read storage directly and write only through
-  a message.
+- The options page reads storage directly and writes only through a message.
 - The message contract is the only interface between the contexts. The service
-  worker adds `lang: 'en'` to the alternatives request and checks the URL
-  against the digest that the sender's tab recorded. Result images are the one
-  direct backend request: a row loads `GET /v1/img` with the signed link in
-  the answer.
+  worker adds `lang: 'en'` to the alternatives request, coalesces one request
+  per URL, and checks the URL against the digest that the sender's tab
+  recorded. A result favicon is the
+  one direct backend request: a row loads the icon link from the answer. The
+  source card loads the icon of the stopped page from its publisher when
+  `imagesEnabled` is on.
 
 The backend contract has three layers:
 
@@ -289,6 +307,8 @@ and names the list. Both systems import it. It imports neither of them.
   A page test retires its run with `stopBlockPage` in `afterEach`, so an answer
   or a note timer of the old run cannot paint the next shell.
 - The metadata reader runs against the saved pages in `sites/fixtures/pages/`.
+- The popup and the block page render from a state fixture through one injected
+  send, and a case asserts that neither reads `chrome.storage` or `chrome.tabs`.
 - The dummy server test starts the server on a free port, reads real HTTP
   answers, and closes it in `afterAll`. Never call a remote service in a test.
 - The end-to-end run is Playwright, and `pnpm check` never starts the browser.
@@ -299,6 +319,13 @@ and names the list. Both systems import it. It imports neither of them.
   first navigation fails open, so a case never meets a cold worker. `E2E_PORT`
   moves the run to a free port, and the build must then name the same origin in
   `DETOUR_API_BASE`.
+- The popup is tested on the surface a reader presses. `openNativePopup` asks
+  the worker for `chrome.action.openPopup()` and attaches a second Playwright
+  client over the browser's DevTools port, where Chrome lists the popup window
+  as a page: content, a route press, and a screenshot all reach it, and the
+  state it paints is that of the page in front of the reader.
+  `openPopupOver` opens the same document in a background tab for the reload
+  case, where a popup window has already closed.
 - Three behaviors the product promises are unit tests: a framed document draws
   nothing and sends nothing, an `Open <site> anyway` press stores the tab
   allowance before the tab moves, and a `Just once` press writes a pass that
@@ -331,11 +358,14 @@ Extension configuration:
 - The manifest carries `action` with `popup.html`, `default_title` `Detour`,
   and `default_icon`, `options_ui` with `options.html` and `open_in_tab`
   `true`, and the `icons` set `icon-16.png` to `icon-128.png`. The action sets a
-  second, gray icon set while Detour stops no page.
-- The three pages share one stylesheet, `ui.css`, and one page mark,
-  `src/logo-mark.png`. The build copies both beside the bundles, with the four
+  faint set on a page that Detour lets load and a gray set while Detour is off.
+- The three pages share one stylesheet, `ui.css`, the Inter font
+  `src/inter.woff2` and its licence, and one page mark, `src/logo-mark.png`. The
+  build copies them beside the bundles, with the four
   toolbar icons `src/icon-16.png` to `src/icon-128.png` and the gray set
-  `src/icon-off-16.png` to `src/icon-off-128.png`.
+  `src/icon-off-16.png` to `src/icon-off-128.png`. `pnpm icons` draws all nine
+  images from the one geometry in `scripts/icons.ts`, and the sheet paints the
+  tile of the page mark with `--mark`.
 - The popup is a fixed 340 pixels wide, so the `max-width: 520px` block of
   `ui.css` always matches it. A narrow-screen rule that names a shared control
   is scoped to the block page's `[data-role='actions']`, or it widens the popup
@@ -426,16 +456,17 @@ Website configuration:
 
 Documents and their update triggers:
 
-| Document               | Update when                                                       |
-| ---------------------- | ----------------------------------------------------------------- |
-| `README.md`            | Behavior, the backend URL, or install steps change                |
-| `DEVELOPMENT.md`       | A script, an environment value, the build, or the release changes |
-| `CONTRIBUTING.md`      | How to contribute to the extension changes                        |
-| `docs/architecture.md` | The architecture, a storage key, a route, or a flow changes       |
-| `docs/privacy.md`      | Data that leaves the device, retention, or the provider changes   |
-| `docs/brand.md`        | The mark, the palette, or the license changes                     |
-| `store/README.md`      | The listing, the images, or the release steps change              |
-| `AGENTS.md`            | The structure, a command, or a convention changes                 |
+| Document                 | Update when                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| `README.md`              | Behavior, the backend URL, or install steps change                  |
+| `DEVELOPMENT.md`         | A script, an environment value, the build, or the release changes   |
+| `CONTRIBUTING.md`        | How to contribute to the extension changes                          |
+| `docs/architecture.md`   | The architecture, a storage key, a route, or a flow changes         |
+| `docs/privacy.md`        | Data that leaves the device, retention, or the provider changes     |
+| `docs/brand.md`          | The mark, the palette, or the license changes                       |
+| `docs/manual-testing.md` | A surface, a state, the copy, or the way a reader checks it changes |
+| `store/README.md`        | The listing, the images, or the release steps change                |
+| `AGENTS.md`              | The structure, a command, or a convention changes                   |
 
 ### Other
 

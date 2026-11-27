@@ -4,10 +4,11 @@
 sites:
   - domain: 127.0.0.1
     name: Local fixture
+    verified: 2026-11-20
     walls:
       - category: adblock
         type: hard
       - category: paywall
         type: metered
     paths: ['/walled/*']
-    note: Local fixture page for development; it is not a publisher.
+    note: An ad-blocker card covers the fixture page until the reader allows ads, and a metered paywall follows it.

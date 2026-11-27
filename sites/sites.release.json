@@ -6,6 +6,7 @@
     {
       "domain": "cnet.com",
       "name": "CNET",
+      "verified": "2026-11-25",
       "walls": [
         {
           "category": "adblock",
@@ -13,17 +14,18 @@
         }
       ],
       "paths": [],
-      "note": "An ad-blocker card covers the home page for readers who run an ad blocker; the stories stay behind it until the reader allows ads.",
+      "note": "An Admiral card offers 'Continue to site' beside 'Allow Ads'; Continue clears it and the story reads with the ad blocker on, and the card returns on the next story.",
       "avoid": [],
       "prefer": []
     },
     {
       "domain": "express.co.uk",
       "name": "Daily Express",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -34,10 +36,11 @@
     {
       "domain": "dailymail.com",
       "name": "Daily Mail",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -48,22 +51,24 @@
     {
       "domain": "businessinsider.com",
       "name": "Business Insider",
+      "verified": "2026-11-26",
       "walls": [
         {
-          "category": "paywall",
-          "type": "soft"
+          "category": "registration",
+          "type": "hard"
         }
       ],
       "paths": [
         "/*-20*-*"
       ],
-      "note": "A subscription dialog covers the story and the text says it is available to subscribers only; the front page reads.",
+      "note": "A 'Read more for free' dialog dims the story and asks the reader to create an account or log in; its only controls take an email or a Google or Apple account, and it returns on every load.",
       "avoid": [],
       "prefer": []
     },
     {
       "domain": "zdnet.com",
       "name": "ZDNET",
+      "verified": "2026-11-18",
       "walls": [
         {
           "category": "adblock",
@@ -78,40 +83,28 @@
     {
       "domain": "telegraph.co.uk",
       "name": "The Telegraph",
+      "verified": "2026-11-26",
       "walls": [
         {
           "category": "registration",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [
         "/*/*/*/*/**"
       ],
-      "note": "The story stops after its first paragraph at a 'TO CONTINUE...' prompt that asks the reader to create a free account or log in; the ad blocker makes no difference.",
-      "avoid": [],
-      "prefer": []
-    },
-    {
-      "domain": "forbes.com",
-      "name": "Forbes",
-      "walls": [
-        {
-          "category": "adblock",
-          "type": "soft"
-        }
-      ],
-      "paths": [],
-      "note": "An ad-blocker card covers the story for readers who run an ad blocker; the only ways past it are to allow ads or to sign in.",
+      "note": "The story stops after its first paragraph at a 'TO CONTINUE...' card that offers only an email sign-up, Google, Apple, or a log-in, with no close; the ad blocker makes no difference.",
       "avoid": [],
       "prefer": []
     },
     {
       "domain": "theverge.com",
       "name": "The Verge",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "adblock",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -122,6 +115,7 @@
     {
       "domain": "hbr.org",
       "name": "Harvard Business Review",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "paywall",
@@ -138,10 +132,11 @@
     {
       "domain": "corriere.it",
       "name": "Corriere della Sera",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -152,6 +147,7 @@
     {
       "domain": "theatlantic.com",
       "name": "The Atlantic",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "paywall",
@@ -168,10 +164,11 @@
     {
       "domain": "welt.de",
       "name": "WELT",
+      "verified": "2026-11-27",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -182,10 +179,11 @@
     {
       "domain": "repubblica.it",
       "name": "la Repubblica",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -196,10 +194,11 @@
     {
       "domain": "focus.de",
       "name": "FOCUS online",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -210,10 +209,11 @@
     {
       "domain": "marca.com",
       "name": "MARCA",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -224,6 +224,7 @@
     {
       "domain": "economist.com",
       "name": "The Economist",
+      "verified": "2026-11-23",
       "walls": [
         {
           "category": "paywall",
@@ -244,10 +245,11 @@
     {
       "domain": "aftonbladet.se",
       "name": "Aftonbladet",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -258,10 +260,11 @@
     {
       "domain": "vg.no",
       "name": "VG",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -272,6 +275,7 @@
     {
       "domain": "bloomberg.com",
       "name": "Bloomberg",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -279,7 +283,7 @@
         },
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [
@@ -292,10 +296,11 @@
     {
       "domain": "t-online.de",
       "name": "t-online",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -306,10 +311,11 @@
     {
       "domain": "elpais.com",
       "name": "EL PAÍS",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -320,10 +326,11 @@
     {
       "domain": "lemonde.fr",
       "name": "Le Monde",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -334,6 +341,7 @@
     {
       "domain": "spiegel.de",
       "name": "DER SPIEGEL",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -341,7 +349,7 @@
         },
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -350,22 +358,9 @@
       "prefer": []
     },
     {
-      "domain": "cbsnews.com",
-      "name": "CBS News",
-      "walls": [
-        {
-          "category": "adblock",
-          "type": "soft"
-        }
-      ],
-      "paths": [],
-      "note": "An Admiral card headed \"It looks like you're using an ad blocker.\" covers the story; \"Continue\" leads only to instructions for turning the blocker off, and \"I'll fix it next time\" dismisses it.",
-      "avoid": [],
-      "prefer": []
-    },
-    {
       "domain": "ft.com",
       "name": "Financial Times",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -382,10 +377,11 @@
     {
       "domain": "gazzetta.it",
       "name": "La Gazzetta dello Sport",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -396,10 +392,11 @@
     {
       "domain": "iltalehti.fi",
       "name": "Iltalehti",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -410,6 +407,7 @@
     {
       "domain": "newyorker.com",
       "name": "The New Yorker",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -430,30 +428,28 @@
     {
       "domain": "marketwatch.com",
       "name": "MarketWatch",
+      "verified": "2026-11-26",
       "walls": [
         {
           "category": "paywall",
-          "type": "soft"
-        },
-        {
-          "category": "registration",
-          "type": "soft"
+          "type": "metered"
         }
       ],
       "paths": [
         "/story/**"
       ],
-      "note": "A ‘Continue Reading with One of the Options Below’ panel covers the story and asks the reader to register for a limited number of free articles or to subscribe; the ad blocker makes no difference.",
+      "note": "After one free story, a ‘Continue reading your article with a MarketWatch subscription’ card replaces it, offering only ‘SUBSCRIBE NOW’ or a subscriber ‘Sign In’; the ad blocker makes no difference.",
       "avoid": [],
       "prefer": []
     },
     {
       "domain": "vox.com",
       "name": "Vox",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "adblock",
-          "type": "soft"
+          "type": "hard"
         },
         {
           "category": "paywall",
@@ -468,10 +464,11 @@
     {
       "domain": "lefigaro.fr",
       "name": "Le Figaro",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -482,6 +479,7 @@
     {
       "domain": "idnes.cz",
       "name": "iDNES.cz",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
@@ -496,6 +494,7 @@
     {
       "domain": "axios.com",
       "name": "Axios",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "registration",
@@ -510,6 +509,7 @@
     {
       "domain": "variety.com",
       "name": "Variety",
+      "verified": "2026-11-25",
       "walls": [
         {
           "category": "adblock",
@@ -517,17 +517,33 @@
         }
       ],
       "paths": [],
-      "note": "An Admiral card headed 'Please consider allowing ads' covers the story for readers who run an ad blocker; 'Continue without supporting' then leads into it.",
+      "note": "An Admiral card headed 'Please consider allowing ads' offers 'ALLOW ADS' or 'Continue without supporting'; Continue clears it, the story reads, and the card did not return on the next story.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "hollywoodreporter.com",
+      "name": "The Hollywood Reporter",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'Please consider allowing ads' offers 'Allow Ads' or 'Continue without supporting'; Continue clears it and the story reads with the ad blocker on.",
       "avoid": [],
       "prefer": []
     },
     {
       "domain": "heise.de",
       "name": "heise online",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -538,10 +554,11 @@
     {
       "domain": "ladepeche.fr",
       "name": "La Dépêche du Midi",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -552,6 +569,7 @@
     {
       "domain": "smh.com.au",
       "name": "The Sydney Morning Herald",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -566,26 +584,13 @@
       "prefer": []
     },
     {
-      "domain": "hollywoodreporter.com",
-      "name": "The Hollywood Reporter",
-      "walls": [
-        {
-          "category": "adblock",
-          "type": "soft"
-        }
-      ],
-      "paths": [],
-      "note": "An Admiral card headed 'Please consider allowing ads' covers the story for readers who run an ad blocker, and its only action is to allow ads.",
-      "avoid": [],
-      "prefer": []
-    },
-    {
       "domain": "bild.de",
       "name": "BILD",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -596,6 +601,7 @@
     {
       "domain": "theglobeandmail.com",
       "name": "The Globe and Mail",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -612,10 +618,11 @@
     {
       "domain": "actu.fr",
       "name": "actu.fr",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -626,10 +633,11 @@
     {
       "domain": "faz.net",
       "name": "F.A.Z.",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -640,10 +648,11 @@
     {
       "domain": "n-tv.de",
       "name": "n-tv",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -654,6 +663,7 @@
     {
       "domain": "newscientist.com",
       "name": "New Scientist",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -670,10 +680,11 @@
     {
       "domain": "ilfattoquotidiano.it",
       "name": "Il Fatto Quotidiano",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -684,10 +695,11 @@
     {
       "domain": "elmundo.es",
       "name": "El Mundo",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -698,10 +710,11 @@
     {
       "domain": "eleconomista.es",
       "name": "elEconomista.es",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -712,6 +725,7 @@
     {
       "domain": "expressen.se",
       "name": "Expressen",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -726,10 +740,11 @@
     {
       "domain": "mundodeportivo.com",
       "name": "Mundo Deportivo",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -740,10 +755,11 @@
     {
       "domain": "nytimes.com",
       "name": "The New York Times",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "registration",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -754,10 +770,11 @@
     {
       "domain": "newsweek.com",
       "name": "Newsweek",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [
@@ -770,10 +787,11 @@
     {
       "domain": "jutarnji.hr",
       "name": "Jutarnji list",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -784,6 +802,7 @@
     {
       "domain": "washingtonpost.com",
       "name": "The Washington Post",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -804,6 +823,7 @@
     {
       "domain": "novinky.cz",
       "name": "Novinky.cz",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
@@ -818,6 +838,7 @@
     {
       "domain": "chicagotribune.com",
       "name": "Chicago Tribune",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
@@ -832,10 +853,11 @@
     {
       "domain": "ilmessaggero.it",
       "name": "Il Messaggero",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "paywall",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -846,10 +868,11 @@
     {
       "domain": "elespanol.com",
       "name": "El Español",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -860,10 +883,11 @@
     {
       "domain": "lavanguardia.com",
       "name": "La Vanguardia",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -874,10 +898,11 @@
     {
       "domain": "metro.co.uk",
       "name": "Metro",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         }
       ],
       "paths": [],
@@ -888,10 +913,11 @@
     {
       "domain": "tagesspiegel.de",
       "name": "Der Tagesspiegel",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "consent",
-          "type": "soft"
+          "type": "hard"
         },
         {
           "category": "paywall",
@@ -906,16 +932,2437 @@
     {
       "domain": "cbssports.com",
       "name": "CBS Sports",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/news/**"
+      ],
+      "note": "An Admiral card headed \"Unlock the full power of CBSSports.com\" covers the story; \"I'LL FIX IT NEXT TIME\" clears it once, then the card returns and \"Continue\" only explains turning off the ad blocker.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "chip.de",
+      "name": "CHIP",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A privacy manager covers the story, offering only 'Akzeptieren' ad tracking or a 'Werbefrei für 3,99 € / Monat' Contentpass subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "leparisien.fr",
+      "name": "Le Parisien",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Bienvenue chez Le Parisien' consent dialog covers the story with only 'Accepter' ad tracking or a paid subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "thetimes.com",
+      "name": "The Times",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/**/article/*"
+      ],
+      "note": "The story body is replaced by a 'Continue reading' card that sells a $1-a-month subscription, and only the headline and standfirst remain.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ansa.it",
+      "name": "ANSA",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Gentile Lettore' consent dialog covers the story; rejecting all cookies leads to a Consentless subscription at 16,99 €/year, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "foxbusiness.com",
+      "name": "Fox Business",
+      "verified": "2026-11-24",
       "walls": [
         {
           "category": "adblock",
           "type": "soft"
         }
       ],
-      "paths": [
-        "/*/news/**"
+      "paths": [],
+      "note": "An Admiral card headed 'Welcome to Fox Business' covers the story for readers who run an ad blocker, and 'Continue without supporting' only defers it for that page view.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "boston.com",
+      "name": "Boston.com",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "adblock",
+          "type": "hard"
+        }
       ],
-      "note": "An Admiral card headed \"Unlock the full power of CBSSports.com\" covers the story for readers who run an ad blocker, and \"Continue\" leads only to instructions for turning the blocker off.",
+      "paths": [],
+      "note": "A '$1 for 6 months' subscription interstitial covers the story, and an Admiral card asks ad-blocker readers to allow ads; 'Continue without supporting' clears it on one page only.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "bostonglobe.com",
+      "name": "The Boston Globe",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A '$1 through the end of winter' subscription card covers the story and offers only 'Claim Offer', a subscriber log-in, or 'Home'; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "business-standard.com",
+      "name": "Business Standard",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A story badged premium stops after its first answer, and a subscription panel offers ₹900 for three months or ₹2,700 for a year with no free way on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nydailynews.com",
+      "name": "New York Daily News",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An email form headed 'Provide an email to continue reading' covers the story; an Admiral card headed 'You're using an adblocker.' offers 'Allow Ads', 'Subscribe' and 'Contact Support', with no close.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ilsole24ore.com",
+      "name": "Il Sole 24 Ore",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'La vostra privacy è per noi molto importante' dialog covers the story, and 'Rifiuta e abbonati' leads to a subscription page, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "harpersbazaar.com",
+      "name": "Harper's BAZAAR",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "With an ad blocker on, the story body is removed from the page: the headline and standfirst stay, then blank space and the footer, and no visible text names the cause.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "20minutos.es",
+      "name": "20minutos",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An 'Acepta para leer gratis y sin límites' panel covers the story; 'Aceptar y cerrar' accepts tracking and 'Rechazar y pagar' opens a 0,50 € checkout, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "20minutes.fr",
+      "name": "20 Minutes",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi dialog covers the story; saving every purpose refused leads to a 1,99 €/month subscription page, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "livemint.com",
+      "name": "Mint",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/news/*"
+      ],
+      "note": "The story stops after three paragraphs at a Mint Premium subscription box that replaces the rest; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "howtogeek.com",
+      "name": "How-To Geek",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A \"We noticed that ads aren't being displayed\" dialog covers the story for readers who use a blocker; its X closes it, but the dialog returns on every load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "barrons.com",
+      "name": "Barron's",
+      "verified": "2026-11-24",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/articles/*"
+      ],
+      "note": "The story stops after its first paragraph at a subscription offer that replaces the rest; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "rg.ru",
+      "name": "Rossiyskaya Gazeta",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker card headed \"Пожалуйста, отключите блокировщик рекламы\" covers the story for readers who run an ad blocker; its close button leaves the story readable.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "foreignpolicy.com",
+      "name": "Foreign Policy",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "metered"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/20*/*/*/*/"
+      ],
+      "note": "A 'Get one free article every month' gate covers the story after its opening paragraphs and asks for a free account, with subscription plans for unlimited access; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "xda-developers.com",
+      "name": "XDA",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A dialog tells readers who run an ad blocker that ads are not displayed and asks them to allow ads; the story stays behind it until it is dismissed.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "collider.com",
+      "name": "Collider",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker dialog reading \"We noticed that ads aren't being displayed.\" covers the story for readers who run an ad blocker; its X leaves the story readable, and the dialog returns on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lesechos.fr",
+      "name": "Les Echos",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Ce contenu est réservé aux abonnés' block replaces the story after its opening paragraphs and offers La Sélection for 1 €; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "mediaset.it",
+      "name": "Mediaset Infinity",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "region",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/video/**"
+      ],
+      "note": "Outside Italy, Mediaset Infinity video pages replace the player with a 'Questo contenuto non è disponibile nel Paese in cui ti trovi' notice, and an international-channel offer covers the page.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "cbr.com",
+      "name": "CBR",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker dialog reading \"We noticed that ads aren't being displayed.\" covers the story for readers who run an ad blocker; its X leaves the story readable, and the dialog returns on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "sudouest.fr",
+      "name": "Sud Ouest",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Refuser et s''abonner' consent panel covers the story and offers no free reject, and the article itself is 'Réservé aux abonnés', cut at 'Poursuivez votre lecture'.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "csmonitor.com",
+      "name": "The Christian Science Monitor",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "metered"
+        }
+      ],
+      "paths": [],
+      "note": "A fixed bar under the story counts the reader's free reading — \"1 of 3 stories this month\" — and offers \"Get unlimited stories\" and a subscription for ongoing access.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "elperiodico.com",
+      "name": "El Periódico",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Gestión del consentimiento' panel covers the story until the reader accepts ad cookies or pays 2,5 €/month for anti-tracking; rejecting all cookies leads to that payment prompt.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dallasnews.com",
+      "name": "The Dallas Morning News",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "metered"
+        }
+      ],
+      "paths": [],
+      "note": "After one free article, a \"SUBSCRIBE TO CONTINUE READING\" interstitial covers the story and keeps it covered until the reader pays.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nzz.ch",
+      "name": "NZZ",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We use cookies' dialog covers the story, and rejecting every purpose leads to a 'Mit «NZZ Digital» weiterlesen' subscription offer that cuts the article, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "haaretz.com",
+      "name": "Haaretz",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/**/.premium/**"
+      ],
+      "note": "A subscriber-only story shows only its headline, standfirst and first sentence, then a \"Get 50% off a full year\" card in place of the article body.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "inquirer.com",
+      "name": "The Philadelphia Inquirer",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "metered"
+        }
+      ],
+      "paths": [],
+      "note": "A \"You have reached your free article limit\" dialog covers the story and offers a $1 subscription; only the headline and summary read.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "sandiegouniontribune.com",
+      "name": "The San Diego Union-Tribune",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A subscriber paywall modal reads \"This article is available only to subscribers\" and offers a Black Friday subscription, and the article body does not load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "denverpost.com",
+      "name": "The Denver Post",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A \"This article is available only to subscribers\" card replaces the story after its opening sentence, and the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "rp-online.de",
+      "name": "Rheinische Post",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Wie möchten Sie die Rheinische Post lesen?' consent page replaces the story until the reader takes tracking under 'Weiter mit Werbung' or the RP+ subscription at 1 € per week; no reject is offered.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "midilibre.fr",
+      "name": "Midi Libre",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A consent dialog covers the story; 'Accepter et fermer' accepts personalised ads and 'Refuser et s'abonner' leads to a subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vulture.com",
+      "name": "Vulture",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/article/**"
+      ],
+      "note": "A 'Keep reading' card covers the story and locks scrolling; it offers only a free account, a $4 subscription, or a sign-in, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "infoworld.com",
+      "name": "InfoWorld",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A Sourcepoint 'We've updated our terms' dialog covers the story and offers only an Accept button, so a reader must accept the terms and privacy notice to read it.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "wwd.com",
+      "name": "WWD",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Please consider allowing ads' card covers the story for readers who run an ad blocker, and 'Continue without supporting' closes it while the card remains the wall.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "theintercept.com",
+      "name": "The Intercept",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An email wall covers the story and asks the reader to enter an email address to keep reading; there is no free close.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vanityfair.it",
+      "name": "Vanity Fair Italia",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "In a browser with AdGuard the story stops after its first paragraph at a 'Continua a leggere l'articolo' membership gate at 1 € al mese; the same URL reads in full without the extension.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "adevarul.ro",
+      "name": "Adevărul",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A OneTrust consent sheet covers the lower page and intercepts clicks; the only visible way past it is 'Accept all', and the preference centre offers no usable reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lesoir.be",
+      "name": "Le Soir",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/article/**"
+      ],
+      "note": "The story stops after its opening paragraphs at 'La suite est réservée à nos abonnés', with a 4,99 €/month subscription offer in place of the rest.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "blesk.cz",
+      "name": "Blesk.cz",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A \"Než budete pokračovat\" panel covers the story until the reader consents to ad targeting for 73 partners; refusing every purpose returns to it, and the other way is 99 Kč a month.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nouvelobs.com",
+      "name": "Le Nouvel Obs",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An 'Accéder gratuitement en acceptant l'utilisation de vos données' panel offers only tracking consent or a subscription, and the story still stops at 'Article réservé aux abonnés'.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "gala.de",
+      "name": "GALA",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A \"Herzlich willkommen\" panel covers the story until the reader accepts ads and cookies or buys contentpass for 3,99 € a month; no reject keeps the page readable.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "rp.pl",
+      "name": "Rzeczpospolita",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Pozostało jeszcze 95% artykułu' cut replaces almost the whole story with a BLACK WEEKS subscription card and a sign-in prompt; rejecting every cookie leaves the same cut.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ajc.com",
+      "name": "The Atlanta Journal-Constitution",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A hard subscription wall stops the story after its opening paragraphs and offers only a paid intro or annual plan, with or without an ad blocker.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lindependant.fr",
+      "name": "L'Indépendant",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Bienvenue chez lindependant.fr' panel covers the story until the reader accepts personalised ads for 322 partners; 'Refuser et s'abonner' leads to a subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "baltimoresun.com",
+      "name": "The Baltimore Sun",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/2026/**"
+      ],
+      "note": "A subscriber gate replaces the story's body with 'Subscribers are entitled to 10 gift articles' prompts and 'THIS ARTICLE IS AVAILABLE ONLY TO SUBSCRIBERS' overlay; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "thecut.com",
+      "name": "The Cut",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Continue Reading' subscriber gate covers the story and locks scrolling; it offers only 'Claim Your Offer' and 'Sign In', with no close control, and an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "gala.fr",
+      "name": "Gala",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Make a choice for your data' panel covers the dossier; 'Refuse all' goes to a Figaro login page and 'Continue without accepting' to a subscription page, so no free exit stays on the story.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "statnews.com",
+      "name": "STAT",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*/*/*/**"
+      ],
+      "note": "A 'This article is exclusive to STAT+ subscribers' card replaces the rest of the story after four paragraphs and offers only subscription plans or a log-in; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "france.tv",
+      "name": "france.tv",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "The replay player asks the reader to sign in or create a free account before the video plays; the page and synopsis read without one.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "informer.rs",
+      "name": "Informer",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A consent card covers the story and its only button, 'U redu', accepts ad tracking; the cookie settings offer no reject, so the reader must accept to read.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lexpress.fr",
+      "name": "L'Express",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'To support us, allow cookies' dialog covers the story; 'Disagree and create account' opens an account-creation form, so refusing tracking costs an account.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "foreignaffairs.com",
+      "name": "Foreign Affairs",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*"
+      ],
+      "note": "A story stops mid-sentence after its opening paragraphs at a gate that asks for an email address for a paywall-free link, or a subscription; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "afr.com",
+      "name": "Australian Financial Review",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/**/*-20*-p*"
+      ],
+      "note": "A 'This article is for subscribers only' card replaces the rest of the story after two paragraphs; an ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "eluniversal.com.mx",
+      "name": "El Universal",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A \"No te quedes fuera de la conversación\" Digital Plus dialog covers the column on load; its close X clears it and the full column reads, and the dialog returns on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lecturas.com",
+      "name": "Lecturas",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Bienvenido a Lecturas' consent dialog covers the story; rejecting every purpose opens an RBA access offer for a 1 €/month subscription, so free reading needs accepting tracking.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "semana.es",
+      "name": "Semana",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A '¡Bienvenido a Semana Gestión del consentimiento' dialog covers the story; rejecting cookies leads to a gate offering a 1 €/mes subscription or accepting the ad cookies, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nationalreview.com",
+      "name": "National Review",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "metered"
+        }
+      ],
+      "paths": [],
+      "note": "A fixed bar under the story says 'You've reached your free article limit' and offers a $1/week subscription or a free account; the story itself reads in full.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "morgenpost.de",
+      "name": "Berliner Morgenpost",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Kostenfrei mit Werbetracking weiterlesen' dialog offers only ad tracking with profiling or a 4,99 €/Monat ad-free subscription; then the story stops after its teaser at a PLUS subscription card.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "expansion.com",
+      "name": "Expansión",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An Expansión consent dialog covers the story; its only buttons are 'Accept and continue' and 'Decline and subscribe', so free reading needs accepting tracking.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "newsday.com",
+      "name": "Newsday",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*/*-*"
+      ],
+      "note": "A 'FLASH SALE $1 for 1 YEAR' subscription modal covers the story and the page cannot scroll; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "bunte.de",
+      "name": "BUNTE",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'bunte.de weiter werbefinanziert lesen' panel covers the story until the reader accepts ads and tracking or buys Contentpass for 3,99 € a month; the ad-funding purposes have no reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "huffingtonpost.fr",
+      "name": "HuffPost France",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Pour soutenir le HuffPost, faites le bon choix' dialog covers the story and offers only accepting data use or a 2 €/month subscription, so no free reject stands before the article.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "publico.es",
+      "name": "Público",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A consent dialog covers the story: 'Acepta y navega gratis' accepts ad cookies, and both reject options land on a 9€/month subscription page, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "abendblatt.de",
+      "name": "Hamburger Abendblatt",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Kostenfrei mit Werbetracking weiterlesen' dialog covers the story and offers only ad tracking with profiling or a 4,99 €/Monat ad-free subscription, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "newstatesman.com",
+      "name": "New Statesman",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/*/*/*/*"
+      ],
+      "note": "An 'Exclusive Subscriber Only Content' card cuts the story after three paragraphs and asks for a $2 subscription; rejecting the consent dialog first and the ad blocker change nothing.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "tampabay.com",
+      "name": "Tampa Bay Times",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [
+        "/**/20*/*/*/*/"
+      ],
+      "note": "The story stops after three paragraphs at an inline Zephr gate headed 'Enjoy one more article for free!' that offers only Register or Log in; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "aftenposten.no",
+      "name": "Aftenposten",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "The story stops after two paragraphs at a subscription offer, behind a Schibsted consent dialog whose only free exit accepts ad tracking, because rejecting personalised ads is a paid subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "augsburger-allgemeine.de",
+      "name": "Augsburger Allgemeine",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Weiter mit Tracking durch Dritte' / 'Weiter mit dem PUR-Abo' gateway covers the story; 'Alles ablehnen' saves the refusal but the gateway stays, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "liverpoolecho.co.uk",
+      "name": "Liverpool Echo",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A black 'ECHO Premium' modal says the article is for subscribers and covers the story; 'Save now', 'Log in' and 'Back to home' are its only ways out.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "svd.se",
+      "name": "Svenska Dagbladet",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "The story stops after two paragraphs at a subscription offer, behind a Schibsted consent dialog whose free exit leaves personalised ads in place, because rejecting them is a paid subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lne.es",
+      "name": "La Nueva España",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'La Nueva España' cookie dialog covers the story; rejecting cookies leads to an anti-tracking subscription at 2,5€/month, so free reading needs accepting the ad cookies.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "reviewjournal.com",
+      "name": "Las Vegas Review-Journal",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker card covers the story for readers who run a blocker, and dismissing it leaves the Black Friday subscription offer where the story was.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "kleinezeitung.at",
+      "name": "Kleine Zeitung",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Wir respektieren Ihre Privatsphäre' dialog covers the story, and refusing the advertising purpose needs a Pur subscription; accepting every purpose leaves the Digitalabo offer where the story was.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "antena3.com",
+      "name": "Antena 3",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An Atresmedia consent dialog covers the story; rejecting all cookies leads to a 7,99-euro monthly atresplayer premium prompt, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "theinformation.com",
+      "name": "The Information",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A subscription prompt replaces the story, and no article text is readable without paying.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "inews.co.uk",
+      "name": "The i Paper",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Continue reading' modal offers a $1 one-month subscription and covers the story; its only ways out are 'Subscribe for $1' and 'Log in'.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nationalpost.com",
+      "name": "National Post",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'We noticed that you have an ad blocker on.' covers the story; 'Continue with ad blocker' clears it and the whole story reads with the blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "motherjones.com",
+      "name": "Mother Jones",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A fixed 'We see you're using an ad blocker...' card offers a Donate link and a Not Now button; Not Now clears it and the story reads with the blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "cbsnews.com",
+      "name": "CBS News",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral ad-block card covers the story; its free \"I'll fix it next time\" dismiss clears the card and the story reads with the blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "eater.com",
+      "name": "Eater",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Support Eater by Enabling Ads' card offers 'Continue to site'; Continue clears it, the story reads with the blocker on, and the card returns on the next story.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "rd.com",
+      "name": "Reader's Digest",
+      "verified": "2026-11-25",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card offers 'Continue without disabling'; Continue clears it, the story reads with the blocker on, and the card did not return on the next story.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dr.dk",
+      "name": "DR",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'DR passer på dine data' dialog covers the story until the reader picks 'Tillad udvalgte' with every optional purpose off, and it does not come back on later loads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "nu.nl",
+      "name": "NU.nl",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A DPG Media 'Jouw privacy-instellingen' gate covers the story; 'Instellen' then 'Alles weigeren' clears it and the story reads with the ad blocker on, and the choice persists.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dn.se",
+      "name": "Dagens Nyheter",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Bonnier News 'Vi använder kakor' dialog covers the story at load; 'Inställningar' then 'Neka allt' rejects every purpose, the story then reads, and the dialog did not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lalibre.be",
+      "name": "La Libre",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'La Libre respecte votre vie privée' dialog covers the story; 'En savoir plus' then 'Refuser tout' clears it for free and the story reads, while 'Je refuse et je m'abonne' sells a subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "diariovasco.com",
+      "name": "El Diario Vasco",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Configura tu navegación' consent dialog covers the story; 'Rechazar y pagar' and the Didomi panel's 'Disagree to all' both land on a subscription panel, which returns on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lifo.gr",
+      "name": "LiFO",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'LiFO - Do Not Process My Personal Information' panel covers the story; switching all four opt-outs on and pressing CONFIRM saves the choice for free, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "cadenaser.com",
+      "name": "Cadena SER",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Continue with ads…' or '… with Contentpass' layer covers the story: 'Agree & continue' accepts tracking, 'Deny & surf ad-free' sells 3,99 €/month, and 'Disagree to all' returns to the same gate.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "radiotimes.com",
+      "name": "Radio Times",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We value your privacy' dialog covers the story on first load; MORE OPTIONS then REJECT ALL closes it, the story reads to its end, and the choice persists so the dialog does not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "digitalspy.com",
+      "name": "Digital Spy",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Hearst 'Privacy' dialog covers the story in both states; 'Essential Cookies Only' is a working reject-all that clears it, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "protothema.gr",
+      "name": "Πρώτο Θέμα",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Protothema - Do Not Process My Personal Information' dialog covers the story; switching all four opt-outs on and pressing CONFIRM saves the choice for free, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "cnews.fr",
+      "name": "CNEWS",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi consent dialog covers the story on load; 'Tout refuser' clears it for free, the article then reads in full, and the choice is stored for later loads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lanazione.it",
+      "name": "La Nazione",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We value your privacy' consent dialog covers the story; the close labelled 'Continue without accepting' clears it, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "24sata.hr",
+      "name": "24sata",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi dialog covers the story until the reader rejects every purpose in its 'Saznaj više' layer; the story then reads with the ad blocker on, and the choice persists for that visitor.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "heute.at",
+      "name": "Heute.at",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Herzlich willkommen' consent dialog covers the story; 'Cookie-Einstellungen' and then 'Cookies ablehnen' close it for free, and the story reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "di.se",
+      "name": "Dagens industri",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Bonnier News 'Vi använder kakor' dialog covers the story at load; 'Inställningar' then 'Neka allt' clears it for free, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dhnet.be",
+      "name": "La DH/Les Sports+",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi consent panel covers the story; 'En savoir plus' then 'Refuser tout' clears it without a payment or an account, and the story reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lavoixdunord.fr",
+      "name": "La Voix du Nord",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi consent dialog covers the story on load; \"Learn More →\" then \"Disagree to all\" clears it for free, and the story then reads in full.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "tv2.no",
+      "name": "TV 2",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Sourcepoint consent dialog covers the story at load; 'Avvis' rejects all and the story then reads, and the dialog does not return on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "gq-magazine.co.uk",
+      "name": "British GQ",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Your Front-Row Seat' consent dialog covers the story; Reject clears it and the story reads, and the choice persists.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "polsatnews.pl",
+      "name": "Polsat News",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A \"Drogi użytkowniku\" consent dialog covers the story; \"Odrzuć wszystko\" rejects every purpose for free, the story then reads, and the choice holds on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "franceinfo.fr",
+      "name": "franceinfo",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Bienvenue chez franceinfo' dialog covers the story; 'Continuer sans accepter' rejects every purpose for free, the story then reads, and the dialog does not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vecernji.hr",
+      "name": "Večernji list",
+      "verified": "2026-11-26",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Didomi 'Dobro došli na Vecernji.hr' dialog covers the story; 'Saznaj više' then 'Ne slažem se ni sa čim' rejects every purpose for free, the story then reads, and the choice persists.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "wyborcza.pl",
+      "name": "Gazeta Wyborcza",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A \"Dbamy o Twoją prywatność\" dialog covers the article; \"NIE WYRAŻAM ZGODY\" rejects it for free, and the story then ends after three paragraphs at a digital-subscription gate.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "autobild.de",
+      "name": "AUTO BILD",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Datenschutz und Nutzungserlebnis auf autobild.de' dialog covers the story; 'Alle akzeptieren' is the only free way on, and the tracking-free route is the paid AUTO BILD Pur subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "efe.com",
+      "name": "EFE",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A \"Do Not Process My Personal Information\" opt-out modal covers the story; its close button confirms the pre-set choice and the story then reads with the ad blocker on, and the modal does not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vancouversun.com",
+      "name": "Vancouver Sun",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'We noticed that you have an ad blocker on.' covers the story; 'Continue to Site' clears it and the story reads with the blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "aerzteblatt.de",
+      "name": "Deutsches Ärzteblatt",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Weiter kostenfrei mit Werbung… oder werbefrei mit contentpass' gate covers the story until the reader accepts ad tracking or pays 3,99 €/month; rejecting consent returns the same gate.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dailydot.com",
+      "name": "The Daily Dot",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral 'We noticed you're using an Adblocker...' card covers the story; 'No thanks, maybe next time' closes it and the story reads with the ad blocker on, but the card returns on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "timesunion.com",
+      "name": "Times Union",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'SUBSCRIBE TO CONTINUE READING' interstitial covers the story, and its only controls pay, register or leave the site, so the story stays covered with an ad blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "tvn.pl",
+      "name": "TVN",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A \"Dbamy o Twoją prywatność\" dialog covers the story; \"Pokaż cele\" then \"Tylko niezbędne pliki cookie\" rejects every purpose for free, the story then reads, and the dialog does not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ici.fr",
+      "name": "ICI",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Nous respectons vos données personnelles' dialog covers the story; 'Tout refuser' rejects every purpose for free, the story then reads, and the dialog does not return on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "diepresse.com",
+      "name": "Die Presse",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Herzlich willkommen' consent dialog covers the story; 'Einstellungen verwalten' and then 'Alle ablehnen' close it for free, and the story reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "birminghammail.co.uk",
+      "name": "BirminghamLive",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A CIPA consent panel with only 'ACCEPT' covers the story; Escape then 'Opt-out all' on the Quantcast panel rejects tracking and the story reads with the ad blocker on, though both return next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "mediapart.fr",
+      "name": "Mediapart",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Votre choix pour vos données' dialog covers the article, 'Refuser' clears it for free, and the story then stops at 'La lecture des articles est réservée aux abonné·es' behind a subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "spectator.com",
+      "name": "The Spectator",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We value your privacy' consent dialog covers the story; 'Essential cookies only' clears it and the story reads with the ad blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "estrepublicain.fr",
+      "name": "L'Est Républicain",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Bienvenue sur L'Est Républicain !' consent dialog covers the story; 'En savoir plus' then refusing every purpose and 'Enregistrer' clears it for free, and the dialog returns on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "haaretz.co.il",
+      "name": "הארץ",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "With an ad blocker on, the article URL redirects to a 'we noticed your ad blocker is on' page that offers a subscription or a login and asks the reader to turn the blocker off; the story never loads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "pnp.de",
+      "name": "Passauer Neue Presse",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Mit Werbung weiterlesen … oder mit contentpass' dialog covers the story until the reader accepts tracking with up to 364 partners or pays 3.99 € for contentpass; the settings offer no reject-all.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "laodong.vn",
+      "name": "Lao Động",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Vui lòng cho phép quảng cáo xuất hiện' modal covers the story with an ad blocker on; its only button allows ads, and Escape does not clear it.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "gazetaprawna.pl",
+      "name": "GazetaPrawna.pl",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Serwisy Spółek Grupy INFOR PL dbają o Twoją prywatność' dialog covers the story; 'USTAWIENIA ZAAWANSOWANE' then 'ODRZUĆ WSZYSTKO' clears it and the story reads with the ad blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "semafor.com",
+      "name": "Semafor",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A cookie consent prompt covers the story until the reader chooses Decline; the story then reads with the ad blocker on, and the prompt did not return on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "netzwelt.de",
+      "name": "NETZWELT",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Weiter mit Werbung …' dialog covers the story; the settings' 'Disagree to all' is refused, and the page offers only consent to data use or a paid Contentpass subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "law360.com",
+      "name": "Law360",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        },
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Sign up now for free access to this content' dialog covers the story, and closing it leaves only the first paragraph before a subscription pitch; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "t3n.de",
+      "name": "t3n",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 't3n mit Cookies nutzen' dialog covers the story; its settings reject the other purposes but personalised advertising offers only 'Zustimmen', so free reading needs that consent or the Pur-Abo.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "se.pl",
+      "name": "Super Express",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Drogi Użytkowniku' consent dialog covers the story; 'Ustawienia' then 'Odrzuć wszystkie' rejects every purpose, the story then reads with the ad blocker on, and the dialog did not return on reload.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "huffingtonpost.it",
+      "name": "HuffPost Italia",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "The story stops after its first paragraph at a 'Questo contenuto è riservato agli abbonati' panel that asks the reader to subscribe or sign in; a free cookie reject clears only the notice.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dazeddigital.com",
+      "name": "Dazed",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Dazed consent dialog offers 'Do not Share or Sell my Personal Information' or 'Agree and Close'; the opt-out sets every purpose to 'Disagree', the choice sticks, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "thejakartapost.com",
+      "name": "The Jakarta Post",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A \"to Read Full Story\" panel replaces the story after the opening paragraphs and offers only a subscription, an IDR 35,000 one-off purchase, or registration; the ad blocker makes no difference.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "mopo.de",
+      "name": "MOPO",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'your access to mopo.de' dialog covers the story with ACCEPT ALL and SUBSCRIBE NOW, and its per-purpose settings offer no reject-all, so the only free way on is to accept tracking.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "dailysabah.com",
+      "name": "Daily Sabah",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Cookiebot 'This website uses cookies' dialog covers the story; 'Deny' clears it and the story reads with the ad blocker on, and the choice does not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "vogue.it",
+      "name": "Vogue Italia",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We Care About Your Privacy' dialog covers the story; 'Continua senza accettare' clears it and the whole story reads with the ad blocker on, and the choice persists.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "la-croix.com",
+      "name": "La Croix",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Accéder gratuitement au site' dialog covers the page; 'Réglages' then 'Refuser tout' leaves a 'Soutenez-nous!' card that offers only 'J'accepte' or 'Je m'abonne', so no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "torontosun.com",
+      "name": "Toronto Sun",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'We noticed that you have an ad blocker on.' covers the story; 'Continue to Site' clears it and the cartoon reads with the blocker on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "digiday.com",
+      "name": "Digiday",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A story marked 'Member Exclusive' stops after three paragraphs at a Piano gate that offers a Digiday+ subscription or a log-in; closing the sale modal leaves the gate.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "project-syndicate.org",
+      "name": "Project Syndicate",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An OnPoint story opens on one paragraph under a cookie bar, then fades out above 'Register an account to save $50 and continue reading' with a REGISTER NOW button and a Log in link.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "waz.de",
+      "name": "Westdeutsche Allgemeine Zeitung",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Kostenfrei mit Werbetracking weiterlesen' card covers the story; the only ways on are consent to ad profiling, the Werbefrei subscription at 4,99 € / Monat, or a subscriber login.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "capital.fr",
+      "name": "Capital",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A Prisma Media consent dialog covers the story; five 'Consentement requis' purposes offer only 'Accepter', 'Enregistrer mes choix' never enables, and refusing leads to a 1.99€ subscription.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "abendzeitung-muenchen.de",
+      "name": "Abendzeitung München",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Wie möchten Sie abendzeitung.de nutzen?' dialog covers the story with only ACCEPT ALL, SUBSCRIBE NOW (2,99 Euro/Monat) and LOGIN, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "err.ee",
+      "name": "ERR",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An 'ERR uuenenud küpsisepoliitika' dialog covers the story on load; 'Nõustun vajalike küpsistega' clears it and the radio page reads, and the dialog does not return on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ilfoglio.it",
+      "name": "Il Foglio",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A Clickio 'Abbiamo a cuore la tua privacy' dialog covers the story; 'Rifiuta e chiudi' clears it without accepting tracking, and the story then reads.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "malaysiakini.com",
+      "name": "Malaysiakini",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        },
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "The story stops after two paragraphs at 'Unlock 3 stories now', and logging in, creating an account or subscribing is the only way to read on.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "lasexta.com",
+      "name": "laSexta",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "An Atresmedia privacy dialog covers the story; 'Configurar' opens 'Rechazar todo', which leads to a second card asking the reader to accept cookies or pay 7,99 Euro/month.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "oxfordmail.co.uk",
+      "name": "Oxford Mail",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Subscribe to unlock this article' card replaces the story after the lead paragraph, offering £6 monthly and £27 annual trials; only the headline, standfirst and lead image read.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "triblive.com",
+      "name": "TribLive",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A OneTrust privacy dialog dims the page and locks scrolling until the reader closes it with the X; Close clears it and the story reads with the ad blocker on, and it does not return on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "ksta.de",
+      "name": "Kölner Stadt-Anzeiger",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Cookies zustimmen' dialog covers the story; without the paid PUR subscription, personalised advertising consent is required, so there is no free reject.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "sciencefocus.com",
+      "name": "BBC Science Focus",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "A 'We value your privacy' consent dialog covers the story; More Options then Reject All clears it and the story reads with the ad blocker on, and it does not return on the next load.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "montrealgazette.com",
+      "name": "Montreal Gazette",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An Admiral card headed 'We noticed you have an ad blocker on' covers the story; 'Continue with ad blocker' clears it, the whole story reads with the blocker on, and the card does not return.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "diariodenavarra.es",
+      "name": "Diario de Navarra",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "adblock",
+          "type": "soft"
+        },
+        {
+          "category": "consent",
+          "type": "soft"
+        }
+      ],
+      "paths": [],
+      "note": "An ad-blocker card offers 'Continuar' to read with the blocker still on, and a Didomi consent dialog covers the story until the reader rejects all purposes in its settings.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "postandcourier.com",
+      "name": "The Post and Courier",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "paywall",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Keep reading with a digital subscription' gate replaces the story after two paragraphs, with three plan cards and a subscriber log-in link; only paying or logging in continues it.",
+      "avoid": [],
+      "prefer": []
+    },
+    {
+      "domain": "twincities.com",
+      "name": "Twin Cities Pioneer Press",
+      "verified": "2026-11-27",
+      "walls": [
+        {
+          "category": "registration",
+          "type": "hard"
+        }
+      ],
+      "paths": [],
+      "note": "A 'Provide an email to continue reading' dialog covers the story; its only controls are an email field with Continue and a Log in link, and the story behind it stops at the second paragraph.",
       "avoid": [],
       "prefer": []
     }

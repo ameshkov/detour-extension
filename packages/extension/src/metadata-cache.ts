@@ -25,9 +25,13 @@ function toEntry(value: unknown): MetaEntry | null {
     return null;
   }
 
-  // An earlier release stored an image and a canonical link beside the two
-  // fields. They are dropped on read, so no migration rewrites the store.
-  return { meta: { title: meta.title, description: meta.description }, storedAt: record.storedAt };
+  // An earlier release stored an image and a canonical link beside the fields,
+  // and its entries carry no icon. The unknown fields are dropped on read, so no
+  // migration rewrites the store.
+  return {
+    meta: { title: meta.title, description: meta.description, icon: meta.icon ?? null },
+    storedAt: record.storedAt,
+  };
 }
 
 function isExpired(entry: MetaEntry, now: number): boolean {
@@ -93,17 +97,28 @@ export async function readMetaCache(url: string, now = Date.now()): Promise<Page
 }
 
 /**
- * Stores one cached read. The writer drops the expired entries first, then the
- * oldest entries beyond the cap, so a busy day cannot push the live ones out.
+ * One direct write, and nothing else. The guard's navigation waits for this, so
+ * the card has its head when the block page paints; the cleanup is not part of
+ * that wait.
  */
-export async function writeMetaCache(url: string, meta: PageMeta, now = Date.now()): Promise<void> {
+export async function writeMeta(url: string, meta: PageMeta, now = Date.now()): Promise<void> {
   const key = await cacheKey(url);
+
+  await chrome.storage.local.set({ [key]: { meta, storedAt: now } });
+}
+
+/**
+ * Drops the expired entries and the oldest beyond the cap, so a busy day cannot
+ * push the live ones out. It runs after a navigation or on a later write, never
+ * on the navigation path.
+ */
+export async function evictMeta(now = Date.now()): Promise<void> {
   const { entries, malformed } = await readEntries();
   const live: Array<{ key: string; storedAt: number }> = [];
   const stale: string[] = [...malformed];
 
   for (const [entryKey, entry] of entries) {
-    if (entryKey === key || isExpired(entry, now)) {
+    if (isExpired(entry, now)) {
       stale.push(entryKey);
     } else {
       live.push({ key: entryKey, storedAt: entry.storedAt });
@@ -112,7 +127,7 @@ export async function writeMetaCache(url: string, meta: PageMeta, now = Date.now
 
   live.sort((one, other) => one.storedAt - other.storedAt || one.key.localeCompare(other.key));
 
-  while (live.length >= META_MAX_ENTRIES) {
+  while (live.length > META_MAX_ENTRIES) {
     const oldest = live.shift();
 
     if (oldest === undefined) {
@@ -125,6 +140,4 @@ export async function writeMetaCache(url: string, meta: PageMeta, now = Date.now
   if (stale.length > 0) {
     await chrome.storage.local.remove(stale);
   }
-
-  await chrome.storage.local.set({ [key]: { meta, storedAt: now } });
 }

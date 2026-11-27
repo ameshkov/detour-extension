@@ -6,12 +6,16 @@ import { DEFAULT_SETTINGS, LIST_STORAGE_VERSION, STORAGE } from './constants';
 import bundledList from './sites.json';
 import { BUNDLED_LIST_ID } from './sites-id';
 import type { WallSettings } from './walls';
-import { defaultWalls, readWallSettings } from './walls';
+import { defaultWalls, isWallSettings, readWallSettings } from './walls';
+import type { ThemeChoice } from './theme';
+import { isThemeChoice, readThemeChoice } from './theme';
 
 export type Settings = {
   enabled: boolean;
   autoOpenBest: boolean;
   imagesEnabled: boolean;
+  /** The painted theme: follow the system, or hold one of the two. */
+  theme: ThemeChoice;
   /** The walls that stop a page, grouped by the type that presents them. */
   walls: WallSettings;
 };
@@ -83,6 +87,7 @@ export async function readSettings(): Promise<Settings> {
     enabled: readBoolean(record.enabled, DEFAULT_SETTINGS.enabled),
     autoOpenBest: readBoolean(record.autoOpenBest, DEFAULT_SETTINGS.autoOpenBest),
     imagesEnabled: readBoolean(record.imagesEnabled, DEFAULT_SETTINGS.imagesEnabled),
+    theme: readThemeChoice(record.theme),
     walls: readWallSettings(record.walls),
   };
 }
@@ -92,33 +97,29 @@ export async function writeSettings(settings: Settings): Promise<void> {
     enabled: settings.enabled,
     autoOpenBest: settings.autoOpenBest,
     imagesEnabled: settings.imagesEnabled,
+    theme: settings.theme,
     walls: settings.walls,
   });
 }
 
 /**
- * The pause is two keys: a timestamp that the worker writes for a timed pause,
- * and a flag in the session store that empties itself when the browser closes.
+ * The one guard of the settings shape: a message and a state answer both use it.
+ * `readSettings` does not, because a stored value falls back per field.
  */
-export type PauseState = { until: number; session: boolean };
+export function isSettings(value: unknown): value is Settings {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
 
-export async function readPause(): Promise<PauseState> {
-  const [until, session] = await Promise.all([
-    readValue('local', STORAGE.pauseUntil),
-    readValue('session', STORAGE.pauseSession),
-  ]);
+  const record = value as Record<string, unknown>;
 
-  return { until: typeof until === 'number' ? until : 0, session: session === true };
-}
-
-/** Both keys are written together, so a new pause never inherits the old shape. */
-export async function writePause(state: PauseState): Promise<void> {
-  await writeValue('local', STORAGE.pauseUntil, state.session ? 0 : state.until);
-  await writeValue('session', STORAGE.pauseSession, state.session);
-}
-
-export function isPaused(state: PauseState, now: number): boolean {
-  return state.session || state.until > now;
+  return (
+    typeof record.enabled === 'boolean' &&
+    typeof record.autoOpenBest === 'boolean' &&
+    typeof record.imagesEnabled === 'boolean' &&
+    isThemeChoice(record.theme) &&
+    isWallSettings(record.walls)
+  );
 }
 
 function isAllowanceEntry(value: unknown): value is AllowanceEntry {

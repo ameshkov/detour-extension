@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { META_MAX_ENTRIES, META_TTL_MS, STORAGE } from './constants';
 import type { PageMeta } from './metadata';
-import { readMetaCache, writeMetaCache } from './metadata-cache';
+import { evictMeta, readMetaCache, writeMeta } from './metadata-cache';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 
 const NOW = 1_700_000_000_000;
@@ -12,6 +12,7 @@ const URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-gener
 const META: PageMeta = {
   title: 'Best AI Image Generators of 2026',
   description: 'Everything you need to pick the right AI for your project and budget.',
+  icon: null,
 };
 
 function article(index: number): string {
@@ -30,15 +31,34 @@ describe('the metadata cache', () => {
   it('keys the cache by the page digest', async () => {
     const fake = installFakeChrome();
 
-    await writeMetaCache(URL, META, NOW);
+    await writeMeta(URL, META, NOW);
 
     expect(fake.storage.local.values[await keyOf(URL)]).toEqual({ meta: META, storedAt: NOW });
+  });
+
+  it('writes one entry and evicts nothing on the write', async () => {
+    const fake = installFakeChrome();
+    const expired = await keyOf(article(0));
+
+    fake.storage.local.values[expired] = { meta: META, storedAt: NOW - META_TTL_MS };
+
+    await writeMeta(URL, META, NOW);
+
+    // The write is one direct write: the navigation waits for it and nothing else.
+    expect(fake.storage.local.values[expired]).toEqual({
+      meta: META,
+      storedAt: NOW - META_TTL_MS,
+    });
+
+    await evictMeta(NOW);
+
+    expect(fake.storage.local.values[expired]).toBeUndefined();
   });
 
   it('reads a fresh entry', async () => {
     installFakeChrome();
 
-    await writeMetaCache(URL, META, NOW);
+    await writeMeta(URL, META, NOW);
 
     await expect(readMetaCache(URL, NOW)).resolves.toEqual(META);
     await expect(readMetaCache(URL, NOW + META_TTL_MS - 1)).resolves.toEqual(META);
@@ -61,13 +81,14 @@ describe('the metadata cache', () => {
     await expect(readMetaCache(URL, NOW)).resolves.toEqual({
       title: 'A legacy title',
       description: 'A legacy description',
+      icon: null,
     });
   });
 
   it('drops an entry at seven days', async () => {
     installFakeChrome();
 
-    await writeMetaCache(URL, META, NOW);
+    await writeMeta(URL, META, NOW);
 
     await expect(readMetaCache(URL, NOW + META_TTL_MS)).resolves.toBeNull();
   });
@@ -76,8 +97,10 @@ describe('the metadata cache', () => {
     const fake = installFakeChrome();
 
     for (let index = 0; index < META_MAX_ENTRIES + 1; index += 1) {
-      await writeMetaCache(article(index), META, NOW + index);
+      await writeMeta(article(index), META, NOW + index);
     }
+
+    await evictMeta(NOW + META_MAX_ENTRIES + 1);
 
     const keys = Object.keys(fake.storage.local.values).filter((key) =>
       key.startsWith(STORAGE.meta),
@@ -104,7 +127,8 @@ describe('the metadata cache', () => {
       fake.storage.local.values[key] = { meta: META, storedAt: NOW + index };
     }
 
-    await writeMetaCache(article(META_MAX_ENTRIES), META, NOW + META_MAX_ENTRIES);
+    await writeMeta(article(META_MAX_ENTRIES), META, NOW + META_MAX_ENTRIES);
+    await evictMeta(NOW + META_MAX_ENTRIES);
 
     const keys = Object.keys(fake.storage.local.values).filter((key) =>
       key.startsWith(STORAGE.meta),
@@ -119,13 +143,14 @@ describe('the metadata cache', () => {
     }
   });
 
-  it('drops an unreadable entry on the next write', async () => {
+  it('drops an unreadable entry when the cleanup runs', async () => {
     const fake = installFakeChrome();
     const broken = await keyOf(article(0));
 
     fake.storage.local.values[broken] = { meta: { title: 1 }, storedAt: NOW };
 
-    await writeMetaCache(URL, META, NOW);
+    await writeMeta(URL, META, NOW);
+    await evictMeta(NOW);
 
     expect(fake.storage.local.values[broken]).toBeUndefined();
     expect(Object.keys(fake.storage.local.values)).toEqual([await keyOf(URL)]);
@@ -134,7 +159,7 @@ describe('the metadata cache', () => {
   it('answers a miss when the store fails', async () => {
     const fake = installFakeChrome();
 
-    await writeMetaCache(URL, META, NOW);
+    await writeMeta(URL, META, NOW);
     fake.storage.local.failReads = true;
 
     await expect(readMetaCache(URL, NOW)).resolves.toBeNull();

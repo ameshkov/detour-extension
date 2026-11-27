@@ -7,9 +7,11 @@ import { renderActions } from './block-actions';
 import { REPORT_ISSUE_URL, STORAGE } from './constants';
 import {
   ACTION_ERROR,
+  ONCE_DETAIL,
   ONCE_LABEL,
   PASS_ERROR,
   REPORT_LABEL,
+  SCOPE_DETAIL,
   SCOPE_LABEL,
   SCOPE_MENU_LABEL,
   openAnywayLabel,
@@ -33,9 +35,11 @@ function view(overrides: Partial<ActionsView> = {}): ActionsView {
     host: 'forbes.com',
     listed: true,
     listId: LIST_ID,
+    defaultScope: 'tab',
     navigate: (url: string): void => {
       navigated.push(url);
     },
+    back: (): void => undefined,
     ...overrides,
   };
 }
@@ -53,8 +57,12 @@ function pressElsewhere(target: EventTarget): void {
   target.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
 }
 
+function messagesOf(type: string): unknown[] {
+  return fake.calls.messages.filter((message) => (message as { type?: string }).type === type);
+}
+
 function allowMessages(): unknown[] {
-  return fake.calls.messages.filter((message) => (message as { type?: string }).type === 'allow');
+  return messagesOf('allow');
 }
 
 function tabEntry(): AllowanceEntry {
@@ -101,10 +109,14 @@ describe('the allowance menu', () => {
   it('offers the one-time open and the three scopes in the menu', () => {
     renderActions(view());
 
-    expect(role('scope-once').textContent).toBe(ONCE_LABEL);
-    expect(role('scope-tab').textContent).toBe(SCOPE_LABEL.tab);
-    expect(role('scope-session').textContent).toBe(SCOPE_LABEL.session);
-    expect(role('scope-always').textContent).toBe(SCOPE_LABEL.always);
+    expect(role('scope-once').textContent).toContain(ONCE_LABEL);
+    expect(role('scope-once').textContent).toContain(ONCE_DETAIL);
+    expect(role('scope-tab').textContent).toContain(SCOPE_LABEL.tab);
+    expect(role('scope-tab').textContent).toContain(SCOPE_DETAIL.tab);
+    expect(role('scope-session').textContent).toContain(SCOPE_LABEL.session);
+    expect(role('scope-session').textContent).toContain(SCOPE_DETAIL.session);
+    expect(role('scope-always').textContent).toContain(SCOPE_LABEL.always);
+    expect(role('scope-always').textContent).toContain(SCOPE_DETAIL.always);
   });
 
   it('keeps the menu closed until the caret is pressed', () => {
@@ -182,6 +194,23 @@ describe('the allowance menu', () => {
     press('open-menu');
 
     expect(menu.dataset.side).toBeUndefined();
+  });
+
+  it('caps the menu to the room on its side and lets it scroll', () => {
+    renderActions(view());
+
+    const caret = role('open-menu');
+    const menu = role('scope-menu');
+
+    place(caret, { top: 100, bottom: 138, height: 38 });
+    place(menu, { top: 144, bottom: 444, height: 300 });
+    viewportHeight(400);
+
+    press('open-menu');
+
+    expect(menu.dataset.side).toBeUndefined();
+    expect(menu.style.maxHeight).toBe('248px');
+    expect(menu.style.overflowY).toBe('auto');
   });
 
   it('closes the menu on escape from the caret', () => {
@@ -268,22 +297,50 @@ describe('the allowance menu', () => {
 });
 
 describe('the open action', () => {
-  it('closes the menu of the scope it opens', async () => {
+  it('starts on the scope that the domain kept', () => {
+    renderActions(view({ defaultScope: 'once' }));
+
+    expect(role('open-menu-label').textContent).toBe(ONCE_LABEL);
+    expect(role('scope-once').getAttribute('aria-checked')).toBe('true');
+    expect(role('scope-tab').getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('sends the chosen scope for the domain', async () => {
+    renderActions(view());
+    press('scope-session');
+
+    await vi.waitFor(() => {
+      expect(messagesOf('rememberScope')).toEqual([
+        { type: 'rememberScope', url: URL, scope: 'session' },
+      ]);
+    });
+  });
+
+  it('chooses a scope without opening the site', async () => {
     renderActions(view());
     press('open-menu');
     press('scope-always');
+
+    expect(role('open-menu-label').textContent).toBe(SCOPE_LABEL.always);
+    expect(role('scope-always').getAttribute('aria-checked')).toBe('true');
+    expect(role('scope-tab').getAttribute('aria-checked')).toBe('false');
+    expect(role('scope-menu').hidden).toBe(true);
+    expect(navigated).toEqual([]);
+    expect(allowMessages()).toEqual([]);
+
+    press('open-site');
 
     await vi.waitFor(() => {
       expect(navigated).toEqual([URL]);
     });
 
-    expect(role('scope-menu').hidden).toBe(true);
+    expect(allowMessages()).toEqual([{ type: 'allow', scope: 'always', url: URL }]);
   });
 
   it('opens the site in this tab by default', async () => {
     renderActions(view());
 
-    expect(role('open-site').textContent).toBe(openAnywayLabel('Forbes'));
+    expect(role('open-site-label').textContent).toBe(openAnywayLabel('Forbes'));
 
     press('open-site');
 
@@ -299,6 +356,11 @@ describe('the open action', () => {
     press('open-menu');
     press('scope-session');
 
+    expect(role('open-menu-label').textContent).toBe(SCOPE_LABEL.session);
+    expect(navigated).toEqual([]);
+
+    press('open-site');
+
     await vi.waitFor(() => {
       expect(navigated).toEqual([URL]);
     });
@@ -313,11 +375,16 @@ describe('the open action', () => {
     press('open-menu');
     press('scope-once');
 
+    expect(role('open-menu-label').textContent).toBe(ONCE_LABEL);
+    expect(navigated).toEqual([]);
+
+    press('open-site');
+
     await vi.waitFor(() => {
       expect(navigated).toEqual([URL]);
     });
 
-    expect(fake.calls.messages).toEqual([{ type: 'pass', url: URL }]);
+    expect(messagesOf('pass')).toEqual([{ type: 'pass', url: URL }]);
     expect(allowMessages()).toEqual([]);
   });
 
@@ -327,6 +394,7 @@ describe('the open action', () => {
     renderActions(view());
     press('open-menu');
     press('scope-once');
+    press('open-site');
 
     await vi.waitFor(() => {
       expect(role('action-error').hidden).toBe(false);
@@ -341,6 +409,11 @@ describe('the open action', () => {
     renderActions(view());
     press('open-menu');
     press('scope-always');
+
+    expect(role('open-menu-label').textContent).toBe(SCOPE_LABEL.always);
+    expect(navigated).toEqual([]);
+
+    press('open-site');
 
     await vi.waitFor(() => {
       expect(navigated).toEqual([URL]);
@@ -452,7 +525,7 @@ describe('the open action', () => {
 
     expect(() => renderActions(view())).not.toThrow();
     expect(role('actions').hidden).toBe(false);
-    expect(role('open-site').textContent).toBe(openAnywayLabel('Forbes'));
+    expect(role('open-site-label').textContent).toBe(openAnywayLabel('Forbes'));
     expect(role('report').hidden).toBe(true);
   });
 
@@ -463,7 +536,7 @@ describe('the open action', () => {
 
     expect(() => renderActions(view())).not.toThrow();
     expect(role('actions').hidden).toBe(false);
-    expect(role('open-site').textContent).toBe(openAnywayLabel('Forbes'));
+    expect(role('open-site-label').textContent).toBe(openAnywayLabel('Forbes'));
     expect(role('report').hidden).toBe(true);
   });
 });

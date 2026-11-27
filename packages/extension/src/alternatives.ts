@@ -2,6 +2,26 @@ import { ALT_TIMEOUT_MS } from './constants';
 import type { FetchLike } from './net';
 import { isWebUrl } from './page-url';
 
+/**
+ * How closely one alternative matches the story, as the backend classifies it.
+ * `same_story` is the same article, `same_event` the same news event,
+ * `same_topic` the subject without the event, `different` another story, and
+ * `unknown` a page that the classifier could not place.
+ */
+export const MATCH_KINDS = [
+  'same_story',
+  'same_event',
+  'same_topic',
+  'different',
+  'unknown',
+] as const;
+
+export type MatchKind = (typeof MATCH_KINDS)[number];
+
+export function isMatchKind(value: unknown): value is MatchKind {
+  return typeof value === 'string' && (MATCH_KINDS as readonly string[]).includes(value);
+}
+
 export type Alternative = {
   url: string;
   title: string;
@@ -9,12 +29,16 @@ export type Alternative = {
   domain: string;
   image?: string;
   favicon?: string;
+  /** The match category, or null when the analysis did not run for this row. */
+  match: MatchKind | null;
 };
 
 export type AlternativesAnswer = {
   query: string;
   degraded: boolean;
   provider: string;
+  /** The story of the article, or null when the analysis gave none. */
+  topic: string | null;
   alternatives: Alternative[];
 };
 
@@ -38,7 +62,7 @@ function toAlternative(value: unknown): Alternative | null {
     return null;
   }
 
-  const { url, title, description, domain, image, favicon } = value;
+  const { url, title, description, domain, image, favicon, match } = value;
 
   if (
     typeof url !== 'string' ||
@@ -50,7 +74,13 @@ function toAlternative(value: unknown): Alternative | null {
     return null;
   }
 
-  const row: Alternative = { url, title, description, domain };
+  const row: Alternative = {
+    url,
+    title,
+    description,
+    domain,
+    match: isMatchKind(match) ? match : null,
+  };
   const pictured: Alternative =
     typeof image === 'string' && isWebUrl(image) ? { ...row, image } : row;
 
@@ -66,7 +96,7 @@ export function parseAlternativesAnswer(value: unknown): AlternativesAnswer | nu
     return null;
   }
 
-  const { query, degraded, provider, alternatives } = value;
+  const { query, degraded, provider, topic, alternatives } = value;
 
   if (
     typeof query !== 'string' ||
@@ -87,7 +117,7 @@ export function parseAlternativesAnswer(value: unknown): AlternativesAnswer | nu
     }
   }
 
-  return { query, degraded, provider, alternatives: rows };
+  return { query, degraded, provider, topic: normalizeTopic(topic), alternatives: rows };
 }
 
 /**
@@ -96,6 +126,17 @@ export function parseAlternativesAnswer(value: unknown): AlternativesAnswer | nu
  * request, and an unparseable body all answer null, so the page shows its
  * failure text and caches nothing.
  */
+/** The story as one phrase: whitespace collapses, and a blank value names none. */
+function normalizeTopic(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const phrase = value.replace(/\s+/g, ' ').trim();
+
+  return phrase === '' ? null : phrase;
+}
+
 export async function requestAlternatives(input: RequestInput): Promise<AlternativesAnswer | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ALT_TIMEOUT_MS);

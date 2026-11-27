@@ -1,8 +1,9 @@
-import { GUARD_TIMEOUT_MS, MESSAGE } from './constants';
+import { GUARD_TIMEOUT_MS, MESSAGE, META_HEAD_WAIT_MS } from './constants';
 import { GUARD_LINK_LABEL } from './copy';
 import { devLog } from './log';
 import type { BlockedMessage, IsBlockedMessage } from './messages';
 import { isBlockedNavigationResponse, isIsBlockedResponse } from './messages';
+import { readPageMeta } from './page-meta';
 
 devLog('guard', 'the guard is loaded');
 
@@ -50,6 +51,43 @@ async function askWithinTimeout(message: IsBlockedMessage): Promise<unknown> {
 }
 
 /**
+ * The parser has passed `</head>` when `document.body` exists, so that node is
+ * the signal. An observer ends the wait on the mutation that inserts it and a
+ * timer enforces the cap: the guard reacts in the same task, and it never polls.
+ * The observer disconnects on either end, so it cannot outlive the wait.
+ */
+export function awaitHeadClose(doc: Document, capMs: number): Promise<void> {
+  if (doc.body !== null) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (): void => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const observer = new MutationObserver(() => {
+      if (doc.body !== null) {
+        finish();
+      }
+    });
+
+    observer.observe(doc, { childList: true, subtree: true });
+
+    const timer = setTimeout(finish, capMs);
+  });
+}
+
+/**
  * The one element the guard draws, and only when the worker could not navigate
  * the stopped document. It is built from the worker's answer, so the reader can
  * still reach the block page.
@@ -93,12 +131,18 @@ export async function runGuard(href = location.href): Promise<void> {
     return;
   }
 
+  // The head carries the description and the icon, and the icon can sit far
+  // after the title. Waiting for the body is waiting for the head to close.
+  await awaitHeadClose(document, META_HEAD_WAIT_MS);
+
   window.stop();
+
+  const meta = readPageMeta(document, href);
 
   let navigation: unknown;
 
   try {
-    navigation = await askWorker({ type: MESSAGE.blocked, url: href });
+    navigation = await askWorker({ type: MESSAGE.blocked, url: href, meta });
   } catch {
     restoreDocument();
 

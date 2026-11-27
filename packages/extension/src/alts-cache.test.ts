@@ -13,6 +13,7 @@ const ANSWER: AlternativesAnswer = {
   query: 'Nvidia Next Move custom silicon',
   degraded: false,
   provider: 'ceramic',
+  topic: 'Custom silicon for the biggest customers',
   alternatives: [
     {
       url: 'https://arstechnica.com/gadgets/2026/10/nvidias-custom-chip-push-explained/',
@@ -20,6 +21,7 @@ const ANSWER: AlternativesAnswer = {
       description: 'Hyperscalers want their own silicon.',
       domain: 'arstechnica.com',
       image: 'https://detour-api.invalid/v1/img?u=x&sig=y',
+      match: 'same_topic',
     },
   ],
 };

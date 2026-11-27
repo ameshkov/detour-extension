@@ -18,6 +18,7 @@ const URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-m
 const META: PageMeta = {
   title: 'Nvidia Bets On Custom Silicon',
   description: null,
+  icon: null,
 };
 
 function field(): HTMLInputElement {
@@ -34,6 +35,28 @@ function engines(): HTMLAnchorElement[] {
   return [...document.querySelectorAll<HTMLAnchorElement>('[data-role="engines"] a')];
 }
 
+function names(): Array<string | null> {
+  return engines().map(
+    (link) => link.querySelector('[data-role="engine-name"]')?.textContent ?? null,
+  );
+}
+
+function keyCaps(): Array<string | null> {
+  return engines().map(
+    (link) => link.querySelector('[data-role="engine-key"]')?.textContent ?? null,
+  );
+}
+
+function box(): HTMLElement {
+  const element = document.querySelector<HTMLElement>('[data-role="fallback"]');
+
+  if (element === null) {
+    throw new Error('the shell has no fallback box');
+  }
+
+  return element;
+}
+
 function hrefs(): Array<string | null> {
   return engines().map((link) => link.getAttribute('href'));
 }
@@ -41,6 +64,30 @@ function hrefs(): Array<string | null> {
 function type(text: string): void {
   field().value = text;
   field().dispatchEvent(new Event('input'));
+}
+
+function press(key: string, target: HTMLElement): void {
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+}
+
+/**
+ * Records the engines that a press would open, and keeps the run from
+ * navigating. The listener sits on the container, because every edit rebuilds
+ * the links.
+ */
+function recordClicks(): string[] {
+  const clicked: string[] = [];
+  const container = document.querySelector('[data-role="engines"]');
+
+  container?.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    if (event.target instanceof HTMLAnchorElement) {
+      clicked.push(event.target.querySelector('[data-role="engine-name"]')?.textContent ?? '');
+    }
+  });
+
+  return clicked;
 }
 
 beforeEach(() => {
@@ -51,12 +98,30 @@ describe('the search fallback', () => {
   it('offers the four engines in one order', () => {
     renderSearchFallback('Nvidia custom silicon');
 
-    expect(engines().map((link) => link.textContent)).toEqual([
+    expect(names()).toEqual([
       SEARCH_ENGINE_NAMES.duckduckgo,
       SEARCH_ENGINE_NAMES.brave,
       SEARCH_ENGINE_NAMES.google,
       SEARCH_ENGINE_NAMES.bing,
     ]);
+  });
+
+  it('names the keys of the engines on a line below the box', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    const note = document.querySelector<HTMLElement>('[data-role="fallback-note"]');
+    const keys = [...document.querySelectorAll('[data-role="fallback-note"] kbd')];
+
+    expect(note).not.toBeNull();
+    expect(note?.closest('[data-role="fallback"]')).toBeNull();
+    expect(note?.textContent).toContain('to search with an engine');
+    expect(keys.map((key) => key.textContent)).toEqual(['1', '4', '↵', '↑']);
+  });
+
+  it('numbers the engines from one', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    expect(keyCaps()).toEqual(['1', '2', '3', '4']);
   });
 
   it('links the four engines with the encoded query', () => {
@@ -109,11 +174,172 @@ describe('the search fallback', () => {
     }
   });
 
+  it('searches with the first engine on enter in the query', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    const clicked = recordClicks();
+
+    press('Enter', field());
+
+    expect(clicked).toEqual([SEARCH_ENGINE_NAMES.duckduckgo]);
+  });
+
+  it('searches with the engine that the query was edited to', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    const clicked = recordClicks();
+
+    type('my own words');
+    press('Enter', field());
+
+    expect(clicked).toEqual([SEARCH_ENGINE_NAMES.duckduckgo]);
+    expect(engines()[0]?.href).toBe(engineUrl('duckduckgo', 'my own words'));
+  });
+
+  it('walks the engines with the arrows and returns to the query', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    press('ArrowDown', field());
+
+    expect(document.activeElement).toBe(engines()[0]);
+    expect(engines()[0]?.dataset.selected).toBe('true');
+
+    press('ArrowDown', engines()[0]!);
+
+    expect(document.activeElement).toBe(engines()[1]);
+    expect(engines()[1]?.dataset.selected).toBe('true');
+    expect(engines()[0]?.dataset.selected).toBeUndefined();
+
+    press('ArrowUp', engines()[1]!);
+
+    expect(document.activeElement).toBe(engines()[0]);
+
+    press('ArrowUp', engines()[0]!);
+
+    expect(document.activeElement).toBe(field());
+  });
+
+  it('selects an engine with its digit and gives it the focus', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    press('3', box());
+
+    expect(document.activeElement).toBe(engines()[2]);
+    expect(engines()[2]?.dataset.selected).toBe('true');
+    expect(engines()[0]?.dataset.selected).toBeUndefined();
+  });
+
+  it('leaves a digit that belongs to the query to the query field', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    press('3', box());
+    press('4', field());
+
+    expect(engines()[3]?.dataset.selected).toBeUndefined();
+    expect(engines()[2]?.dataset.selected).toBe('true');
+  });
+
+  it('searches with the engine chosen with a digit', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    const clicked = recordClicks();
+
+    press('3', box());
+    press('Enter', field());
+
+    expect(clicked).toEqual([SEARCH_ENGINE_NAMES.google]);
+  });
+
+  it('keeps a digit above four inside the box away from the list', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    press('3', box());
+
+    const event = new KeyboardEvent('keydown', { key: '5', bubbles: true, cancelable: true });
+
+    engines()[2]?.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(engines()[2]?.dataset.selected).toBe('true');
+  });
+
+  it('opens the engine that holds the focus with enter', () => {
+    renderSearchFallback('Nvidia custom silicon');
+
+    const clicked = recordClicks();
+
+    press('4', box());
+    press('Enter', engines()[3]!);
+
+    expect(clicked).toEqual([SEARCH_ENGINE_NAMES.bing]);
+  });
+
+  it('offers sites similar to the domain when the page carries no title', () => {
+    const query = fallbackQuery({
+      answer: null,
+      meta: { ...META, title: '   ' },
+      url: URL,
+      siteName: 'Forbes',
+      edited: '',
+    });
+
+    expect(query).toBe('Sites similar to forbes.com');
+  });
+
+  it('offers similar sites when the metadata names no title at all', () => {
+    const query = fallbackQuery({
+      answer: null,
+      meta: { ...META, title: null },
+      url: URL,
+      siteName: 'Forbes',
+      edited: '',
+    });
+
+    expect(query).toBe('Sites similar to forbes.com');
+  });
+
+  it('still takes the edit of the reader when the page carries no title', () => {
+    const query = fallbackQuery({
+      answer: null,
+      meta: { ...META, title: '' },
+      url: URL,
+      siteName: 'Forbes',
+      edited: 'my own words',
+    });
+
+    expect(query).toBe('my own words');
+  });
+
+  it('names the host of a page without a registrable domain', () => {
+    const query = fallbackQuery({
+      answer: null,
+      meta: { ...META, title: '' },
+      url: 'http://127.0.0.1:8787/walled/slow',
+      siteName: 'Local fixture',
+      edited: '',
+    });
+
+    expect(query).toBe('Sites similar to 127.0.0.1');
+  });
+
+  it('keeps the cleaner query when the metadata did not arrive', () => {
+    const query = fallbackQuery({
+      answer: null,
+      meta: null,
+      url: 'https://www.forbes.com/tech/nvidia-custom-silicon/',
+      siteName: 'Forbes',
+      edited: '',
+    });
+
+    expect(query).toBe('tech nvidia custom silicon');
+  });
+
   it('takes the query the worker answered with', () => {
     const answer: AlternativesAnswer = {
       query: 'The worker query',
       degraded: false,
       provider: 'ceramic',
+      topic: null,
       alternatives: [],
     };
 

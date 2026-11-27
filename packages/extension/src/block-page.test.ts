@@ -1,39 +1,57 @@
 // @vitest-environment happy-dom
 import type { SitesJson } from '@detour/shared';
-import { sha256Hex } from '@detour/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { writeAltCache } from './alts-cache';
 import type { AlternativesAnswer } from './alternatives';
 import { requestAlternatives } from './alternatives';
 import type { BlockPageOptions } from './block-page';
 import { startBlockPage, stopBlockPage } from './block-page';
-import { ALT_TTL_MS, MESSAGE, STORAGE } from './constants';
+import { MESSAGE, STORAGE } from './constants';
 import {
   ALTERNATIVES_FAILED,
   ALTERNATIVES_HEADING,
   ALTERNATIVES_LOADING,
   ALTERNATIVES_NONE,
   ANTI_USER_NOTE,
+  COPIED_ADDRESS_LABEL,
+  COPY_ADDRESS_LABEL,
+  COPY_FAILED_LABEL,
   FAILED_DETAIL,
   FOOTNOTE,
   KEEP_WAITING_LABEL,
   NONE_DETAIL,
+  NO_RECORD_LINK,
+  NO_RECORD_NOTICE,
   NO_URL_HEADLINE,
+  NO_URL_NOTICE,
+  NO_WALLS_LABEL,
+  ONCE_LABEL,
   RETRY_EMPTY_LABEL,
+  REPORT_WALL_LABEL,
   RETRY_LABEL,
   SLOW_NOTE,
-  SOURCE_LABEL,
+  SCOPE_LABEL,
+  THEME_SWITCH_DARK,
+  THEME_SWITCH_LIGHT,
+  BACK_LABEL,
+  ESC_KEY,
+  WALLS_HINT,
+  WALL_TYPE_DETAIL,
   countdownText,
   headline,
+  keyboardHint,
   openAnywayLabel,
   openInsteadLabel,
+  resultsLabel,
+  topicLabel,
 } from './copy';
-import type { GetAlternativesMessage } from './messages';
 import type { PageMeta } from './metadata';
+import { pageView } from './state-view';
 import type { FetchLike } from './net';
 import { SEARCH_ENGINES, engineUrl } from './search-fallback';
-import { writeStoredList } from './storage';
+import { readList, readListId, readSettings, writeStoredList } from './storage';
+import { readScopeDefaults } from './scope-defaults';
+import { defaultWalls } from './walls';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 import { installFramedWindow, restoreWindowTop } from './testing/frame';
@@ -50,12 +68,14 @@ const SHELL = readShell('block.html');
 const META: PageMeta = {
   title: 'Best AI Image Generators of 2026',
   description: 'Everything you need to pick the right AI for your project and budget.',
+  icon: null,
 };
 
 const ANSWER: AlternativesAnswer = {
   query: 'Best AI Image Generators 2026',
   degraded: false,
   provider: 'ceramic',
+  topic: 'AI image generators',
   alternatives: [
     {
       url: 'https://arstechnica.com/gadgets/2026/10/ai-image-tools-compared/',
@@ -63,12 +83,14 @@ const ANSWER: AlternativesAnswer = {
       description: 'We tested every tool that asks for your money.',
       domain: 'arstechnica.com',
       image: 'https://detour-api.invalid/v1/img?u=a&sig=b',
+      match: 'same_story',
     },
     {
       url: 'https://www.theverge.com/ai-image-tools-ranked/',
       title: 'AI image tools, ranked',
       description: 'A second look at the same tools.',
       domain: 'theverge.com',
+      match: 'different',
     },
   ],
 };
@@ -83,6 +105,7 @@ const HARD_LIST: SitesJson = {
     {
       domain: 'forbes.com',
       name: 'Forbes',
+      verified: '2026-11-12',
       walls: [{ category: 'adblock', type: 'hard' }],
       paths: [],
       note: 'Full-page wall for readers with an ad blocker.',
@@ -118,36 +141,56 @@ function searchFor(url: string): string {
   return `?u=${encodeURIComponent(url)}`;
 }
 
+/** The head the worker kept for the stopped page, or a failure the case injects. */
+let metaForPage: (() => unknown) | null = null;
+
 /**
- * The service worker's alternatives answer. The test drives the same backend
- * request through the message that the real page sends, so a case controls the
- * network with one fetch stub.
+ * The service worker's one answer. The test drives the same backend request
+ * through the state that the real page asks for, so a case controls the network
+ * with one fetch stub and one metadata value.
  */
 function installAnswer(fetchImpl: FetchLike): void {
-  fake.respond(MESSAGE.getAlternatives, async (message) => {
-    const request = message as GetAlternativesMessage;
+  fake.respond(MESSAGE.pageState, async (message) => {
+    const { url } = message as { url: string };
+    const raw = metaForPage === null ? null : await metaForPage();
+    const meta = (raw as { meta?: PageMeta | null } | null)?.meta ?? null;
+    const list = await readList();
+    const settings = await readSettings();
+    const scopeDefaults = await readScopeDefaults();
     const answer = await requestAlternatives({
       apiBase: API_BASE,
-      url: request.url,
-      title: request.title,
+      url,
+      title: meta?.title ?? '',
       fetchImpl,
     });
 
-    return { ok: true, answer };
+    return {
+      ok: true,
+      state: {
+        settings,
+        view: pageView({
+          url,
+          list,
+          listId: await readListId(),
+          settings,
+          scopeDefaults,
+          meta,
+          answer,
+        }),
+      },
+    };
   });
 }
 
 function startPage(
   search: string,
   fetchImpl: FetchLike,
-  now = NOW,
+  _now = NOW,
   extra: Partial<BlockPageOptions> = {},
 ): Promise<void> {
   installAnswer(fetchImpl);
 
-  const options: BlockPageOptions = { search, now, ...extra };
-
-  return startBlockPage(options);
+  return startBlockPage({ search, ...extra });
 }
 
 function start(
@@ -161,6 +204,16 @@ function start(
 
 function press(name: string): void {
   role(name).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+}
+
+function pressKey(key: string): void {
+  document.body.dispatchEvent(
+    new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+  );
+}
+
+function rows(): HTMLLIElement[] {
+  return [...role('list').querySelectorAll<HTMLLIElement>('li')];
 }
 
 function messagesOfType(type: string): unknown[] {
@@ -236,10 +289,11 @@ async function drainStart(): Promise<void> {
 }
 
 function answerMeta(meta: PageMeta | null = META): void {
-  fake.respond('getMeta', () => ({ ok: true, meta }));
+  metaForPage = () => ({ ok: true, meta });
 }
 
 beforeEach(() => {
+  metaForPage = null;
   fake = installFakeChrome();
   fake.respond('allow', () => ({
     ok: true,
@@ -254,6 +308,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   restoreWindowTop();
   document.body.innerHTML = '';
+  delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.themeChoice;
   resetFakeChrome();
 });
 
@@ -262,17 +318,30 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     // The parsed copy drops the stylesheet link, which this environment cannot load.
     const shell = new DOMParser().parseFromString(SHELL.replace(/<link[^>]*>/g, ''), 'text/html');
     const roles = [
+      'canvas',
+      'card',
       'header',
       'mark',
       'wordmark',
+      'wall-status',
+      'header-sep',
+      'wall-status-dot',
+      'wall-status-text',
       'headline',
       'walls',
+      'walls-row',
+      'walls-label',
+      'walls-hint',
+      'walls-detail',
       'lede',
       'source',
       'source-text',
-      'source-label',
+      'source-tile',
       'source-title',
-      'source-link',
+      'source-address',
+      'source-description',
+      'copy',
+      'copy-status',
       'open-group',
       'alternatives',
       'list-head',
@@ -281,6 +350,15 @@ describe('the block page shell', { timeout: 20_000 }, () => {
       'status',
       'detail',
       'list',
+      'search',
+      'search-icon',
+      'search-body',
+      'search-title',
+      'search-detail',
+      'search-action',
+      'search-key',
+      'search-arrow',
+      'keyboard-hint',
       'fallback',
       'fallback-heading',
       'query-label',
@@ -298,8 +376,15 @@ describe('the block page shell', { timeout: 20_000 }, () => {
       'retry-row',
       'retry',
       'actions',
+      'actions-start',
+      'actions-end',
+      'back',
+      'back-label',
+      'back-key',
       'open-site',
       'open-menu',
+      'open-menu-label',
+      'note',
       'scope-menu',
       'scope-once',
       'scope-tab',
@@ -308,9 +393,14 @@ describe('the block page shell', { timeout: 20_000 }, () => {
       'action-error',
       'report',
       'footnote',
+      'theme',
     ];
     const closed = [
+      'note',
+      'search',
+      'wall-status',
       'fallback',
+      'fallback-note',
       'slow-note',
       'countdown',
       'retry-row',
@@ -366,20 +456,20 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     const read = fake.storage.local.get.bind(fake.storage.local);
 
     fake.storage.local.get = () => store.promise;
-    fake.respond('getMeta', () => meta.promise);
+    metaForPage = () => meta.promise;
 
     const running = start(URL, answerFetch(calls, ANSWER));
 
     expect(role('lede').hidden).toBe(true);
     expect(role('walls').hidden).toBe(true);
-    expect(role('source-label').textContent).toBe(SOURCE_LABEL);
     expect(role('alternatives-heading').textContent).toBe(ALTERNATIVES_HEADING);
-    expect(role('source-link').getAttribute('href')).toBe(URL);
-    expect(role('source-link').textContent).toBe(COMPACT_URL);
-    expect(role('source-link').getAttribute('title')).toBe(URL);
+    expect(role('source-address').tagName).toBe('P');
+    expect(role('source-address').textContent).toBe(COMPACT_URL);
+    expect(role('source-address').getAttribute('href')).toBeNull();
+    expect(role('source-address').getAttribute('title')).toBeNull();
     expect(role('status').textContent).toBe(ALTERNATIVES_LOADING);
     expect(calls).toHaveLength(0);
-    expect(fake.calls.messages).toHaveLength(0);
+    expect(messagesOfType(MESSAGE.pageState)).toHaveLength(1);
 
     fake.storage.local.get = read;
     store.resolve({});
@@ -414,7 +504,7 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     expect(role('footnote').textContent).toBe(FOOTNOTE);
     expect(calls).toHaveLength(0);
-    expect(fake.calls.messages).toHaveLength(0);
+    expect(messagesOfType(MESSAGE.pageState)).toHaveLength(1);
 
     fake.storage.local.get = read;
     store.resolve({});
@@ -433,8 +523,10 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(role('headline').textContent).toBe(headline('Forbes', 1));
     expect(chips).toHaveLength(1);
     expect(role('walls').textContent).toContain('Ad blocker');
-    expect(role('walls').textContent).toContain('Hard');
+    expect(role('walls').textContent).not.toContain('Hard');
     expect(role('walls').hidden).toBe(false);
+    expect(role('wall-status-text').textContent).toBe('1 wall detected');
+    expect(role('wall-status').hidden).toBe(false);
     expect(role('lede').textContent).toBe(ANTI_USER_NOTE);
     expect(role('lede').hidden).toBe(false);
   });
@@ -449,8 +541,61 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     expect(chips).toHaveLength(2);
     expect(role('headline').textContent).toBe('Forbes puts two walls in front of this story');
+    expect(role('wall-status-text').textContent).toBe('2 walls detected');
     expect(role('walls').textContent).toContain('Paywall');
-    expect(role('walls').textContent).toContain('Metered');
+    expect(role('walls').textContent).not.toContain('Metered');
+  });
+
+  it('opens the description of a wall from its pill', async () => {
+    await writeStoredList(NOW, TWO_WALL_LIST, STORED_ID);
+    answerMeta(null);
+
+    await start(FORBES_URL, answerFetch([], ANSWER));
+
+    const chips = role('walls').querySelectorAll<HTMLButtonElement>('[data-role="wall"]');
+
+    expect(chips).toHaveLength(2);
+    expect(chips[0]?.tagName).toBe('BUTTON');
+    expect(role('walls-hint').textContent).toBe(WALLS_HINT);
+    expect(role('walls-detail').hidden).toBe(true);
+
+    chips[1]?.click();
+
+    const note = TWO_WALL_LIST.sites[0]?.note ?? '';
+
+    expect(role('walls-detail').hidden).toBe(false);
+    expect(role('wall-detail-text').textContent).toBe(note);
+    expect(role('wall-detail-title').textContent).toContain('Paywall');
+    expect(role('wall-type-badge').textContent).toBe('Metered wall');
+    expect(role('wall-type-badge').getAttribute('title')).toBe(WALL_TYPE_DETAIL.metered);
+    expect(role('wall-verified').textContent).toBe('Verified 2026-11-12');
+    expect(role('wall-detail-icon').querySelector('svg')).not.toBeNull();
+    expect(chips[1]?.getAttribute('aria-expanded')).toBe('true');
+    expect(chips[0]?.getAttribute('aria-expanded')).toBe('false');
+
+    const wallReport = role('walls-detail').querySelector<HTMLAnchorElement>(
+      '[data-role="wall-report"]',
+    );
+    const noteReport = role('report');
+
+    if (noteReport instanceof HTMLAnchorElement && noteReport.getAttribute('href') !== null) {
+      expect(wallReport?.getAttribute('href')).toBe(noteReport.getAttribute('href'));
+      expect(wallReport?.textContent).toBe(REPORT_WALL_LABEL);
+    } else {
+      expect(wallReport).toBeNull();
+    }
+
+    chips[0]?.click();
+
+    expect(role('wall-detail-text').textContent).toBe(note);
+    expect(role('wall-detail-title').textContent).toContain('Ad blocker');
+    expect(role('wall-type-badge').textContent).toBe('Soft wall');
+    expect(chips[1]?.getAttribute('aria-expanded')).toBe('false');
+    expect(chips[0]?.getAttribute('aria-expanded')).toBe('true');
+
+    chips[0]?.click();
+
+    expect(role('walls-detail').hidden).toBe(true);
   });
 
   it('draws the wall of a soft entry', async () => {
@@ -459,7 +604,7 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     await start(URL, answerFetch([], ANSWER));
 
     expect(role('headline').textContent).toBe(headline('CNET', 1));
-    expect(role('walls').textContent).toBe('Ad blocker·Soft');
+    expect(role('walls').textContent).toBe('Ad blocker');
   });
 
   it('judges no page that carries no ad-blocker wall', async () => {
@@ -468,7 +613,7 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     await start(FORBES_URL, answerFetch([], ANSWER));
 
-    expect(role('walls').textContent).toBe('Paywall·Hard');
+    expect(role('walls').textContent).toBe('Paywall');
     expect(role('lede').textContent).toBe('');
     expect(role('lede').hidden).toBe(true);
   });
@@ -481,9 +626,9 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(role('headline').textContent).toBe(NO_URL_HEADLINE);
     expect(role('lede').hidden).toBe(true);
     expect(role('walls').hidden).toBe(true);
-    expect(role('source-link').getAttribute('href')).toBeNull();
-    expect(role('source-link').textContent).toBe('');
+    expect(role('source-address').textContent).toBe('');
     expect(role('source').hidden).toBe(true);
+    expect(role('wall-status').hidden).toBe(true);
     expect(fake.calls.messages).toHaveLength(0);
     expect(calls).toHaveLength(0);
   });
@@ -502,8 +647,8 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     await startPage(searchFor(unsafe), answerFetch([], ANSWER));
 
-    expect(role('source-link').textContent).toBe(unsafe);
-    expect(role('source-link').getAttribute('href')).toBeNull();
+    expect(role('source-address').textContent).toBe(unsafe);
+    expect(role('source-address').getAttribute('href')).toBeNull();
     expect(role('source').hidden).toBe(false);
   });
 
@@ -513,9 +658,207 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     await start(URL, answerFetch([], ANSWER));
 
     expect(role('source-title').textContent).toBe(META.title);
-    expect(role('source-link').textContent).toBe(COMPACT_URL);
+    expect(role('source-description').textContent).toBe(META.description);
+    expect(role('source-description').hidden).toBe(false);
+    expect(role('source-address').textContent).toBe(COMPACT_URL);
     expect(role('source-text').childElementCount).toBe(3);
     expect(role('source').querySelector('img')).toBeNull();
+  });
+
+  it('takes the icon of the stopped page when the icons are on', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+    answerMeta({ ...META, icon: 'https://www.cnet.com/icon-192.png' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    const image = role('source').querySelector<HTMLImageElement>('[data-role="source-icon"]');
+
+    expect(image?.src).toBe('https://www.cnet.com/icon-192.png');
+    expect(image?.alt).toBe('');
+    expect(image?.referrerPolicy).toBe('no-referrer');
+
+    // The letter holds the tile until the icon has arrived, so a slow publisher
+    // never leaves an empty square in the card.
+    expect(role('source-tile').textContent).toBe('C');
+    expect(role('source-tile').dataset.icon).toBeUndefined();
+
+    Object.defineProperty(image, 'naturalWidth', { value: 192, configurable: true });
+    image?.dispatchEvent(new Event('load'));
+
+    expect(role('source-tile').dataset.icon).toBe('true');
+    expect(role('source-tile').textContent).toBe('');
+  });
+
+  it('keeps the letter tile while the icons are off', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: false,
+    };
+    answerMeta({ ...META, icon: 'https://www.cnet.com/favicon.ico' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('source').querySelector('img')).toBeNull();
+    expect(role('source-tile').textContent).toBe('C');
+    expect(role('source-tile').dataset.icon).toBeUndefined();
+  });
+
+  it('returns the letter when the icon fails to load', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+    answerMeta({ ...META, icon: 'https://www.cnet.com/broken.ico' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    const image = role('source').querySelector<HTMLImageElement>('[data-role="source-icon"]');
+
+    image?.dispatchEvent(new Event('error'));
+
+    expect(role('source').querySelector('img')).toBeNull();
+    expect(role('source-tile').textContent).toBe('C');
+    expect(role('source-tile').dataset.icon).toBeUndefined();
+    expect(role('source-tile').style.backgroundColor).not.toBe('');
+  });
+
+  it('returns the letter when the icon is smaller than the tile', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+    // CNET and ZDNET serve a 16 px, fully transparent file at `/favicon.ico`,
+    // which is the icon a page names none gets: a blank square with it.
+    answerMeta({ ...META, icon: 'https://www.cnet.com/favicon.ico' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    const image = role('source').querySelector<HTMLImageElement>('[data-role="source-icon"]');
+
+    Object.defineProperty(image, 'naturalWidth', { value: 16, configurable: true });
+    image?.dispatchEvent(new Event('load'));
+
+    expect(role('source').querySelector('img')).toBeNull();
+    expect(role('source-tile').textContent).toBe('C');
+    expect(role('source-tile').dataset.icon).toBeUndefined();
+    expect(role('source-tile').style.backgroundColor).not.toBe('');
+  });
+
+  it('holds the icon until it has loaded', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+    answerMeta({ ...META, icon: 'https://www.cnet.com/icon-192.png' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    const image = role('source').querySelector<HTMLImageElement>('[data-role="source-icon"]');
+
+    expect(image?.hidden).toBe(true);
+    expect(role('source-tile').textContent).toBe('C');
+  });
+
+  it('keeps an icon that fills the tile', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+    answerMeta({ ...META, icon: 'https://www.cnet.com/icon-192.png' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    const image = role('source').querySelector<HTMLImageElement>('[data-role="source-icon"]');
+
+    Object.defineProperty(image, 'naturalWidth', { value: 192, configurable: true });
+    image?.dispatchEvent(new Event('load'));
+
+    expect(role('source').querySelector('img')).toBe(image);
+    expect(role('source-tile').dataset.icon).toBe('true');
+  });
+
+  it('hides a title that only repeats the address', async () => {
+    answerMeta({ ...META, title: 'cnet.com' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('source-title').textContent).toBe('');
+    expect(role('source-title').hidden).toBe(true);
+  });
+
+  it('keeps the title of the story', async () => {
+    answerMeta({ ...META, title: 'Best AI Image Generators of 2026' });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('source-title').textContent).toBe('Best AI Image Generators of 2026');
+    expect(role('source-title').hidden).toBe(false);
+  });
+
+  it('hides the description when the page names none', async () => {
+    answerMeta({ ...META, description: null });
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('source-description').hidden).toBe(true);
+    expect(role('source-description').textContent).toBe('');
+  });
+
+  it('copies the whole address from the source card', async () => {
+    vi.useFakeTimers();
+
+    const written: string[] = [];
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async (text: string) => void written.push(text) },
+    });
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+    press('copy');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(written).toEqual([URL]);
+    expect(role('copy').dataset.copied).toBe('true');
+    expect(role('copy').getAttribute('aria-label')).toBe(COPIED_ADDRESS_LABEL);
+    expect(role('copy-status').textContent).toBe(COPIED_ADDRESS_LABEL);
+
+    await vi.advanceTimersByTimeAsync(2100);
+
+    expect(role('copy').dataset.copied).toBeUndefined();
+    expect(role('copy').getAttribute('aria-label')).toBe(COPY_ADDRESS_LABEL);
+    expect(role('copy-status').textContent).toBe('');
+  });
+
+  it('reports an address that the browser refuses to copy', async () => {
+    vi.useFakeTimers();
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new Error('denied');
+        },
+      },
+    });
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+    press('copy');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(role('copy-status').textContent).toBe(COPY_FAILED_LABEL);
+    expect(role('copy').dataset.copied).toBeUndefined();
   });
 
   it('names the site in the tab', async () => {
@@ -527,50 +870,54 @@ describe('the block page shell', { timeout: 20_000 }, () => {
   });
 
   it('renders the card with the url only when the metadata fails', async () => {
-    fake.respond('getMeta', () => {
+    metaForPage = () => {
       throw new Error('the worker is asleep');
-    });
+    };
 
     await start(URL, answerFetch([], ANSWER));
 
-    expect(role('source-link').textContent).toBe(COMPACT_URL);
+    expect(role('source-address').textContent).toBe(COMPACT_URL);
     expect(role('source-title').textContent).toBe('');
   });
 
-  it('keeps the url-only card when the runtime is absent', async () => {
+  it('keeps the url-only card when the worker does not answer', async () => {
     resetFakeChrome();
 
-    const calls: FetchCall[] = [];
+    await startBlockPage({ search: searchFor(URL) });
 
-    await start(URL, answerFetch(calls, ANSWER));
-
-    expect(role('source-link').textContent).toBe(COMPACT_URL);
+    expect(role('source-address').textContent).toBe(COMPACT_URL);
     expect(role('source-title').textContent).toBe('');
-    expect(role('status').textContent).toBe(ALTERNATIVES_FAILED);
-    expect(role('list').querySelectorAll('li')).toHaveLength(0);
-    expect(role('actions').hidden).toBe(false);
-    expect(role('open-site').textContent).toBe(openAnywayLabel('CNET'));
-    expect(role('report').hidden).toBe(true);
+    expect(role('alternatives').hidden).toBe(true);
+    expect(role('actions').hidden).toBe(true);
   });
 
-  it('renders the card before the alternatives arrive', async () => {
+  it('paints the shell before the state arrives', async () => {
     const meta = deferred<unknown>();
+    const answer = deferred<Response>();
 
-    fake.respond('getMeta', () => meta.promise);
+    metaForPage = () => meta.promise;
 
-    void start(URL, pendingFetch([]));
+    const running = start(URL, () => answer.promise);
+
+    expect(role('source-title').textContent).toBe('');
+    expect(role('status').textContent).toBe(ALTERNATIVES_LOADING);
+    expect(role('list').querySelectorAll('li')).toHaveLength(0);
 
     meta.resolve({ ok: true, meta: META });
+    answer.resolve(
+      new Response(JSON.stringify(ANSWER), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
 
-    await vi.waitFor(() => {
-      expect(role('source-title').textContent).toBe(META.title);
-    });
+    await running;
 
-    expect(role('status').textContent).toBe(ALTERNATIVES_LOADING);
-    expect(role('list').children).toHaveLength(0);
+    expect(role('source-title').textContent).toBe(META.title);
+    expect(role('status').textContent).toBe('');
   });
 
-  it('hides the row images when the setting is off', async () => {
+  it('keeps the letter tiles when the icon setting is off', async () => {
     fake.storage.local.values[STORAGE.settings] = {
       enabled: true,
       autoOpenBest: false,
@@ -600,6 +947,33 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(role('status').textContent).toBe('');
   });
 
+  it('checks the alternatives against the list in use', async () => {
+    await writeStoredList(NOW, { ...HARD_LIST, sites: [] }, STORED_ID);
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+
+    const badges = [...role('list').querySelectorAll<HTMLElement>('[data-role="result-walls"]')];
+
+    expect(badges).toHaveLength(ANSWER.alternatives.length);
+
+    for (const badge of badges) {
+      expect(badge.textContent).toBe(NO_WALLS_LABEL);
+    }
+  });
+
+  it('asks for similar sites when the page names no title', async () => {
+    answerMeta({ ...META, title: '' });
+
+    await start(URL, answerFetch([], ANSWER));
+    press('search');
+
+    expect(queryField().value).toBe('Sites similar to cnet.com');
+    expect(engineLinks()[0]?.getAttribute('href')).toContain(
+      encodeURIComponent('Sites similar to cnet.com'),
+    );
+  });
+
   it('writes an answer value as text and never as markup', async () => {
     const malicious = {
       ...ANSWER,
@@ -623,61 +997,12 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(role('list').querySelector('img')).toBeNull();
   });
 
-  it('marks every row image as referrer-free and lazy', async () => {
+  it('writes no key of its own', async () => {
     answerMeta();
 
     await start(URL, answerFetch([], ANSWER));
 
-    const images = role('list').querySelectorAll('img');
-
-    expect(images).toHaveLength(1);
-
-    for (const image of images) {
-      expect(image.getAttribute('referrerpolicy')).toBe('no-referrer');
-      expect(image.getAttribute('loading')).toBe('lazy');
-    }
-  });
-
-  it('renders a cached answer without a request', async () => {
-    const calls: FetchCall[] = [];
-    const fetchImpl: FetchLike = async (input, init) => {
-      calls.push({ input, init });
-
-      throw new Error('the page must not ask the network');
-    };
-
-    await writeAltCache(URL, ANSWER, NOW);
-    answerMeta();
-
-    await start(URL, fetchImpl);
-
-    expect(calls).toHaveLength(0);
-    expect(role('list').querySelectorAll('li')).toHaveLength(2);
-  });
-
-  it('caches an answer for one day', async () => {
-    const calls: FetchCall[] = [];
-
-    answerMeta();
-
-    await start(URL, answerFetch(calls, ANSWER));
-
-    mountShell(SHELL);
-    await start(URL, answerFetch(calls, ANSWER), NOW + ALT_TTL_MS - 1);
-
-    expect(calls).toHaveLength(1);
-    expect(role('list').querySelectorAll('li')).toHaveLength(2);
-  });
-
-  it('writes no key but the alternatives cache', async () => {
-    answerMeta();
-
-    await start(URL, answerFetch([], ANSWER));
-
-    const keys = Object.keys(fake.storage.local.values);
-
-    expect(keys).toHaveLength(1);
-    expect(keys[0]).toBe(`${STORAGE.alt}${await sha256Hex(URL)}`);
+    expect(Object.keys(fake.storage.local.values)).toHaveLength(0);
     expect(Object.keys(fake.storage.session.values)).toHaveLength(0);
   });
 
@@ -719,16 +1044,6 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     answerMeta();
 
     await start(URL, fetchImpl);
-
-    expect(role('status').textContent).toBe(ALTERNATIVES_FAILED);
-  });
-
-  it('shows the failure text when the page digest fails', async () => {
-    vi.spyOn(crypto.subtle, 'digest').mockRejectedValue(new Error('the digest is unavailable'));
-
-    answerMeta();
-
-    await start(URL, answerFetch([], ANSWER));
 
     expect(role('status').textContent).toBe(ALTERNATIVES_FAILED);
   });
@@ -846,20 +1161,456 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     answerMeta();
 
-    await start(URL, answerFetch([], ANSWER), NOW, { openTab: (url) => opened.push(url) });
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
 
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
     expect(opened).toEqual([ANSWER.alternatives[0]!.url]);
   });
 
-  it('opens one tab when the page starts twice', async () => {
+  it('opens a result from its digit', async () => {
     const opened: string[] = [];
 
     answerMeta();
 
-    await start(URL, answerFetch([], ANSWER), NOW, { openTab: (url) => opened.push(url) });
-    await start(URL, answerFetch([], ANSWER), NOW, { openTab: (url) => opened.push(url) });
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
+    pressKey('2');
+
+    expect(opened).toEqual([ANSWER.alternatives[1]!.url]);
+    expect(rows()[1]?.dataset.selected).toBe('true');
+  });
+
+  it('starts the selection from a control that holds the focus', async () => {
+    const opened: string[] = [];
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
+
+    const control = role('theme');
+
+    control.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
+
+    expect(rows()[0]?.dataset.selected).toBe('true');
+
+    control.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
+
+    expect(opened).toHaveLength(0);
+  });
+
+  it('moves the selection with the arrows and opens it with enter', async () => {
+    const opened: string[] = [];
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
+
+    pressKey('ArrowDown');
+
+    expect(rows()[0]?.dataset.selected).toBe('true');
+    expect(rows()[1]?.dataset.selected).toBeUndefined();
+
+    pressKey('ArrowDown');
+
+    expect(rows()[0]?.dataset.selected).toBeUndefined();
+    expect(rows()[1]?.dataset.selected).toBe('true');
+
+    pressKey('Enter');
+
+    expect(opened).toEqual([ANSWER.alternatives[1]!.url]);
+  });
+
+  it('moves the selection into the search card and back', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('ArrowDown');
+    pressKey('ArrowDown');
+    pressKey('ArrowDown');
+
+    expect(rows()[1]?.dataset.selected).toBeUndefined();
+    expect(role('search').dataset.selected).toBe('true');
+
+    // The search card is the last stop, so a further press stays on it.
+    pressKey('ArrowDown');
+
+    expect(role('search').dataset.selected).toBe('true');
+
+    pressKey('ArrowUp');
+
+    expect(role('search').dataset.selected).toBeUndefined();
+    expect(rows()[1]?.dataset.selected).toBe('true');
+  });
+
+  it('opens the search card with enter', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('ArrowDown');
+    pressKey('ArrowDown');
+    pressKey('ArrowDown');
+    pressKey('Enter');
+
+    expect(role('search').hidden).toBe(true);
+    expect(role('search').dataset.selected).toBeUndefined();
+    expect(role('fallback').hidden).toBe(false);
+    expect(document.activeElement).toBe(engineLinks()[0]);
+  });
+
+  it('opens the search card from its digit', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+
+    expect(role('search').hidden).toBe(true);
+    expect(role('search').dataset.selected).toBeUndefined();
+    expect(role('fallback').hidden).toBe(false);
+    expect(document.activeElement).toBe(engineLinks()[0]);
+  });
+
+  it('takes the open search box as the last stop after the focus leaves it', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+
+    expect(role('fallback').hidden).toBe(false);
+
+    // The focus leaves the box, the way returning from the engine's tab leaves
+    // it, and the arrows still reach the box as the last stop.
+    pressKey('ArrowUp');
+
+    expect(role('fallback').dataset.selected).toBe('true');
+
+    pressKey('Enter');
+
+    expect(document.activeElement).toBe(engineLinks()[0]);
+    expect(role('fallback').dataset.selected).toBeUndefined();
+  });
+
+  it('takes the search box as the only stop of the empty state', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], { ...ANSWER, alternatives: [] }), NOW);
+
+    expect(role('fallback').hidden).toBe(false);
+
+    pressKey('ArrowUp');
+
+    expect(role('fallback').dataset.selected).toBe('true');
+
+    pressKey('Enter');
+
+    expect(document.activeElement).toBe(engineLinks()[0]);
+  });
+
+  it('closes the search box on escape from the query', async () => {
+    let backs = 0;
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, {
+      goBack: (): void => {
+        backs += 1;
+      },
+    });
+
+    pressKey('3');
+    engineLinks()[0]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
+
+    expect(document.activeElement).toBe(queryField());
+
+    queryField().dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+
+    expect(role('fallback').hidden).toBe(true);
+    expect(role('fallback-note').hidden).toBe(true);
+    expect(role('search').hidden).toBe(false);
+    expect(role('search').dataset.selected).toBe('true');
+    expect(document.activeElement).not.toBe(queryField());
+    expect(backs).toBe(0);
+
+    // The card is the selected stop, so Enter opens the box again.
+    pressKey('Enter');
+
+    expect(role('fallback').hidden).toBe(false);
+    expect(document.activeElement).toBe(engineLinks()[0]);
+  });
+
+  it('returns to the last alternative on up in the query', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+    engineLinks()[0]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
+
+    expect(document.activeElement).toBe(queryField());
+
+    queryField().dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
+
+    expect(role('fallback').hidden).toBe(true);
+    expect(rows()[rows().length - 1]?.dataset.selected).toBe('true');
+    expect(role('search').dataset.selected).toBeUndefined();
+    expect(rows()[0]?.dataset.selected).toBeUndefined();
+  });
+
+  it('closes the search box on escape from an engine', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+
+    engineLinks()[2]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+
+    expect(role('fallback').hidden).toBe(true);
+    expect(role('search').hidden).toBe(false);
+    expect(role('search').dataset.selected).toBe('true');
+  });
+
+  it('closes the box on escape when the box is the last stop', async () => {
+    let backs = 0;
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, {
+      goBack: (): void => {
+        backs += 1;
+      },
+    });
+
+    pressKey('3');
+    pressKey('ArrowUp');
+
+    expect(role('fallback').dataset.selected).toBe('true');
+
+    pressKey('Escape');
+
+    expect(role('fallback').hidden).toBe(true);
+    expect(role('fallback').dataset.selected).toBeUndefined();
+    expect(role('search').dataset.selected).toBe('true');
+    expect(backs).toBe(0);
+  });
+
+  it('leaves the page on escape in the empty state', async () => {
+    let backs = 0;
+
+    answerMeta();
+
+    await start(URL, answerFetch([], { ...ANSWER, alternatives: [] }), NOW, {
+      goBack: (): void => {
+        backs += 1;
+      },
+    });
+
+    expect(role('fallback').hidden).toBe(false);
+
+    queryField().dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+
+    expect(role('fallback').hidden).toBe(false);
+    expect(backs).toBe(1);
+  });
+
+  it('searches with the first engine on enter after the search card', async () => {
+    const clicked: string[] = [];
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+
+    role('engines').addEventListener('click', (event) => {
+      event.preventDefault();
+
+      if (event.target instanceof HTMLAnchorElement) {
+        clicked.push(event.target.href);
+      }
+    });
+
+    engineLinks()[0]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
+
+    expect(clicked).toEqual([engineLinks()[0]?.href]);
+  });
+
+  it('opens the search card on its first engine', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+
+    expect(document.activeElement).toBe(engineLinks()[0]);
+    expect(engineLinks()[0]?.dataset.selected).toBe('true');
+  });
+
+  it('picks an engine with a digit from the selected box', async () => {
+    const clicked: string[] = [];
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    role('engines').addEventListener('click', (event) => {
+      event.preventDefault();
+
+      if (event.target instanceof HTMLAnchorElement) {
+        clicked.push(event.target.href);
+      }
+    });
+
+    pressKey('3');
+    pressKey('ArrowUp');
+
+    expect(role('fallback').dataset.selected).toBe('true');
+
+    pressKey('2');
+
+    expect(role('fallback').dataset.selected).toBeUndefined();
+    expect(document.activeElement).toBe(engineLinks()[1]);
+    expect(engineLinks()[1]?.dataset.selected).toBe('true');
+
+    engineLinks()[1]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
+
+    expect(clicked).toEqual([engineLinks()[1]?.href]);
+  });
+
+  it('keeps the list selection while the arrows walk the engines', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW);
+
+    pressKey('3');
+
+    engineLinks()[0]?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
+
+    expect(rows()[0]?.dataset.selected).toBeUndefined();
+    expect(document.activeElement).toBe(engineLinks()[1]);
+  });
+
+  it('starts the scope selector on the choice of the domain', async () => {
+    fake.storage.local.values[STORAGE.scopeDefaults] = { 'cnet.com': 'once' };
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('open-menu-label').textContent).toBe(ONCE_LABEL);
+    expect(role('scope-once').getAttribute('aria-checked')).toBe('true');
+    expect(role('scope-tab').getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('keeps the way back and the note around the card', async () => {
+    let backs = 0;
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, {
+      goBack: (): void => {
+        backs += 1;
+      },
+    });
+
+    expect(role('back-label').textContent).toBe(BACK_LABEL);
+    expect(role('back-key').textContent).toBe(ESC_KEY);
+    expect(role('open-menu-label').textContent).toBe(SCOPE_LABEL.tab);
+    expect(role('note').contains(role('footnote'))).toBe(true);
+    expect(role('note').contains(role('report'))).toBe(true);
+    expect(role('actions').contains(role('report'))).toBe(false);
+
+    press('back');
+
+    expect(backs).toBe(1);
+  });
+
+  it('goes back on escape after it clears the selection', async () => {
+    let backs = 0;
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, {
+      goBack: (): void => {
+        backs += 1;
+      },
+    });
+
+    pressKey('ArrowDown');
+    expect(rows()[0]?.dataset.selected).toBe('true');
+
+    pressKey('Escape');
+
+    expect(rows()[0]?.dataset.selected).toBeUndefined();
+    expect(backs).toBe(0);
+
+    pressKey('Escape');
+
+    expect(backs).toBe(1);
+  });
+
+  it('shows the count and the keyboard line under the rows', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('count').textContent).toBe('3');
+    expect(role('count').getAttribute('title')).toBe(resultsLabel(3));
+    expect(role('keyboard-hint').textContent).toBe(
+      `${keyboardHint(3)}${topicLabel('AI image generators')}`,
+    );
+    expect(role('search-key').textContent).toBe('3');
+    expect(role('keyboard-hint').hidden).toBe(false);
+  });
+
+  it('names the story of the answer at the end of the keyboard line', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(role('topic').textContent).toBe(topicLabel('AI image generators'));
+  });
+
+  it('leaves the story out when the answer names none', async () => {
+    answerMeta();
+
+    await start(URL, answerFetch([], { ...ANSWER, topic: null }));
+
+    expect(document.querySelector('[data-role="topic"]')).toBeNull();
+    expect(role('keyboard-hint').textContent).toBe(keyboardHint(3));
+  });
+
+  it('navigates once when the page starts twice', async () => {
+    const opened: string[] = [];
+
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
 
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
@@ -871,7 +1622,7 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     answerMeta();
 
-    await start(URL, answerFetch([], ANSWER), NOW, { openTab: (url) => opened.push(url) });
+    await start(URL, answerFetch([], ANSWER), NOW, { navigate: (url) => opened.push(url) });
 
     queryField().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
@@ -969,13 +1720,71 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     });
 
     expect(role('actions').hidden).toBe(false);
-    expect(role('open-site').textContent).toBe(openAnywayLabel('example.com'));
+    expect(role('open-site-label').textContent).toBe(openAnywayLabel('example.com'));
 
     press('open-site');
 
     await vi.waitFor(() => {
       expect(navigated).toEqual([unlisted]);
     });
+  });
+
+  it('does not offer to open the site before the answer arrives', async () => {
+    vi.useFakeTimers();
+
+    const pending = deferred<Response>();
+
+    answerMeta();
+
+    const running = start(URL, () => pending.promise);
+
+    await drainStart();
+
+    // The answer names the site and the scope; until then the frame keeps the
+    // way back and hides the controls it cannot label.
+    expect(role('actions').hidden).toBe(false);
+    expect(role('open-site').hidden).toBe(true);
+    expect(role('theme').hidden).toBe(true);
+    expect(role('back-label').textContent).toBe(BACK_LABEL);
+
+    pending.resolve(
+      new Response(JSON.stringify(ANSWER), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    await running;
+
+    expect(role('open-site').hidden).toBe(false);
+    expect(role('open-site-label').textContent).toBe(openAnywayLabel('CNET'));
+    expect(role('theme').hidden).toBe(false);
+  });
+
+  it('explains a missing tab record and offers the article again', async () => {
+    await startPage(`${searchFor(URL)}&theme=dark`, answerFetch([], ANSWER), NOW, {
+      send: async () => ({ ok: false, error: 'missing_tab' }),
+    });
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(role('theme').hidden).toBe(true);
+    expect(role('notice').hidden).toBe(false);
+    expect(role('notice-body').textContent).toContain(NO_RECORD_NOTICE);
+
+    const link = role('notice-body').querySelector('a');
+
+    expect(link?.getAttribute('href')).toBe(URL);
+    expect(link?.textContent).toBe(NO_RECORD_LINK);
+    expect(role('alternatives').hidden).toBe(true);
+    expect(role('actions').hidden).toBe(true);
+  });
+
+  it('explains a page with no address and offers no link', async () => {
+    await startPage('', answerFetch([], ANSWER));
+
+    expect(role('notice').hidden).toBe(false);
+    expect(role('notice-body').textContent).toBe(NO_URL_NOTICE);
+    expect(role('notice-body').querySelector('a')).toBeNull();
   });
 
   it('adds the note and the two links after three seconds', async () => {
@@ -999,7 +1808,7 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(role('alternatives').dataset.state).toBe('loading');
     expect(role('slow-note').hidden).toBe(false);
     expect(role('slow-text').textContent).toBe(SLOW_NOTE);
-    expect(role('open-instead').textContent).toBe(openInsteadLabel('CNET'));
+    expect(role('open-instead').textContent).toBe(openInsteadLabel('cnet.com'));
     expect(role('keep-waiting').textContent).toBe(KEEP_WAITING_LABEL);
   });
 
@@ -1183,25 +1992,29 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(role('source-title').textContent).toBe('');
   });
 
-  it('sends nothing for a page whose run has retired', async () => {
-    const meta = deferred<unknown>();
-    const calls: FetchCall[] = [];
+  it('paints nothing for a page whose run has retired', async () => {
+    const pending = deferred<Response>();
 
-    fake.respond('getMeta', () => meta.promise);
+    answerMeta();
 
-    const running = start(URL, answerFetch(calls, ANSWER));
+    const running = start(URL, () => pending.promise);
 
     await vi.waitFor(() => {
-      expect(messagesOfType('getMeta')).toHaveLength(1);
+      expect(messagesOfType(MESSAGE.pageState)).toHaveLength(1);
     });
 
     stopBlockPage();
-    meta.resolve({ ok: true, meta: META });
+    pending.resolve(
+      new Response(JSON.stringify(ANSWER), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
 
     await running;
 
-    expect(messagesOfType('getAlternatives')).toEqual([]);
-    expect(calls).toHaveLength(0);
+    expect(role('list').querySelectorAll('li')).toHaveLength(0);
+    expect(role('source-title').textContent).toBe('');
   });
 
   it('starts no note without a url', async () => {
@@ -1314,10 +2127,9 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     expect(navigated).toEqual([]);
   });
 
-  it('stops the countdown when enter opens a tab', async () => {
+  it('stops the countdown when enter opens the first result', async () => {
     vi.useFakeTimers();
 
-    const opened: string[] = [];
     const navigated: string[] = [];
 
     fake.storage.local.values[STORAGE.settings] = {
@@ -1329,19 +2141,19 @@ describe('the block page shell', { timeout: 20_000 }, () => {
 
     await start(URL, answerFetch([], ANSWER), NOW, {
       navigate: (url) => navigated.push(url),
-      openTab: (url) => opened.push(url),
     });
 
     expect(role('countdown').hidden).toBe(false);
 
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
-    expect(opened).toEqual([ANSWER.alternatives[0]!.url]);
+    expect(navigated).toEqual([ANSWER.alternatives[0]!.url]);
     expect(role('countdown').hidden).toBe(true);
 
     await vi.advanceTimersByTimeAsync(5000);
 
-    expect(navigated).toEqual([]);
+    // The stopped countdown never navigates a second time.
+    expect(navigated).toEqual([ANSWER.alternatives[0]!.url]);
   });
 
   it('stops the countdown of an earlier start', async () => {
@@ -1372,5 +2184,40 @@ describe('the block page shell', { timeout: 20_000 }, () => {
     await vi.advanceTimersByTimeAsync(5000);
 
     expect(navigated).toEqual([]);
+  });
+});
+
+describe('the theme control', () => {
+  it('paints the stored choice and moves to the other theme on a press', async () => {
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+      theme: 'dark',
+      walls: defaultWalls(),
+    };
+    answerMeta();
+
+    await start(URL, answerFetch([], ANSWER));
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(role('theme').getAttribute('aria-label')).toBe(THEME_SWITCH_LIGHT);
+
+    press('theme');
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(role('theme').getAttribute('aria-label')).toBe(THEME_SWITCH_DARK);
+    expect(messagesOfType(MESSAGE.setSettings)).toEqual([
+      {
+        type: MESSAGE.setSettings,
+        settings: {
+          enabled: true,
+          autoOpenBest: false,
+          imagesEnabled: true,
+          theme: 'light',
+          walls: defaultWalls(),
+        },
+      },
+    ]);
   });
 });

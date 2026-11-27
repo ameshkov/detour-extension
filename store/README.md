@@ -80,15 +80,17 @@ The command builds the development extension, starts the dummy server, and draws
 image from the real pages, with the local fixtures as their data. It needs the Chromium
 that `pnpm exec playwright install chromium` installs.
 
-One shot of a real article replaces the block page image:
+One shot of a real article replaces the block page and the popup images:
 
 ```bash
 pnpm store:shot --live=https://www.cnet.com/tech/services-and-software/best-ai-image-generators/
 ```
 
-It builds the development extension against the production backend, stops that page, and
-waits for the real answers. The run uses the development build, because the development id
-is one of the two ids that the backend allows, and a build without the key has neither.
+It builds the development extension against the production backend, stops that page for the
+block page image, and opens the same article with an allowance for the popup image, so both
+name the real site and the routes are the ones that the backend returned. The run uses the
+development build, because the development id is one of the two ids that the backend allows,
+and a build without the key has neither.
 
 The PNGs are committed, and a test checks their size.
 

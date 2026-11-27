@@ -14,42 +14,118 @@
       <input data-role="enabled" type="checkbox" role="switch" />
     </header>
     <main>
-      <section data-role="site" hidden>
-        <p data-role="site-row">
-          <span data-role="site-badge" aria-hidden="true" hidden></span>
-          <span data-role="site-text"></span>
-        </p>
-        <p data-role="site-walls" hidden></p>
-        <a data-role="site-report" target="_blank" rel="noreferrer noopener" hidden></a>
-        <button data-role="site-alternatives" type="button" hidden>
-          <span data-role="site-alternatives-label"></span
-          ><span class="chevron" aria-hidden="true">›</span>
-        </button>
-      </section>
-      <div data-role="pause-row">
-        <button data-role="pause" type="button" aria-expanded="false">
-          <span data-role="pause-label"></span
-          ><span data-role="pause-chevron" class="chevron" aria-hidden="true">›</span>
-        </button>
-        <button data-role="resume" type="button" hidden></button>
+      <div data-role="popup-pad">
+        <section data-role="source" hidden>
+          <span data-role="source-tile" aria-hidden="true"></span>
+          <div data-role="source-text">
+            <div data-role="source-line">
+              <p data-role="source-address"><span data-role="source-domain"></span></p>
+            </div>
+            <p data-role="source-description"></p>
+          </div>
+          <div data-role="walls-row" hidden>
+            <p data-role="walls" hidden></p>
+          </div>
+          <div data-role="walls-detail" id="walls-detail" hidden></div>
+        </section>
+        <a data-role="site-report" target="_blank" rel="noreferrer noopener" hidden>
+          <span data-role="report-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <path d="M4 22v-7" />
+            </svg>
+          </span>
+          <span data-role="report-title"></span>
+          <span data-role="report-action">
+            <kbd data-role="report-key"></kbd>
+            <span data-role="report-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 7h10v10" />
+                <path d="M7 17 17 7" />
+              </svg>
+            </span>
+          </span>
+        </a>
+        <a data-role="report" target="_blank" rel="noreferrer noopener" hidden></a>
+        <section data-role="alternatives" data-state="loading">
+          <div data-role="list-head" hidden>
+            <h2 data-role="alternatives-heading"></h2>
+            <span data-role="count"></span>
+          </div>
+          <p data-role="status" hidden></p>
+          <ul data-role="list"></ul>
+          <button data-role="search" type="button" hidden>
+            <span data-role="search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            </span>
+            <span data-role="search-body">
+              <span data-role="search-title"></span>
+              <span data-role="search-detail"></span>
+            </span>
+            <span data-role="search-action">
+              <kbd data-role="search-key"></kbd>
+              <span data-role="search-arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M7 7h10v10" />
+                  <path d="M7 17 17 7" />
+                </svg>
+              </span>
+            </span>
+          </button>
+          <div data-role="fallback" hidden>
+            <h2 data-role="fallback-heading"></h2>
+            <div data-role="engines"></div>
+          </div>
+          <div data-role="retry-row" hidden>
+            <button data-role="retry" type="button"></button>
+          </div>
+        </section>
       </div>
-      <div data-role="durations" hidden>
-        <button data-role="duration-5m" type="button"></button>
-        <button data-role="duration-30m" type="button"></button>
-        <button data-role="duration-1h" type="button"></button>
-        <button data-role="duration-today" type="button">
-          <span data-role="duration-today-label"></span
-          ><span data-role="duration-today-note"></span>
-        </button>
-        <button data-role="duration-session" type="button"></button>
-      </div>
-      <button data-role="settings" type="button">
-        <span data-role="settings-label"></span><span class="chevron" aria-hidden="true">›</span>
-      </button>
     </main>
     <footer>
       <a data-role="how-it-works" target="_blank" rel="noreferrer noopener"></a>
       <a data-role="privacy" target="_blank" rel="noreferrer noopener"></a>
+      <div data-role="footer-end">
+        <button data-role="theme" type="button">
+          <span data-role="theme-icon" aria-hidden="true">
+            <svg data-icon="moon" viewBox="0 0 24 24">
+              <path
+                d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+              />
+            </svg>
+            <svg data-icon="sun" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="m4.93 4.93 1.41 1.41" />
+              <path d="m17.66 17.66 1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="m6.34 17.66-1.41 1.41" />
+              <path d="m19.07 4.93-1.41 1.41" />
+            </svg>
+          </span>
+        </button>
+        <button data-role="settings" type="button" aria-label="Settings">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="2.9" />
+            <path
+              d="M9.93 3.04 L14.07 3.04 L14.97 5.33 L16.29 6.09 L18.73 5.73 L20.80 9.31 L19.26 11.24 L19.26 12.76 L20.80 14.69 L18.73 18.27 L16.29 17.91 L14.97 18.67 L14.07 20.96 L9.93 20.96 L9.03 18.67 L7.71 17.91 L5.27 18.27 L3.20 14.69 L4.74 12.76 L4.74 11.24 L3.20 9.31 L5.27 5.73 L7.71 6.09 L9.03 5.33 Z"
+            />
+          </svg>
+        </button>
+      </div>
     </footer>
     <script src="popup.js"></script>
   </body>

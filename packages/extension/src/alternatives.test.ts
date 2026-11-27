@@ -11,6 +11,7 @@ const URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-m
 const META: PageMeta = {
   title: "Nvidia's Next Move: Inside the $50 Billion Bet on Custom Silicon",
   description: 'The chipmaker is designing silicon for its largest customers.',
+  icon: null,
 };
 
 type RequestInitRecord = { input: string; init?: RequestInit };
@@ -93,7 +94,55 @@ describe('the alternatives answer', () => {
       domain: 'a.test',
       image: 'https://api.test/v1/img?u=x&sig=y',
       favicon: 'https://api.test/v1/img?u=fav&sig=z',
+      match: null,
     });
+  });
+
+  it('keeps the match kind of a row and drops a value it does not know', () => {
+    const answer = parseAlternativesAnswer({
+      query: 'q',
+      degraded: false,
+      provider: 'ceramic',
+      alternatives: [
+        {
+          url: 'https://a.test/one',
+          title: 'One',
+          description: 'First',
+          domain: 'a.test',
+          match: 'same_event',
+          best: true,
+        },
+        {
+          url: 'https://b.test/two',
+          title: 'Two',
+          description: 'Second',
+          domain: 'b.test',
+          match: 'close',
+        },
+      ],
+    });
+
+    expect(answer?.alternatives.map((row) => row.match)).toEqual(['same_event', null]);
+  });
+
+  it('collapses the topic of the answer and drops a blank one', () => {
+    const named = parseAlternativesAnswer({
+      query: 'q',
+      degraded: false,
+      provider: 'ceramic',
+      topic: '  EU   data centre\n rules ',
+      alternatives: [],
+    });
+    const blank = parseAlternativesAnswer({
+      query: 'q',
+      degraded: false,
+      provider: 'ceramic',
+      topic: '   ',
+      alternatives: [],
+    });
+
+    expect(named?.topic).toBe('EU data centre rules');
+    expect(blank?.topic).toBeNull();
   });
 
   it('drops a favicon that is not an http url and keeps the row', () => {
@@ -138,7 +187,7 @@ describe('the alternatives answer', () => {
       lang: 'en',
     });
     expect(JSON.stringify(bodyOf(calls[0]))).not.toContain('description');
-    expect(answer).toEqual(body);
+    expect(answer).toEqual({ ...body, topic: null });
 
     const withoutMeta: RequestInitRecord[] = [];
 

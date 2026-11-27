@@ -23,6 +23,12 @@ afterEach(() => {
   resetFakeChrome();
 });
 
+describe('the block page shell', () => {
+  it('keeps the count pill hidden until the answer names it', () => {
+    expect(role('count').hidden).toBe(true);
+  });
+});
+
 describe('the block page entry', () => {
   it('draws nothing and sends nothing in a framed document', async () => {
     installFramedWindow();
@@ -40,6 +46,6 @@ describe('the block page entry', () => {
     expect(send).not.toHaveBeenCalled();
     expect(read).not.toHaveBeenCalled();
     expect(role('headline').textContent).toBe('');
-    expect(role('source-link').textContent).toBe('');
+    expect(role('source-address').textContent).toBe('');
   });
 });

@@ -1,18 +1,12 @@
 import { devLog } from './log';
-import type {
-  PauseMessage,
-  RevokeMessage,
-  SetSettingsMessage,
-  ShowAlternativesMessage,
-} from './messages';
+import type { RevokeMessage, SetSettingsMessage } from './messages';
 
-export type PageScope = 'popup' | 'options';
+export type PageScope = 'block' | 'popup' | 'options';
+
+export type SettingsMessage = RevokeMessage | SetSettingsMessage;
 
 export type PageSender = {
-  send(
-    message: PauseMessage | RevokeMessage | SetSettingsMessage | ShowAlternativesMessage,
-    reload: () => void,
-  ): void;
+  send(message: SettingsMessage, reload: () => void): void;
   guard(work: () => Promise<unknown>, after?: () => void): void;
 };
 
@@ -38,10 +32,7 @@ export function createPageSender(scope: PageScope): PageSender {
     }
   };
 
-  const send = (
-    message: PauseMessage | RevokeMessage | SetSettingsMessage | ShowAlternativesMessage,
-    reload: () => void,
-  ): void => {
+  const send = (message: SettingsMessage, reload: () => void): void => {
     guard(() => chrome.runtime.sendMessage(message), reload);
   };
 

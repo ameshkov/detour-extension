@@ -7,14 +7,20 @@ with your data.
 
 ## What leaves your browser
 
-When you open a page that Detour stops, the extension reads the metadata of
-that page and sends the URL and the title to the backend. The block page
-gives the URL and the title to the extension's own background service, which
-adds the fixed language value `en` and posts the request. The request for the
-metadata carries no cookie. The description of the blocked page stays on the
-device and is never part of that request. The backend builds a search query
-from the title and the URL. Nothing else about the page, and nothing about the
-rest of your browsing, leaves the browser.
+When you open a page that Detour stops, the extension reads the head of that
+page and sends the URL and the title to the backend. The read happens in the
+page itself, before it stops loading, so the publisher sees one request for the
+page and no second one. The block page gives the URL and the title to the
+extension's own background service, which adds the fixed language value `en`
+and posts the request. The backend request carries no cookie. The description
+and the icon of the blocked page stay on the device and are never part of the
+backend request. The backend builds a search query from the title and the URL.
+Nothing else about the page, and nothing about the rest of your browsing,
+leaves the browser.
+
+Opening the popup on a page that the list carries asks for its routes too, so
+the popup shows them without a second press. A page that the list does not
+carry, and a popup opened while Detour is off, sends nothing.
 
 The policy took effect on 2026-11-25. Questions and requests go to the project's
 issue tracker at https://github.com/ameshkov/detour-extension/issues.
@@ -22,9 +28,9 @@ issue tracker at https://github.com/ameshkov/detour-extension/issues.
 The extension asks the backend for the site list as well. That request
 carries no page and no reader, and the answer is the same list for everyone.
 
-The walls that stop a page, and the other settings of the extension, stay in
-the browser's local storage. They never leave the device, and the backend
-receives nothing about the choices you made.
+The walls that stop a page, the other settings of the extension, and the scope
+that you chose for each site stay in the browser's local storage. They never
+leave the device, and the backend receives nothing about the choices you made.
 
 ## When you choose a search engine
 
@@ -38,13 +44,15 @@ policy. Detour sends nothing to the engine itself, and it sets no referrer.
 ## Reporting a problem
 
 The block page carries a `Report a problem` link, and the popup carries the
-sentence `If you see a wall here, report it.` as a link, which it shows for a
-site the list does not carry. Each one opens a new issue form on the project's
-GitHub page, with the list identifier and the extension version already in the
-body. The block page's link adds the address of the page that Detour stopped,
-and the popup's link adds the address of the page in front of the reader. GitHub receives that text when the form opens.
-You can read and edit it before you post, and no issue exists until you press
-the button that creates it.
+sentence `If you see a wall here, report it.` as a row, which it shows for a
+site the list does not carry, and as the wall detail's
+`Report inaccurate wall detection`. Each one opens a new issue form on the
+project's GitHub page, with the list identifier and the extension version
+already in the body. The block page's link adds the address of the page that
+Detour stopped, and the popup's adds the address of the page in front of the
+reader. GitHub receives that text when the form opens. You can read and edit it
+before you post, and no issue exists until you press the button that creates
+it.
 
 ## What the backend keeps
 
@@ -69,11 +77,8 @@ the article title and words from the article URL and nothing about you.
 ## Images
 
 An alternative can carry the page image of the result. The backend reads the
-`og:image` tag of the result page. The image link in an answer points at the
-backend, not at the publisher. The block page appends that image to the
-alternative's row as the row renders, so the backend fetches the image from
-the publisher and sends the bytes to you then. Your browser makes no request
-to the publisher, and the link is signed but not tied to you.
+`og:image` tag of the result page, but the block page does not draw that image,
+so your browser requests nothing for it.
 
 An alternative can carry the favicon of the publisher too. It is the same
 arrangement: the link points at the backend, which fetches the icon and sends
@@ -82,8 +87,12 @@ the row keeps its letter tile when the answer carries no favicon, when the
 favicon fails, or when you turned images off. The favicon says which publisher
 a row comes from, and it tells the publisher nothing.
 
-The source card loads no image. Detour separately requests the blocked page
-for metadata without cookies.
+The source card shows the icon of the stopped page when you turned publisher
+icons on. The address of the icon comes from the metadata, and the browser
+requests it from the publisher itself as a subresource, without a referrer. The
+card draws one letter on a colour when the page names no icon, when the icon
+fails, or when you turned the icons off. Detour separately requests the blocked
+page for metadata, with the cookies that the site set for you.
 
 ## Limited use
 

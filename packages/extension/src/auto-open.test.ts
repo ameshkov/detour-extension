@@ -6,7 +6,8 @@ import { startCountdown } from './auto-open';
 import type { AlternativesView } from './block-results';
 import { renderAlternatives } from './block-results';
 import { AUTO_OPEN_COUNTDOWN_SECONDS } from './constants';
-import { STAY_LABEL, countdownText } from './copy';
+import { SEARCH_CARD_DETAIL, STAY_LABEL, countdownText } from './copy';
+import { routeViews } from './state-view';
 import { mountShell, readShell, role } from './testing/shell';
 
 const URL = 'https://arstechnica.com/gadgets/2026/10/ai-image-tools-compared/';
@@ -16,12 +17,14 @@ const ANSWER: AlternativesAnswer = {
   query: 'AI image tools',
   degraded: false,
   provider: 'ceramic',
+  topic: null,
   alternatives: [
     {
       url: URL,
       title: 'The best AI image generators, compared',
       description: 'We tested every tool that asks for your money.',
       domain: DOMAIN,
+      match: 'same_story',
     },
   ],
 };
@@ -116,9 +119,11 @@ describe('the auto-open countdown', () => {
   it('leaves the list on screen after a stop', () => {
     const view: AlternativesView = {
       state: 'results',
-      answer: ANSWER,
+      routes: routeViews(ANSWER, null),
       imagesEnabled: false,
       query: 'AI image tools',
+      topic: null,
+      searchDetail: SEARCH_CARD_DETAIL,
     };
 
     renderAlternatives(view);

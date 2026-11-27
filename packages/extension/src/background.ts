@@ -35,15 +35,14 @@ export function registerBackground(options: BackgroundOptions): void {
   };
 
   const paintToolbar = (): void => {
-    void refreshToolbar(deps.now);
+    void refreshToolbar();
   };
 
   // The badge answers for the page in front of the reader, so every event that
   // changes that page repaints it: a new tab, a navigation, and a window that
-  // takes the focus. The settings, the pause, and the list repaint it too.
+  // takes the focus. The settings and the list repaint it too.
   const TOOLBAR_KEYS: Readonly<Record<string, readonly string[]>> = {
-    local: [STORAGE.list, STORAGE.settings, STORAGE.pauseUntil],
-    session: [STORAGE.pauseSession],
+    local: [STORAGE.list, STORAGE.settings],
   };
 
   // Chrome may drop an alarm when it restarts, so both the install and the

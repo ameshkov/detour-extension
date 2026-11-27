@@ -63,7 +63,7 @@ describe('the served list schema', () => {
     expect(() => SitesJsonSchema.parse(validList)).not.toThrow();
   });
 
-  it('drops the editorial fields and the alternatives that a backend answers', () => {
+  it('keeps the checked date and drops evidence and the alternatives', () => {
     const site = {
       ...validSite,
       verified: '2026-11-01',
@@ -73,7 +73,7 @@ describe('the served list schema', () => {
 
     const list = SitesJsonSchema.parse({ sites: [site] });
 
-    expect(list.sites[0]).not.toHaveProperty('verified');
+    expect(list.sites[0]).toMatchObject({ verified: '2026-11-01' });
     expect(list.sites[0]).not.toHaveProperty('evidence');
     expect(list.sites[0]).not.toHaveProperty('alternatives');
   });

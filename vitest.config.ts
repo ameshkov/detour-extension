@@ -9,6 +9,7 @@ export default defineConfig({
       'sites/**/*.test.ts',
       'scripts/**/*.test.ts',
       'dev/**/*.test.ts',
+      'qa/**/*.test.ts',
       'store/**/*.test.ts',
       'website/**/*.test.ts',
     ],

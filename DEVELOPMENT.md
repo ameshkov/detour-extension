@@ -224,7 +224,9 @@ starts the server on a free port and reads real HTTP answers.
 
 `pnpm test:e2e` builds the development extension and runs
 `e2e/extension.spec.ts` against the unpacked build in a temporary Chromium
-profile. The run starts the dummy server on `http://127.0.0.1:8787`. The
+profile. The behaviours themselves are written in [qa/README.md](qa/README.md),
+which tags each one with the case that covers it; the ones without a case are
+walked by hand with [docs/manual-testing.md](docs/manual-testing.md). The run starts the dummy server on `http://127.0.0.1:8787`. The
 profile passes `--host-resolver-rules=MAP forbes.test 127.0.0.1`, so the
 unlisted host case reaches the same server.
 
@@ -233,6 +235,27 @@ If port 8787 is not free, move the run and the build together:
 ```sh
 DETOUR_API_BASE=http://127.0.0.1:9000 E2E_PORT=9000 pnpm test:e2e
 ```
+
+### The popup
+
+The popup is a `chrome.action` surface: pressing the icon opens a window that
+is not a tab, so Playwright's context does not list it as a page, and the
+Playwright guide falls back to opening `popup.html` in a tab. That fallback
+loses the one thing the popup depends on — the active tab it answers for — so
+the run gets the real window instead.
+
+`openNativePopup` in `e2e/fixtures.ts` asks the service worker for the popup
+(`chrome.action.openPopup()`), then attaches a second Playwright client over
+the browser's DevTools port (`--remote-debugging-port`, chosen per run). Chrome
+lists the popup window as a page on that port, so locators, assertions, and
+screenshots reach it. The popup paints the state of the page in front of the
+reader, and a route press moves that page and closes the popup, which is what a
+reader does.
+
+`openPopupOver` opens `popup.html` in a background tab of the page's window
+instead, for the one case a popup window cannot serve: a document that survives
+a reload. The switch case uses it to check that the stored setting is what a
+reload paints.
 
 ## Checks
 
@@ -254,13 +277,17 @@ the document checks, and the tests.
 pastes into the dashboard.
 
 ```sh
+pnpm icons           # the mark and the eight toolbar icons
 pnpm site:build      # the website and its privacy page
 pnpm store:capture   # the images of the listing, from the local fixtures
-pnpm store:shot --live=<url>   # one real article in the block page shot
+pnpm store:shot --live=<url>   # one real article in the block page and popup shots
 pnpm store:pack      # the release build and store/dist/detour-<version>.zip
 pnpm store:status    # the version that the store published
 pnpm store:publish   # upload the ZIP and stage it
 ```
+
+The mark and the toolbar icons come from `scripts/icons.ts`. `pnpm icons` redraws them at their
+sizes, so a change to the route is one command and not nine exported files.
 
 The upload reads `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and
 `CWS_REFRESH_TOKEN`. A local run takes them from the environment, and the

@@ -5,21 +5,17 @@ const LIST_ID = 'a'.repeat(64);
 import {
   ENABLED_SWITCH_LABEL,
   KEEP_WAITING_LABEL,
-  PAUSE_DURATION_LABELS,
-  PAUSE_ROW_LABEL,
   POPUP_OFF,
   POPUP_ON,
-  POPUP_PAUSED,
+  POPUP_UNAVAILABLE,
   REPORT_ISSUE_TITLE,
-  RESUME_LABEL,
   SCOPE_DETAIL,
   SCOPE_LABEL,
+  SEARCH_CARD_POPUP_DETAIL,
   SEARCH_ENGINE_NAMES,
   SETTINGS_LABEL,
-  SHOW_ALTERNATIVES_LABEL,
-  SITE_LISTED,
+  SITE_NOT_LISTED,
   SITE_REPORT_HINT,
-  SITE_UNLISTED,
   SLOW_NOTE,
   ANTI_USER_NOTE,
   NO_URL_HEADLINE,
@@ -29,23 +25,75 @@ import {
   countdownText,
   headline,
   openAnywayLabel,
-  pauseCountdown,
-  pausedRowLabel,
   openInsteadLabel,
   removeAllowanceLabel,
   reportIssueBody,
+  WALL_TYPE_DETAIL,
+  fallbackHintParts,
+  keyboardHint,
+  sitesSimilarLabel,
+  verifiedOn,
   resultsCount,
+  resultsLabel,
+  wallsDetected,
 } from './copy';
 
 const FORBES_URL = 'https://www.forbes.com/sites/richardnieva/2026/10/14/nvidias-next-move/';
 
 describe('the copy', () => {
-  it('counts the publishers of one alternative', () => {
-    expect(resultsCount(1)).toBe('1 publisher without a wall');
+  it('counts one route to the story', () => {
+    expect(resultsCount(1)).toBe('1');
+    expect(resultsLabel(1)).toBe('1 route to this story');
   });
 
-  it('counts the publishers of a list', () => {
-    expect(resultsCount(5)).toBe('5 publishers without a wall');
+  it('counts the routes of a list', () => {
+    expect(resultsCount(5)).toBe('5');
+    expect(resultsLabel(5)).toBe('5 routes to this story');
+  });
+
+  it('names similar sites with their domain', () => {
+    expect(sitesSimilarLabel('forbes.com')).toBe('Sites similar to forbes.com');
+  });
+
+  it('names the keys of the engine hint', () => {
+    const parts = fallbackHintParts();
+
+    expect(parts.filter((part) => part.key === true).map((part) => part.text)).toEqual([
+      '1',
+      '4',
+      '↵',
+      '↑',
+    ]);
+    expect(parts.map((part) => part.text).join('')).toBe(
+      'Press 1–4 and ↵ to search with an engine. ↑ edits the query',
+    );
+  });
+
+  it('names the digits that open a row', () => {
+    expect(keyboardHint(1)).toBe('Press 1 or ↑↓ + ↵ to open an alternative');
+    expect(keyboardHint(4)).toBe('Press 1–4 or ↑↓ + ↵ to open an alternative');
+    expect(keyboardHint(12)).toBe('Press 1–9 or ↑↓ + ↵ to open an alternative');
+  });
+
+  it('writes the checked date in the calendar form of the list', () => {
+    expect(verifiedOn('2026-11-12')).toBe('Verified 2026-11-12');
+  });
+
+  it('describes the wall types as detour-list defines them', () => {
+    expect(WALL_TYPE_DETAIL.hard).toBe(
+      'The story stays out of reach until the reader pays, registers, accepts tracking, or turns the ad blocker off.',
+    );
+    expect(WALL_TYPE_DETAIL.soft).toBe(
+      'A card covers the story, and the reader dismisses or defers it, so the story reads.',
+    );
+    expect(WALL_TYPE_DETAIL.metered).toBe(
+      'The page limits the number of articles a reader can open.',
+    );
+  });
+
+  it('counts the walls in the header', () => {
+    expect(wallsDetected(1)).toBe('1 wall detected');
+    expect(wallsDetected(3)).toBe('3 walls detected');
   });
 
   it('counts the walls in the headline', () => {
@@ -88,28 +136,6 @@ describe('the copy', () => {
   it('names the host in the issue title', () => {
     expect(REPORT_ISSUE_TITLE('forbes.com')).toBe('Block page problem on forbes.com');
     expect(REPORT_ISSUE_TITLE(null)).toBe('Block page problem');
-  });
-
-  it('names the five pauses', () => {
-    expect(PAUSE_DURATION_LABELS).toEqual({
-      '5m': '5 minutes',
-      '30m': '30 minutes',
-      '1h': '1 hour',
-      today: 'Today',
-      session: 'Until the browser restarts',
-    });
-  });
-
-  it('counts down under an hour and over one', () => {
-    expect(pauseCountdown(59 * 60 * 1000 + 42 * 1000)).toBe('59:42 left');
-    expect(pauseCountdown(4 * 60 * 1000)).toBe('04:00 left');
-    expect(pauseCountdown(3600 * 1000)).toBe('1:00:00 left');
-    expect(pauseCountdown(0)).toBe('00:00 left');
-  });
-
-  it('names the paused row with and without a clock', () => {
-    expect(pausedRowLabel(90 * 1000)).toBe('Paused · 01:30 left');
-    expect(pausedRowLabel(null)).toBe('Paused · until Chrome restarts');
   });
 
   it('explains each scope in one sentence', () => {
@@ -162,16 +188,13 @@ describe('the copy', () => {
   it('names the popup state, the two site verdicts, and the wall words', () => {
     expect(POPUP_ON).toBe('On');
     expect(POPUP_OFF).toBe('Off');
-    expect(POPUP_PAUSED).toBe('Paused');
-    expect(PAUSE_ROW_LABEL).toBe('Pause the list');
-    expect(RESUME_LABEL).toBe('Resume');
-    expect(SITE_LISTED).toBe('is on the list');
-    expect(SITE_UNLISTED).toBe('is not on the list');
+    expect(POPUP_UNAVAILABLE).toBe('Detour could not read this page.');
+    expect(SITE_NOT_LISTED).toBe('This site is not on the list');
+    expect(SEARCH_CARD_POPUP_DETAIL).toBe('Pick an engine.');
     expect(SITE_REPORT_HINT).toBe('If you see a wall here, report it.');
     expect(WALL_CATEGORY_LABEL.adblock).toBe('Ad blocker');
     expect(WALL_CATEGORY_LABEL.age).toBe('Age check');
     expect(WALL_TYPE_LABEL).toEqual({ hard: 'Hard', soft: 'Soft', metered: 'Metered' });
     expect(SETTINGS_LABEL).toBe('Settings');
-    expect(SHOW_ALTERNATIVES_LABEL).toBe('Show alternatives');
   });
 });

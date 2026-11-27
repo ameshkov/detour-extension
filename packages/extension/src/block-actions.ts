@@ -1,7 +1,17 @@
-import { ONCE_LABEL, REPORT_LABEL, SCOPE_LABEL, SCOPE_MENU_LABEL, openAnywayLabel } from './copy';
+import {
+  BACK_LABEL,
+  ESC_KEY,
+  ONCE_DETAIL,
+  ONCE_LABEL,
+  REPORT_LABEL,
+  SCOPE_DETAIL,
+  SCOPE_LABEL,
+  SCOPE_MENU_LABEL,
+  openAnywayLabel,
+} from './copy';
 import { roleElement, setHidden, setText } from './dom';
 import type { OpenSiteKind } from './open-site';
-import { openSite } from './open-site';
+import { openSite, rememberScopeChoice } from './open-site';
 import { isWebUrl } from './page-url';
 import { reportUrl } from './report';
 import { currentVersion } from './version';
@@ -20,7 +30,10 @@ export type ActionsView = {
   host: string | null;
   listed: boolean;
   listId: string;
+  /** The choice that the reader kept for this domain, or `tab`. */
+  defaultScope: OpenSiteKind;
   navigate: (url: string) => void;
+  back: () => void;
 };
 
 function menuLabel(kind: OpenSiteKind): string {
@@ -29,6 +42,35 @@ function menuLabel(kind: OpenSiteKind): string {
   }
 
   return SCOPE_LABEL[kind];
+}
+
+/** The sentence under a scope label, so the choice explains what it covers. */
+function menuDetail(kind: OpenSiteKind): string {
+  return kind === 'once' ? ONCE_DETAIL : SCOPE_DETAIL[kind];
+}
+
+/**
+ * One menu item, as its label and its sentence. The button's accessible name
+ * carries both, and the check that CSS adds follows the text.
+ */
+function renderMenuItem(role: string, kind: OpenSiteKind): void {
+  const button = roleElement(role);
+
+  if (button === null) {
+    return;
+  }
+
+  const text = document.createElement('span');
+  const label = document.createElement('span');
+  const detail = document.createElement('span');
+
+  text.className = 'scope-text';
+  label.className = 'scope-label';
+  detail.className = 'scope-detail';
+  label.textContent = menuLabel(kind);
+  detail.textContent = menuDetail(kind);
+  text.append(label, detail);
+  button.replaceChildren(text);
 }
 
 const MENU_ITEMS: ReadonlyArray<readonly [string, OpenSiteKind]> = [
@@ -100,6 +142,8 @@ function placeMenu(menu: HTMLElement | null, caret: HTMLElement | null): void {
     return;
   }
 
+  menu.style.maxHeight = '';
+  menu.style.overflowY = '';
   delete menu.dataset.side;
 
   if (caret === null) {
@@ -108,11 +152,21 @@ function placeMenu(menu: HTMLElement | null, caret: HTMLElement | null): void {
 
   const below = menu.getBoundingClientRect();
   const room = window.innerHeight - 8;
-  const above = caret.getBoundingClientRect().top - below.height - 12;
+  const caretRect = caret.getBoundingClientRect();
+  const above = caretRect.top - below.height - 12;
+  const top = below.bottom > room && above > 8;
 
-  if (below.bottom > room && above > 8) {
+  if (top) {
     menu.dataset.side = 'top';
   }
+
+  // A menu of sentences is taller than a menu of labels, so it takes the room
+  // on its side of the control and scrolls inside it. The reader never meets a
+  // menu that starts above the window.
+  const available = top ? caretRect.top - 12 : room - (caretRect.bottom + 6);
+
+  menu.style.maxHeight = `${Math.max(140, available)}px`;
+  menu.style.overflowY = 'auto';
 }
 
 /**
@@ -127,14 +181,21 @@ export function renderActions(view: ActionsView): void {
   const caret = roleElement('open-menu');
   const menu = roleElement('scope-menu');
   const original = view.original !== null && isWebUrl(view.original) ? view.original : null;
+  let chosen = view.defaultScope;
 
   stopMenuListeners();
   setHidden('scope-menu', true);
   setHidden('open-group', original === null);
+  setHidden('open-site', original === null);
   setHidden('actions', original === null);
+  setHidden('note', original === null);
   setHidden('action-error', true);
-  setText('open-site', openAnywayLabel(view.siteName ?? view.host ?? ''));
+  setText('back-label', BACK_LABEL);
+  setText('back-key', ESC_KEY);
+  setText('open-site-label', openAnywayLabel(view.siteName ?? view.host ?? ''));
+  setText('open-menu-label', menuLabel(chosen));
   renderReport(view, roleElement('report'));
+  onClick('back', view.back);
 
   if (caret !== null) {
     caret.setAttribute('aria-label', SCOPE_MENU_LABEL);
@@ -147,7 +208,8 @@ export function renderActions(view: ActionsView): void {
   onClick('open-site', null);
 
   for (const [role, kind] of MENU_ITEMS) {
-    setText(role, menuLabel(kind));
+    renderMenuItem(role, kind);
+    roleElement(role)?.setAttribute('aria-checked', String(kind === chosen));
     onClick(role, null);
   }
 
@@ -169,6 +231,26 @@ export function renderActions(view: ActionsView): void {
 
     if (focus) {
       caret?.focus();
+    }
+  };
+
+  /**
+   * A press on a scope only chooses it. The reader then opens the site with the
+   * main button, so the menu never navigates on its own. The worker stores the
+   * choice for the domain, so the next block page starts on it.
+   */
+  const choose = (kind: OpenSiteKind): void => {
+    chosen = kind;
+    setText('open-menu-label', menuLabel(kind));
+
+    for (const [role, itemKind] of MENU_ITEMS) {
+      roleElement(role)?.setAttribute('aria-checked', String(itemKind === kind));
+    }
+
+    close();
+
+    if (original !== null) {
+      rememberScopeChoice(original, kind);
     }
   };
 
@@ -225,9 +307,11 @@ export function renderActions(view: ActionsView): void {
     };
   };
 
-  onClick('open-site', openWith('tab'));
+  onClick('open-site', (): void => {
+    openWith(chosen)();
+  });
 
   for (const [role, kind] of MENU_ITEMS) {
-    onClick(role, openWith(kind));
+    onClick(role, (): void => choose(kind));
   }
 }

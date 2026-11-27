@@ -47,9 +47,10 @@ export type DomainEntry = z.infer<typeof DomainEntrySchema>;
 /**
  * One publisher of the artifact that a backend serves.
  *
- * The artifact drops the editorial fields `verified` and `evidence`, and the
- * extension does not read the alternatives: a backend answers those. The
- * extension keeps the fields that decide a stop and render the block page.
+ * The artifact drops the editorial field `evidence`, and the extension does not
+ * read the alternatives: a backend answers those. It keeps the fields that
+ * decide a stop and render the block page, including the checked date when the
+ * artifact carries it.
  */
 export const ListedSiteSchema = z
   .object({
@@ -58,6 +59,11 @@ export const ListedSiteSchema = z
       .regex(DOMAIN_PATTERN, DOMAIN_MESSAGE)
       .describe('The registrable domain of the publisher.'),
     name: z.string().min(1).describe('The publisher name, as the block page shows it.'),
+    verified: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'a checked date is YYYY-MM-DD')
+      .optional()
+      .describe('The calendar date of the hand check, when the artifact carries it.'),
     walls: z
       .array(WallSchema)
       .min(1, 'must name at least one wall')

@@ -1,55 +1,36 @@
-import type { Alternative, AlternativesAnswer } from './alternatives';
 import {
   ALTERNATIVES_FAILED,
   ALTERNATIVES_LOADING,
   ALTERNATIVES_NONE,
   FAILED_DETAIL,
   NONE_DETAIL,
+  FALLBACK_HEADING,
   RETRY_EMPTY_LABEL,
   RETRY_LABEL,
+  keyboardHintParts,
   resultsCount,
+  resultsLabel,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
-import { renderSearchFallback } from './search-fallback';
+import { renderHint } from './hint';
+import { routeRow } from './result-row';
+import { renderSearchFallback, selectEngine } from './search-fallback';
+import type { RouteView } from './state-view';
 
 /** The whole state set of the list area. The 3-second note is not one of them. */
 export type AlternativesState = 'loading' | 'results' | 'empty' | 'error';
 
 export type AlternativesView = {
   state: AlternativesState;
-  answer: AlternativesAnswer | null;
+  /** The rows that the worker built, each with its wall verdict and match. */
+  routes: RouteView[];
   imagesEnabled: boolean;
   query: string;
+  /** The story of the article, which the keyboard line carries. */
+  topic: string | null;
+  /** The second line of the search card. The popup has no field to edit. */
+  searchDetail: string;
 };
-
-/** Nine dark colours, so a white tile letter keeps its contrast on every one. */
-export const TILE_COLORS = [
-  '#1F2937',
-  '#2F4A6D',
-  '#3B2F63',
-  '#0B6B57',
-  '#5C3B2E',
-  '#44403C',
-  '#4A2F3D',
-  '#1B3A5C',
-  '#2E4A2A',
-] as const;
-
-/**
- * The same domain always gets the same tile, so a reader learns the colours of
- * the publishers they see twice.
- */
-export function tileColor(domain: string): string {
-  let hash = 0;
-
-  for (const character of domain) {
-    hash += character.charCodeAt(0);
-  }
-
-  return TILE_COLORS[hash % TILE_COLORS.length] ?? TILE_COLORS[0];
-}
-
-const TILE_LETTER = /[a-z0-9]/i;
 
 const STATUS: Record<AlternativesState, string> = {
   loading: ALTERNATIVES_LOADING,
@@ -66,141 +47,13 @@ const DETAIL: Record<AlternativesState, string> = {
 };
 
 /**
- * The tile reuses the favicon of the answer when the service sends one: the
- * icon is the tile, with no generated colour and no letter behind it. The
- * backend serves that favicon, so the request tells the publisher nothing, and
- * a favicon that fails to load falls back to the letter tile.
- */
-function tileElement(alternative: Alternative, imagesEnabled: boolean): HTMLSpanElement {
-  const tile = document.createElement('span');
-  const favicon = imagesEnabled ? alternative.favicon : undefined;
-
-  tile.setAttribute('data-role', 'tile');
-  tile.setAttribute('aria-hidden', 'true');
-
-  const letter = (): void => {
-    tile.replaceChildren();
-    tile.dataset.tile = 'letter';
-    tile.style.backgroundColor = tileColor(alternative.domain);
-    tile.textContent = TILE_LETTER.exec(alternative.domain)?.[0]?.toUpperCase() ?? '';
-  };
-
-  if (favicon === undefined) {
-    letter();
-
-    return tile;
-  }
-
-  const image = document.createElement('img');
-
-  tile.dataset.tile = 'favicon';
-  image.alt = '';
-  image.setAttribute('referrerpolicy', 'no-referrer');
-  image.setAttribute('loading', 'lazy');
-  image.addEventListener('error', letter);
-  image.src = favicon;
-  tile.append(image);
-
-  return tile;
-}
-
-/**
- * The preview image of a row. The backend serves it and a publisher may refuse
- * that request, so a failed image leaves the row without one and not with a
- * broken picture.
- */
-function imageElement(url: string, onFail: () => void): HTMLImageElement {
-  const image = document.createElement('img');
-
-  image.alt = '';
-  image.setAttribute('referrerpolicy', 'no-referrer');
-  image.setAttribute('loading', 'lazy');
-  image.addEventListener('error', onFail);
-  image.src = url;
-
-  return image;
-}
-
-/**
- * One row: the hero leads with its preview image, and a row trails with its
- * thumbnail and carries the tile of the answer's favicon, or its letter.
- *
- * The whole row is one link, so the reader aims at the row and not at a line
- * of text inside it. The title, the domain, the description, the tile, and the
- * image all belong to that link.
- */
-
-function rowFor(alternative: Alternative, imagesEnabled: boolean, hero: boolean): HTMLLIElement {
-  const row = document.createElement('li');
-  const link = document.createElement('a');
-  const preview =
-    imagesEnabled && typeof alternative.image === 'string'
-      ? imageElement(alternative.image, () => {
-          preview?.remove();
-          row.dataset.layout = 'text';
-        })
-      : null;
-
-  row.dataset.variant = hero ? 'hero' : 'row';
-
-  if (preview === null) {
-    row.dataset.layout = 'text';
-  }
-
-  link.setAttribute('href', alternative.url);
-  link.setAttribute('target', '_blank');
-  link.setAttribute('rel', 'noreferrer noopener');
-
-  if (hero && preview !== null) {
-    link.append(preview);
-  }
-
-  if (!hero) {
-    link.append(tileElement(alternative, imagesEnabled));
-  }
-
-  const title = document.createElement('span');
-  const meta = document.createElement('p');
-  const domain = document.createElement('span');
-
-  title.setAttribute('data-role', 'result-title');
-  title.textContent = alternative.title;
-
-  // The domain names the source and the description follows it, so one line
-  // carries both and the row keeps its height for the title. The description
-  // keeps its own element, because a narrow screen drops it whole.
-  meta.setAttribute('data-role', 'result-meta');
-  domain.setAttribute('data-role', 'result-domain');
-  domain.textContent = alternative.domain;
-  meta.append(domain);
-
-  if (alternative.description !== '') {
-    const description = document.createElement('span');
-
-    description.setAttribute('data-role', 'result-description');
-    description.textContent = ` · ${alternative.description}`;
-    meta.append(description);
-  }
-
-  link.append(title, meta);
-
-  if (!hero && preview !== null) {
-    link.append(preview);
-  }
-
-  row.append(link);
-
-  return row;
-}
-
-/**
  * The list area's four answers. The rows carry the count; the empty and failed
  * states share the search fallback and the retry, and each names its own reason.
  */
 export function renderAlternatives(view: AlternativesView): void {
   const section = roleElement('alternatives');
   const list = roleElement('list');
-  const rows = view.state === 'results' && view.answer !== null ? view.answer.alternatives : [];
+  const rows = view.state === 'results' ? view.routes : [];
 
   if (section !== null) {
     section.dataset.state = view.state;
@@ -208,16 +61,67 @@ export function renderAlternatives(view: AlternativesView): void {
 
   list?.replaceChildren();
 
+  // The search card closes the list, so it is one more route and it carries the
+  // last number. The count, the keyboard line, and the digit keys include it.
+  const routes = view.state === 'results' ? rows.length + 1 : rows.length;
+
   setText('status', STATUS[view.state]);
   setText('detail', DETAIL[view.state]);
-  setText('count', view.state === 'results' ? resultsCount(rows.length) : '');
+
+  const countText = view.state === 'results' ? resultsCount(routes) : '';
+
+  setText('count', countText);
+  setHidden('count', countText === '');
+  const searchable = view.state === 'results' && rows.length > 0;
+
+  setHidden('search', !searchable);
+  setHidden('keyboard-hint', !searchable);
+
+  if (searchable) {
+    renderHint(roleElement('keyboard-hint'), keyboardHintParts(routes), view.topic);
+    setText('search-key', String(routes));
+    setText('search-title', FALLBACK_HEADING);
+    setText('search-detail', view.searchDetail);
+
+    const search = roleElement('search');
+
+    if (search !== null) {
+      search.onclick = (): void => {
+        setHidden('search', true);
+        renderSearchFallback(view.query);
+        // The engines answer the digits, so the first one takes the focus and
+        // the reader picks another with a number or the arrows.
+        selectEngine(0);
+      };
+    }
+  } else {
+    setText('keyboard-hint', '');
+    setText('search-key', '');
+
+    const search = roleElement('search');
+
+    if (search !== null) {
+      search.onclick = null;
+    }
+  }
   setText('retry', '');
+
+  const count = roleElement('count');
+
+  if (count !== null && view.state === 'results') {
+    count.setAttribute('title', resultsLabel(routes));
+    count.setAttribute('aria-label', resultsLabel(routes));
+  } else if (count !== null) {
+    count.removeAttribute('title');
+    count.removeAttribute('aria-label');
+  }
   setHidden('fallback', true);
+  setHidden('fallback-note', true);
   setHidden('retry-row', true);
 
   if (view.state === 'results') {
-    for (const [index, alternative] of rows.entries()) {
-      list?.append(rowFor(alternative, view.imagesEnabled, index === 0));
+    for (const [index, route] of rows.entries()) {
+      list?.append(routeRow(route, view.imagesEnabled, index));
     }
 
     return;

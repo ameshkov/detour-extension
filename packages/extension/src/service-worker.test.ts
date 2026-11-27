@@ -2,16 +2,19 @@ import type { SitesJson, WallCategory } from '@detour/shared';
 import { sha256Hex } from '@detour/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { writeAltCache } from './alts-cache';
+import type { AlternativesAnswer } from './alternatives';
 import { hasCapability, recordCapability } from './capabilities';
 import { LIST_STORAGE_VERSION, MESSAGE, STORAGE } from './constants';
 import { FAKE_EXTENSION_ID, installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 import type { PageMeta } from './metadata';
-import { writeMetaCache } from './metadata-cache';
+import { writeMeta } from './metadata-cache';
 import { recordPass } from './passes';
 import type { FetchLike } from './net';
 import type { ServiceWorkerDeps } from './service-worker';
 import { handleMessage, pruneCapability, pruneTabAllowances, refreshList } from './service-worker';
 import { BUNDLED_LIST_ID } from './sites-id';
+import type { PageState, PopupState } from './state-view';
 import { BUNDLED_LIST, writeStoredList } from './storage';
 
 const NOW = 1_700_000_000_000;
@@ -19,7 +22,6 @@ const API_BASE = 'http://127.0.0.1:8787';
 
 const CNET_URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
 const UNLISTED_URL = 'https://example.com/news/a-story';
-const PRIVATE_URL = 'http://127.0.0.1:8787/admin';
 const LOOKALIKE_URL = 'https://notcnet.com/tech/services-and-software/best-ai-image-generators/';
 const FORBES_URL = 'https://www.forbes.com/sites/richardnieva/nvidias-next-move/';
 
@@ -31,9 +33,6 @@ const ENCODED_URL = 'https://www.cnet.com/news/a-story?x=1&y=2#comments';
 const FAILED_NAV_URL = 'https://www.cnet.com/news/failed-navigation/';
 const NO_TAB_URL = 'https://www.cnet.com/news/no-tab-story/';
 const STOPPED_URL = 'https://www.cnet.com/news/stopped-story/';
-const CACHED_URL = 'https://www.cnet.com/news/cached-story/';
-const REFUSED_URL = 'https://www.cnet.com/news/refused-story/';
-const MEMOIZED_URL = 'https://www.cnet.com/news/memoized-story/';
 
 const CNET_SITE = {
   domain: 'cnet.com',
@@ -76,12 +75,13 @@ const METADATA_HTML =
 const METADATA: PageMeta = {
   title: 'A title',
   description: null,
+  icon: 'https://www.cnet.com/favicon.ico',
 };
 
 type FetchCall = { url: string; init?: RequestInit };
 
-function blockPageUrlFor(url: string): string {
-  return `chrome-extension://${FAKE_EXTENSION_ID}/block.html?u=${encodeURIComponent(url)}`;
+function blockPageUrlFor(url: string, theme = 'system'): string {
+  return `chrome-extension://${FAKE_EXTENSION_ID}/block.html?u=${encodeURIComponent(url)}&theme=${theme}`;
 }
 
 function deps(overrides: Partial<ServiceWorkerDeps> = {}): ServiceWorkerDeps {
@@ -243,18 +243,6 @@ describe('the isBlocked handler', () => {
     });
   });
 
-  it('passes every page while the pause is active', async () => {
-    const fake = installFakeChrome();
-
-    fake.storage.local.values.pauseUntil = NOW + 1_000;
-
-    await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
-      ok: true,
-      blocked: false,
-      site: null,
-    });
-  });
-
   it('passes a page with a permanent allowance', async () => {
     const fake = installFakeChrome();
 
@@ -367,47 +355,95 @@ describe('the isBlocked handler', () => {
   });
 });
 
+const EXTENSION_ROOT = `chrome-extension://${FAKE_EXTENSION_ID}/`;
+
+function blockSender(tabId = 11): { tab: { id: number }; url: string; frameId: number } {
+  return { tab: { id: tabId }, url: `${EXTENSION_ROOT}block.html`, frameId: 0 };
+}
+
+function popupSender(): { url: string; frameId: number } {
+  return { url: `${EXTENSION_ROOT}popup.html`, frameId: 0 };
+}
+
+function answerResponse(): Response {
+  return new Response(JSON.stringify(ANSWER_JSON), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
 describe('the blocked handler', () => {
   it('navigates the stopped tab to the block page', async () => {
     const fake = installFakeChrome();
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
 
     const answer = await handleMessage(
-      { type: 'blocked', url: NAVIGATED_URL },
+      { type: 'blocked', url: NAVIGATED_URL, meta: null },
       { tab: { id: 7 } },
-      deps({ fetchImpl }),
+      deps(),
     );
 
     expect(fake.calls.updates).toEqual([{ tabId: 7, url: blockPageUrlFor(NAVIGATED_URL) }]);
     expect(answer).toEqual({ ok: true, blockPageUrl: blockPageUrlFor(NAVIGATED_URL) });
-
-    await vi.waitFor(() => {
-      expect(calls).toHaveLength(1);
-    });
   });
 
-  it('answers the navigation before the metadata fetch settles', async () => {
-    installFakeChrome();
+  it('stamps the stored theme on the block page URL', async () => {
+    const fake = installFakeChrome();
 
-    const fetchImpl: FetchLike = () => new Promise<Response>(() => undefined);
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+      theme: 'dark',
+    };
 
     const answer = await handleMessage(
-      { type: 'blocked', url: SLOW_URL },
+      { type: 'blocked', url: NAVIGATED_URL, meta: null },
       { tab: { id: 7 } },
-      deps({ fetchImpl }),
+      deps(),
     );
 
-    expect(answer).toEqual({ ok: true, blockPageUrl: blockPageUrlFor(SLOW_URL) });
+    expect(fake.calls.updates).toEqual([{ tabId: 7, url: blockPageUrlFor(NAVIGATED_URL, 'dark') }]);
+    expect(answer).toEqual({ ok: true, blockPageUrl: blockPageUrlFor(NAVIGATED_URL, 'dark') });
+  });
+
+  it('writes the meta the guard sent before the navigation, without a fetch', async () => {
+    const fake = installFakeChrome();
+    const digest = await sha256Hex(NAVIGATED_URL);
+    const answer = await handleMessage(
+      { type: 'blocked', url: NAVIGATED_URL, meta: METADATA },
+      { tab: { id: 7 } },
+      deps(),
+    );
+
+    expect(answer.ok).toBe(true);
+    expect(fake.storage.local.values[`${STORAGE.meta}${digest}`]).toEqual({
+      meta: METADATA,
+      storedAt: NOW,
+    });
+    expect(fake.calls.updates).toHaveLength(1);
+  });
+
+  it('navigates on a page whose head read nothing', async () => {
+    const fake = installFakeChrome();
+    const digest = await sha256Hex(SLOW_URL);
+
+    await handleMessage(
+      { type: 'blocked', url: SLOW_URL, meta: { title: null, description: null, icon: null } },
+      { tab: { id: 7 } },
+      deps(),
+    );
+
+    expect(fake.storage.local.values[`${STORAGE.meta}${digest}`]).toBeUndefined();
+    expect(fake.calls.updates).toEqual([{ tabId: 7, url: blockPageUrlFor(SLOW_URL) }]);
   });
 
   it('keeps the encoded original url in the query', async () => {
     const fake = installFakeChrome();
-    const { fetchImpl } = recordingFetch(() => pageResponse(METADATA_HTML));
 
     await handleMessage(
-      { type: 'blocked', url: ENCODED_URL },
+      { type: 'blocked', url: ENCODED_URL, meta: null },
       { tab: { id: 7 } },
-      deps({ fetchImpl }),
+      deps(),
     );
 
     expect(fake.calls.updates).toEqual([{ tabId: 7, url: blockPageUrlFor(ENCODED_URL) }]);
@@ -417,15 +453,14 @@ describe('the blocked handler', () => {
 
   it('answers the block page url when the navigation fails', async () => {
     const fake = installFakeChrome();
-    const { fetchImpl } = recordingFetch(() => pageResponse(METADATA_HTML));
 
     fake.failNextUpdate();
 
     await expect(
       handleMessage(
-        { type: 'blocked', url: FAILED_NAV_URL },
+        { type: 'blocked', url: FAILED_NAV_URL, meta: null },
         { tab: { id: 7 } },
-        deps({ fetchImpl }),
+        deps(),
       ),
     ).resolves.toEqual({
       ok: false,
@@ -437,226 +472,15 @@ describe('the blocked handler', () => {
   it('answers no link and records nothing for a sender with no tab', async () => {
     const fake = installFakeChrome();
 
-    await expect(handleMessage({ type: 'blocked', url: NO_TAB_URL }, {}, deps())).resolves.toEqual({
+    await expect(
+      handleMessage({ type: 'blocked', url: NO_TAB_URL, meta: null }, {}, deps()),
+    ).resolves.toEqual({
       ok: false,
       error: 'missing_tab',
     });
 
     expect(fake.calls.updates).toEqual([]);
     expect(fake.storage.session.values).toEqual({});
-  });
-});
-
-describe('the metadata path', () => {
-  it('asks for metadata when a page is stopped', async () => {
-    installFakeChrome();
-
-    const pending = deferred<Response>();
-    const { fetchImpl, calls } = recordingFetch(() => pending.promise);
-    const worker = deps({ fetchImpl });
-
-    await handleMessage({ type: 'blocked', url: STOPPED_URL }, { tab: { id: 7 } }, worker);
-
-    const answer = handleMessage({ type: 'getMeta', url: STOPPED_URL }, { tab: { id: 7 } }, worker);
-
-    await vi.waitFor(() => {
-      expect(calls).toHaveLength(1);
-    });
-
-    pending.resolve(pageResponse(METADATA_HTML));
-
-    await expect(answer).resolves.toEqual({ ok: true, meta: METADATA });
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.init?.credentials).toBe('omit');
-    expect(calls[0]?.init?.signal).toBeInstanceOf(AbortSignal);
-  });
-
-  it('answers cached metadata without a fetch', async () => {
-    installFakeChrome();
-
-    await writeMetaCache(CACHED_URL, METADATA, NOW);
-    await recordCapability(7, CACHED_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: CACHED_URL }, { tab: { id: 7 } }, deps()),
-    ).resolves.toEqual({
-      ok: true,
-      meta: METADATA,
-    });
-  });
-
-  it('answers null metadata after a failed fetch', async () => {
-    const fake = installFakeChrome();
-    const { fetchImpl } = recordingFetch(() => new Response('refused', { status: 500 }));
-
-    await recordCapability(7, REFUSED_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: REFUSED_URL }, { tab: { id: 7 } }, deps({ fetchImpl })),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    const cached = Object.keys(fake.storage.local.values).filter((key) =>
-      key.startsWith(STORAGE.meta),
-    );
-
-    expect(cached).toEqual([]);
-  });
-
-  it('a second getMeta after a failed fetch asks nothing', async () => {
-    installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => {
-      throw new Error('the publisher refused the fetch');
-    });
-    const worker = deps({ fetchImpl });
-
-    await recordCapability(7, MEMOIZED_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: MEMOIZED_URL }, { tab: { id: 7 } }, worker),
-    ).resolves.toEqual({
-      ok: true,
-      meta: null,
-    });
-    await expect(
-      handleMessage({ type: 'getMeta', url: MEMOIZED_URL }, { tab: { id: 7 } }, worker),
-    ).resolves.toEqual({
-      ok: true,
-      meta: null,
-    });
-
-    expect(calls).toHaveLength(1);
-  });
-
-  it('answers null metadata for a url the list does not carry and asks nothing', async () => {
-    installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    await recordCapability(7, UNLISTED_URL);
-
-    await expect(
-      handleMessage(
-        { type: 'getMeta', url: UNLISTED_URL },
-        { tab: { id: 7 } },
-        deps({ fetchImpl }),
-      ),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it('answers null metadata for a private address and asks nothing', async () => {
-    installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    await recordCapability(7, PRIVATE_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: PRIVATE_URL }, { tab: { id: 7 } }, deps({ fetchImpl })),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it('starts no metadata fetch for an unlisted stopped page', async () => {
-    const fake = installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    await handleMessage(
-      { type: 'blocked', url: UNLISTED_URL },
-      { tab: { id: 7 } },
-      deps({ fetchImpl }),
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    expect(fake.calls.updates).toHaveLength(1);
-    expect(calls).toHaveLength(0);
-  });
-
-  it('starts no metadata fetch for a listed page while the list is disabled', async () => {
-    const fake = installFakeChrome();
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    fake.storage.local.values.list = {
-      storageVersion: LIST_STORAGE_VERSION,
-      fetchedAt: NOW,
-      listId: STORED_ID,
-      list: { ...BUNDLED_LIST, disabled: true },
-    };
-
-    await handleMessage(
-      { type: 'blocked', url: CNET_URL },
-      { tab: { id: 7 } },
-      deps({ fetchImpl }),
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it('answers null metadata for a listed url while the list is disabled and asks nothing', async () => {
-    const fake = installFakeChrome();
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    fake.storage.local.values.list = {
-      storageVersion: LIST_STORAGE_VERSION,
-      fetchedAt: NOW,
-      listId: STORED_ID,
-      list: { ...BUNDLED_LIST, disabled: true },
-    };
-
-    await recordCapability(7, CNET_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: CNET_URL }, { tab: { id: 7 } }, deps({ fetchImpl })),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it('denies metadata to a tab that carries no capability', async () => {
-    installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: CNET_URL }, { tab: { id: 7 } }, deps({ fetchImpl })),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it('denies metadata to a tab other than the recorded one', async () => {
-    installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    await recordCapability(7, CNET_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: CNET_URL }, { tab: { id: 9 } }, deps({ fetchImpl })),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it('denies metadata for a url other than the recorded one', async () => {
-    installFakeChrome();
-
-    const { fetchImpl, calls } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    await recordCapability(7, CNET_URL);
-
-    await expect(
-      handleMessage({ type: 'getMeta', url: STOPPED_URL }, { tab: { id: 7 } }, deps({ fetchImpl })),
-    ).resolves.toEqual({ ok: true, meta: null });
-
-    expect(calls).toHaveLength(0);
   });
 });
 
@@ -720,15 +544,9 @@ describe('the blocked navigation capability', () => {
       deps({ fetchImpl }),
     );
 
-    await expect(
-      handleMessage(
-        { type: 'getMeta', url: FAILED_NAV_URL },
-        { tab: { id: 7 } },
-        deps({ fetchImpl }),
-      ),
-    ).resolves.toEqual({ ok: true, meta: METADATA });
+    await expect(hasCapability(7, FAILED_NAV_URL)).resolves.toBe(true);
 
-    expect(calls.length).toBeGreaterThan(0);
+    expect(calls).toHaveLength(0);
   });
 
   it('prunes the capability when its tab closes', async () => {
@@ -744,47 +562,136 @@ describe('the blocked navigation capability', () => {
   });
 });
 
-describe('the alternatives message', () => {
-  function answerResponse(): Response {
-    return new Response(JSON.stringify(ANSWER_JSON), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
+describe('the page state', () => {
+  async function stopped(url: string): Promise<void> {
+    await recordCapability(11, url);
   }
 
-  it('answers a matching caller from the session store after a restart', async () => {
+  it('answers a stopped tab from the cache without a request', async () => {
     installFakeChrome();
-
-    await recordCapability(7, CNET_URL);
+    await stopped(CNET_URL);
+    await writeMeta(CNET_URL, METADATA, NOW);
+    await writeAltCache(CNET_URL, ANSWER_JSON as AlternativesAnswer, NOW);
 
     const { fetchImpl, calls } = recordingFetch(() => answerResponse());
+    const answer = (await handleMessage(
+      { type: 'pageState', url: CNET_URL },
+      blockSender(),
+      deps({ fetchImpl }),
+    )) as { ok: true; state: PageState };
 
-    await expect(
-      handleMessage(
-        { type: 'getAlternatives', url: CNET_URL, title: 'A title' },
-        { tab: { id: 7 } },
-        deps({ fetchImpl }),
-      ),
-    ).resolves.toEqual({ ok: true, answer: ANSWER_JSON });
+    const view = answer.state.view;
+
+    expect(calls).toHaveLength(0);
+    expect(answer.ok).toBe(true);
+    expect(view.kind).toBe('results');
+
+    if (view.kind !== 'results') {
+      throw new Error('expected the routes of the page');
+    }
+
+    expect(view.site?.domain).toBe('cnet.com');
+    expect(view.meta).toEqual(METADATA);
+    expect(view.routes[0]?.title).toBe('A result');
+    expect(answer.state.settings.enabled).toBe(true);
+  });
+
+  it('starts one request for two callers of the same url', async () => {
+    installFakeChrome();
+    await stopped(CNET_URL);
+
+    const pending = deferred<Response>();
+    const { fetchImpl, calls } = recordingFetch(() => pending.promise);
+    const worker = deps({ fetchImpl });
+    const first = handleMessage({ type: 'pageState', url: CNET_URL }, blockSender(), worker);
+    const second = handleMessage({ type: 'pageState', url: CNET_URL }, blockSender(), worker);
+
+    await vi.waitFor(() => {
+      expect(calls).toHaveLength(1);
+    });
+
+    pending.resolve(answerResponse());
+    await Promise.all([first, second]);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.url).toBe(`${API_BASE}/v1/alternatives`);
-    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
-      url: CNET_URL,
-      title: 'A title',
-      lang: 'en',
-    });
   });
 
-  it('denies a caller with no capability before any fetch', async () => {
+  it('writes a finished answer to the cache', async () => {
+    const fake = installFakeChrome();
+    await stopped(CNET_URL);
+
+    const { fetchImpl } = recordingFetch(() => answerResponse());
+
+    await handleMessage({ type: 'pageState', url: CNET_URL }, blockSender(), deps({ fetchImpl }));
+
+    const digest = await sha256Hex(CNET_URL);
+    const stored = fake.storage.local.values[`${STORAGE.alt}${digest}`] as {
+      answer: { alternatives: unknown[] };
+    };
+
+    expect(stored.answer.alternatives).toHaveLength(1);
+  });
+
+  it('answers an error view when the request fails', async () => {
+    installFakeChrome();
+    await stopped(CNET_URL);
+
+    const { fetchImpl } = recordingFetch(() => new Response('no', { status: 500 }));
+    const answer = (await handleMessage(
+      { type: 'pageState', url: CNET_URL },
+      blockSender(),
+      deps({ fetchImpl }),
+    )) as { ok: true; state: PageState };
+
+    expect(answer.state.view.kind).toBe('error');
+  });
+
+  it('denies a caller without a capability before any request', async () => {
+    installFakeChrome();
+    await stopped(SLOW_URL);
+
+    const { fetchImpl, calls } = recordingFetch(() => answerResponse());
+
+    await expect(
+      handleMessage({ type: 'pageState', url: CNET_URL }, blockSender(), deps({ fetchImpl })),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it('denies a caller from another tab before any request', async () => {
+    installFakeChrome();
+    await stopped(CNET_URL);
+
+    const { fetchImpl, calls } = recordingFetch(() => answerResponse());
+
+    await expect(
+      handleMessage({ type: 'pageState', url: CNET_URL }, blockSender(12), deps({ fetchImpl })),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it('denies a framed caller', async () => {
+    installFakeChrome();
+    await stopped(CNET_URL);
+
+    await expect(
+      handleMessage({ type: 'pageState', url: CNET_URL }, { ...blockSender(), frameId: 3 }, deps()),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+  });
+});
+
+describe('the popup state', () => {
+  it('refuses a sender that is not an extension page', async () => {
     installFakeChrome();
 
     const { fetchImpl, calls } = recordingFetch(() => answerResponse());
 
     await expect(
       handleMessage(
-        { type: 'getAlternatives', url: CNET_URL, title: '' },
-        { tab: { id: 7 } },
+        { type: 'popupState' },
+        { tab: { id: 11 }, url: CNET_URL, frameId: 0 },
         deps({ fetchImpl }),
       ),
     ).resolves.toEqual({ ok: false, error: 'bad_message' });
@@ -792,40 +699,84 @@ describe('the alternatives message', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('denies a caller from the wrong tab before any fetch', async () => {
-    installFakeChrome();
+  it('answers the unlisted card for a tab the list does not carry', async () => {
+    const fake = installFakeChrome();
 
-    await recordCapability(7, CNET_URL);
+    fake.activeTabUrl = UNLISTED_URL;
 
     const { fetchImpl, calls } = recordingFetch(() => answerResponse());
-
-    await expect(
-      handleMessage(
-        { type: 'getAlternatives', url: CNET_URL, title: '' },
-        { tab: { id: 9 } },
-        deps({ fetchImpl }),
-      ),
-    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+    const answer = (await handleMessage(
+      { type: 'popupState' },
+      popupSender(),
+      deps({ fetchImpl }),
+    )) as { ok: true; state: PopupState };
 
     expect(calls).toHaveLength(0);
+    expect(answer.state.view.kind).toBe('unlisted');
+    expect(answer.state.view.kind === 'unlisted' && answer.state.view.domain).toBe('example.com');
   });
 
-  it('denies a caller for the wrong url before any fetch', async () => {
+  it('answers the routes of the listed active tab', async () => {
     installFakeChrome();
 
-    await recordCapability(7, CNET_URL);
+    const { fetchImpl } = recordingFetch(() => answerResponse());
+    const answer = (await handleMessage(
+      { type: 'popupState' },
+      popupSender(),
+      deps({ fetchImpl }),
+    )) as { ok: true; state: PopupState };
+
+    expect(answer.state.view.kind).toBe('results');
+    expect(answer.state.view.kind === 'results' && answer.state.view.site.tabId).toBe(11);
+  });
+
+  it('answers the off state and asks nothing while Detour is off', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values[STORAGE.settings] = { enabled: false };
 
     const { fetchImpl, calls } = recordingFetch(() => answerResponse());
+    const answer = (await handleMessage(
+      { type: 'popupState' },
+      popupSender(),
+      deps({ fetchImpl }),
+    )) as { ok: true; state: PopupState };
+
+    expect(calls).toHaveLength(0);
+    expect(answer.state.view.kind).toBe('off');
+  });
+});
+
+describe('opening a route', () => {
+  it('moves the active tab to the route', async () => {
+    const fake = installFakeChrome();
+    const route = 'https://arstechnica.com/gadgets/nvidia-custom-silicon/';
+
+    await expect(
+      handleMessage({ type: 'openRoute', url: route }, popupSender(), deps()),
+    ).resolves.toEqual({ ok: true });
+
+    expect(fake.calls.updates).toEqual([{ tabId: 11, url: route }]);
+  });
+
+  it('refuses a sender that is not an extension page', async () => {
+    installFakeChrome();
 
     await expect(
       handleMessage(
-        { type: 'getAlternatives', url: STOPPED_URL, title: '' },
-        { tab: { id: 7 } },
-        deps({ fetchImpl }),
+        { type: 'openRoute', url: NAVIGATED_URL },
+        { tab: { id: 11 }, url: CNET_URL, frameId: 0 },
+        deps(),
       ),
     ).resolves.toEqual({ ok: false, error: 'bad_message' });
+  });
 
-    expect(calls).toHaveLength(0);
+  it('refuses an address that is not a web page', async () => {
+    installFakeChrome();
+
+    await expect(
+      handleMessage({ type: 'openRoute', url: 'chrome://settings' }, popupSender(), deps()),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
   });
 });
 
@@ -868,22 +819,18 @@ describe('the message boundary', () => {
     const worker = deps({ fetchImpl });
     const messages: unknown[] = [
       { type: MESSAGE.isBlocked, url: CNET_URL },
-      { type: MESSAGE.blocked, url: CNET_URL },
-      { type: MESSAGE.getMeta, url: CNET_URL },
-      { type: MESSAGE.getAlternatives, url: CNET_URL, title: '' },
-      {
-        type: MESSAGE.showAlternatives,
-        tabId: 7,
-        url: CNET_URL,
-      },
+      { type: MESSAGE.blocked, url: CNET_URL, meta: null },
+      { type: MESSAGE.popupState },
+      { type: MESSAGE.pageState, url: CNET_URL },
+      { type: MESSAGE.openRoute, url: CNET_URL },
       { type: MESSAGE.allow, scope: 'always', url: CNET_URL },
       { type: MESSAGE.pass, url: CNET_URL },
+      { type: MESSAGE.rememberScope, url: CNET_URL, scope: 'once' },
       { type: MESSAGE.revoke, scope: 'always', host: 'cnet.com' },
       {
         type: MESSAGE.setSettings,
         settings: { enabled: true, autoOpenBest: false, imagesEnabled: true },
       },
-      { type: MESSAGE.pause, until: NOW + 1, session: false },
       { type: MESSAGE.clearCache },
     ];
     const types = messages.map((message) => (message as { type: string }).type);
@@ -907,6 +854,69 @@ describe('the message boundary', () => {
       ok: false,
       error: 'bad_message',
     });
+  });
+});
+
+describe('the remembered scope', () => {
+  it('stores the scope that the reader chose', async () => {
+    const fake = installFakeChrome();
+
+    await recordCapability(7, CNET_URL);
+
+    await expect(
+      handleMessage(
+        { type: 'rememberScope', url: CNET_URL, scope: 'once' },
+        { tab: { id: 7 } },
+        deps(),
+      ),
+    ).resolves.toEqual({ ok: true });
+
+    expect(fake.storage.local.values[STORAGE.scopeDefaults]).toEqual({ 'cnet.com': 'once' });
+  });
+
+  it('clears the entry when the reader chooses the tab scope', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values[STORAGE.scopeDefaults] = { 'cnet.com': 'always' };
+    await recordCapability(7, CNET_URL);
+
+    await handleMessage(
+      { type: 'rememberScope', url: CNET_URL, scope: 'tab' },
+      { tab: { id: 7 } },
+      deps(),
+    );
+
+    expect(fake.storage.local.values[STORAGE.scopeDefaults]).toEqual({});
+  });
+
+  it('rejects a choice from a tab without the record', async () => {
+    const fake = installFakeChrome();
+
+    await expect(
+      handleMessage(
+        { type: 'rememberScope', url: CNET_URL, scope: 'once' },
+        { tab: { id: 7 } },
+        deps(),
+      ),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+
+    expect(fake.storage.local.values[STORAGE.scopeDefaults]).toBeUndefined();
+  });
+
+  it('rejects a choice for a url that is not listed', async () => {
+    const fake = installFakeChrome();
+
+    await recordCapability(7, UNLISTED_URL);
+
+    await expect(
+      handleMessage(
+        { type: 'rememberScope', url: UNLISTED_URL, scope: 'always' },
+        { tab: { id: 7 } },
+        deps(),
+      ),
+    ).resolves.toEqual({ ok: false, error: 'bad_message' });
+
+    expect(fake.storage.local.values[STORAGE.scopeDefaults]).toBeUndefined();
   });
 });
 
@@ -1112,6 +1122,7 @@ describe('the settings handler', () => {
       enabled: false,
       autoOpenBest: true,
       imagesEnabled: false,
+      theme: 'system' as const,
       walls: {
         hard: ['adblock'] as WallCategory[],
         soft: ['adblock'] as WallCategory[],
@@ -1132,7 +1143,7 @@ describe('the settings handler', () => {
     });
   });
 
-  it('rejects settings without the walls', async () => {
+  it('rejects a settings record that the contract cannot hold', async () => {
     const fake = installFakeChrome();
 
     await expect(
@@ -1152,138 +1163,24 @@ describe('the settings handler', () => {
         deps(),
       ),
     ).resolves.toEqual({ ok: false, error: 'bad_message' });
-
-    expect(fake.storage.local.values.settings).toBeUndefined();
-  });
-});
-
-describe('the showAlternatives handler', () => {
-  const POPUP_SENDER = { url: `chrome-extension://${FAKE_EXTENSION_ID}/popup.html` };
-
-  it('moves the tab to the block page for the page it holds', async () => {
-    const fake = installFakeChrome();
-    const { fetchImpl } = recordingFetch(() => pageResponse(METADATA_HTML));
-
-    fake.tabPages.set(7, NAVIGATED_URL);
-
-    await expect(
-      handleMessage(
-        { type: 'showAlternatives', tabId: 7, url: NAVIGATED_URL },
-        POPUP_SENDER,
-        deps({ fetchImpl }),
-      ),
-    ).resolves.toEqual({ ok: true, blockPageUrl: blockPageUrlFor(NAVIGATED_URL) });
-
-    expect(fake.calls.updates).toEqual([{ tabId: 7, url: blockPageUrlFor(NAVIGATED_URL) }]);
-    await expect(hasCapability(7, NAVIGATED_URL)).resolves.toBe(true);
-  });
-
-  it('accepts a tab that differs only after the fragment', async () => {
-    const fake = installFakeChrome();
-
-    fake.tabPages.set(7, `${ENCODED_URL}`);
-
     await expect(
       handleMessage(
         {
-          type: 'showAlternatives',
-          tabId: 7,
-          url: 'https://www.cnet.com/news/a-story?x=1&y=2#top',
+          type: 'setSettings',
+          settings: {
+            enabled: true,
+            autoOpenBest: true,
+            imagesEnabled: true,
+            theme: 'sepia',
+            walls: { hard: [], soft: [], metered: [] },
+          },
         },
-        POPUP_SENDER,
-        deps(),
-      ),
-    ).resolves.toEqual({
-      ok: true,
-      blockPageUrl: blockPageUrlFor('https://www.cnet.com/news/a-story?x=1&y=2#top'),
-    });
-  });
-
-  it('refuses a tab that has moved on', async () => {
-    const fake = installFakeChrome();
-
-    fake.tabPages.set(7, NAVIGATED_URL);
-
-    await expect(
-      handleMessage({ type: 'showAlternatives', tabId: 7, url: CNET_URL }, POPUP_SENDER, deps()),
-    ).resolves.toEqual({ ok: false, error: 'missing_tab' });
-
-    expect(fake.calls.updates).toEqual([]);
-  });
-
-  it('refuses a caller that is a page and not one of ours', async () => {
-    const fake = installFakeChrome();
-
-    fake.tabPages.set(7, NAVIGATED_URL);
-
-    await expect(
-      handleMessage(
-        { type: 'showAlternatives', tabId: 7, url: NAVIGATED_URL },
-        { url: 'https://www.cnet.com/news/navigated-story/', tab: { id: 7 } },
+        {},
         deps(),
       ),
     ).resolves.toEqual({ ok: false, error: 'bad_message' });
 
-    expect(fake.calls.updates).toEqual([]);
-  });
-
-  it('refuses a tab that the runtime no longer holds', async () => {
-    const fake = installFakeChrome();
-
-    await expect(
-      handleMessage(
-        { type: 'showAlternatives', tabId: 99, url: NAVIGATED_URL },
-        POPUP_SENDER,
-        deps(),
-      ),
-    ).resolves.toEqual({ ok: false, error: 'missing_tab' });
-
-    expect(fake.calls.updates).toEqual([]);
-  });
-});
-
-describe('the pause handler', () => {
-  it('pauses the list', async () => {
-    const fake = installFakeChrome();
-    const until = NOW + 3_600_000;
-
-    await expect(
-      handleMessage({ type: 'pause', until, session: false }, {}, deps()),
-    ).resolves.toEqual({ ok: true, pauseUntil: until, session: false });
-
-    expect(fake.storage.local.values.pauseUntil).toBe(until);
-    await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
-      ok: true,
-      blocked: false,
-      site: null,
-    });
-  });
-
-  it('pauses until the browser restarts with no timestamp', async () => {
-    const fake = installFakeChrome();
-
-    await expect(
-      handleMessage({ type: 'pause', until: 0, session: true }, {}, deps()),
-    ).resolves.toEqual({ ok: true, pauseUntil: 0, session: true });
-
-    expect(fake.storage.session.values.pauseSession).toBe(true);
-    await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
-      ok: true,
-      blocked: false,
-      site: null,
-    });
-  });
-
-  it('clears the pause with a time that has passed', async () => {
-    installFakeChrome();
-
-    await handleMessage({ type: 'pause', until: NOW - 1, session: false }, {}, deps());
-
-    await expect(handleMessage({ type: 'isBlocked', url: CNET_URL }, {}, deps())).resolves.toEqual({
-      ok: true,
-      blocked: true,
-      site: CNET_SITE,
-    });
+    expect(fake.storage.local.values.settings).toBeUndefined();
   });
 });
 
@@ -1431,7 +1328,7 @@ describe('the list refresh', () => {
 });
 
 describe('the clearCache handler', () => {
-  it('answers the number of entries it removed', async () => {
+  it('removes the cache keys and downloads the list again', async () => {
     const fake = installFakeChrome();
 
     fake.storage.local.values[STORAGE.list] = { storageVersion: 1, fetchedAt: 1, list: {} };
@@ -1443,9 +1340,39 @@ describe('the clearCache handler', () => {
       imagesEnabled: true,
     };
 
-    await expect(handleMessage({ type: 'clearCache' }, {}, deps())).resolves.toEqual({
+    const { fetchImpl, calls } = recordingFetch(() => listResponse(NETWORK_LIST));
+
+    await expect(handleMessage({ type: 'clearCache' }, {}, deps({ fetchImpl }))).resolves.toEqual({
       ok: true,
       cleared: 3,
+    });
+
+    expect(calls.map((call) => call.url)).toEqual([`${API_BASE}/v1/list`]);
+    expect(fake.storage.local.values[STORAGE.settings]).toBeDefined();
+
+    const stored = fake.storage.local.values[STORAGE.list] as { listId: string } | undefined;
+
+    expect(stored?.listId).toBe(await idOf(NETWORK_LIST));
+  });
+
+  it('keeps the bundled copy when the download fails', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values[STORAGE.list] = { storageVersion: 1, fetchedAt: 1, list: {} };
+    fake.storage.local.values[`${STORAGE.alt}aaa`] = { answer: {}, storedAt: 1 };
+    fake.storage.local.values[STORAGE.settings] = {
+      enabled: true,
+      autoOpenBest: false,
+      imagesEnabled: true,
+    };
+
+    const { fetchImpl } = recordingFetch(() => {
+      throw new Error('offline');
+    });
+
+    await expect(handleMessage({ type: 'clearCache' }, {}, deps({ fetchImpl }))).resolves.toEqual({
+      ok: true,
+      cleared: 2,
     });
 
     expect(fake.storage.local.values[STORAGE.settings]).toBeDefined();

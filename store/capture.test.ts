@@ -11,6 +11,7 @@ import {
   SHOT,
   STORE_ICON,
   TILE,
+  listedDomain,
   liveUrl,
   marqueePage,
   stagePage,
@@ -98,7 +99,9 @@ describe('the store images', () => {
 
     expect(html).toContain(`width: ${TILE.width}px`);
     expect(html).toContain(`height: ${TILE.height}px`);
-    expect(html).toContain('#0B6B57');
+    expect(html).toContain('#2563EB');
+    expect(html).toContain('#0F172A');
+    expect(html).not.toContain('invert(1)');
     expect(html).toContain('>Detour<');
     expect(html).toContain(LOGO);
   });
@@ -108,6 +111,8 @@ describe('the store images', () => {
 
     expect(html).toContain(`width: ${MARQUEE.width}px`);
     expect(html).toContain(`height: ${MARQUEE.height}px`);
+    expect(html).toContain('#0F172A');
+    expect(html).not.toContain('invert(1)');
     expect(html).toContain('>Detour<');
     expect(html).toContain(LOGO);
   });
@@ -126,7 +131,7 @@ describe('the store images', () => {
 
     expect(html).toContain(`width: ${SHOT.width}px`);
     expect(html).toContain(`height: ${SHOT.height}px`);
-    expect(html).toContain('#FBFAF8');
+    expect(html).toContain('#F8FAFC');
     expect(html).toContain(LOGO);
   });
 
@@ -135,6 +140,12 @@ describe('the store images', () => {
     expect(liveUrl(['--live=https://www.cnet.com/a'])).toBe('https://www.cnet.com/a');
     expect(() => liveUrl(['--live=http://www.cnet.com/a'])).toThrow('https');
     expect(() => liveUrl(['--live='])).toThrow('https');
+  });
+
+  it('refuses a live article that the list does not name', async () => {
+    await expect(listedDomain('https://not-in-the-detour-list.example/a')).rejects.toThrow(
+      'is not in the list',
+    );
   });
 
   it('keeps the popup at the width of its frame', () => {

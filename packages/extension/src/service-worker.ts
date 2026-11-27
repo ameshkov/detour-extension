@@ -1,20 +1,14 @@
 import { handleAllow, handleRevoke } from './allowance-handlers';
-import { handleGetAlternatives } from './alternatives-handler';
 import { MESSAGE } from './constants';
-import {
-  handleBlocked,
-  handleClearCache,
-  handleGetMeta,
-  handleIsBlocked,
-  handlePause,
-  handleSetSettings,
-  handleShowAlternatives,
-} from './handlers';
+import { handleBlocked, handleClearCache, handleIsBlocked, handleSetSettings } from './handlers';
 import type { MessageResponse } from './messages';
 import { parseMessage } from './messages';
 import type { FetchLike } from './net';
 import { handlePass } from './pass-handler';
 import { refreshList } from './refresh';
+import { handleRememberScope } from './scope-handlers';
+import { handleOpenRoute, handlePageState, handlePopupState } from './state-handlers';
+import type { TabSender } from './sender';
 
 export type ServiceWorkerDeps = {
   apiBase: string;
@@ -29,7 +23,6 @@ export type ServiceWorkerDeps = {
 export { pruneTabAllowances } from './allowance-handlers';
 export { pruneCapability } from './capabilities';
 export { prunePass } from './passes';
-export { metadataFor } from './metadata-fetch';
 export { refreshList };
 export { refreshToolbar } from './toolbar';
 export type { RefreshResult } from './refresh';
@@ -53,7 +46,7 @@ function messageType(value: unknown): string | null {
  */
 export async function handleMessage(
   message: unknown,
-  sender: { tab?: { id?: number; openerTabId?: number }; url?: string },
+  sender: TabSender,
   deps: ServiceWorkerDeps,
 ): Promise<MessageResponse> {
   const type = messageType(message);
@@ -75,27 +68,27 @@ export async function handleMessage(
   try {
     switch (parsed.type) {
       case MESSAGE.isBlocked:
-        return await handleIsBlocked(parsed, sender, deps);
+        return await handleIsBlocked(parsed, sender);
       case MESSAGE.blocked:
         return await handleBlocked(parsed, sender, deps);
-      case MESSAGE.getMeta:
-        return await handleGetMeta(parsed, sender, deps);
-      case MESSAGE.getAlternatives:
-        return await handleGetAlternatives(parsed, sender, deps);
-      case MESSAGE.showAlternatives:
-        return await handleShowAlternatives(parsed, sender, deps);
+      case MESSAGE.popupState:
+        return await handlePopupState(sender, deps);
+      case MESSAGE.pageState:
+        return await handlePageState(parsed, sender, deps);
+      case MESSAGE.openRoute:
+        return await handleOpenRoute(parsed, sender);
       case MESSAGE.allow:
         return await handleAllow(parsed, sender, deps);
       case MESSAGE.pass:
         return await handlePass(parsed, sender);
+      case MESSAGE.rememberScope:
+        return await handleRememberScope(parsed, sender);
       case MESSAGE.revoke:
         return await handleRevoke(parsed);
       case MESSAGE.setSettings:
         return await handleSetSettings(parsed);
-      case MESSAGE.pause:
-        return await handlePause(parsed);
       case MESSAGE.clearCache:
-        return await handleClearCache();
+        return await handleClearCache(deps);
       default:
         return { ok: false, error: 'unknown_message' };
     }

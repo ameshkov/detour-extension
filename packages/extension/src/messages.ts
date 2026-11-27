@@ -1,24 +1,30 @@
 import type { Wall, WallType } from '@detour/shared';
 
 import type { AllowanceScope, AllowanceState } from './allowances';
-import type { AlternativesAnswer } from './alternatives';
-import { parseAlternativesAnswer } from './alternatives';
 import { MESSAGE } from './constants';
 import type { PageMeta } from './metadata';
 import { isPageMeta } from './metadata';
+import type { ScopeChoice } from './scope-defaults';
+import { isScopeChoice } from './scope-defaults';
+import { isPageState, isPopupState } from './state-guard';
+import type { PageState, PopupState } from './state-view';
 import type { Settings } from './storage';
-import { WALL_TYPES, isWallCategory, isWallSettings } from './walls';
+import { isSettings } from './storage';
+import { WALL_TYPES, isWallCategory } from './walls';
 
 export type MessageError = 'bad_message' | 'missing_tab' | 'navigation_failed' | 'unknown_message';
 
 export type ListedSite = { domain: string; name: string; walls: Wall[] };
 
 export type IsBlockedMessage = { type: 'isBlocked'; url: string };
-export type BlockedMessage = { type: 'blocked'; url: string };
-export type GetMetaMessage = { type: 'getMeta'; url: string };
-export type GetAlternativesMessage = { type: 'getAlternatives'; url: string; title: string };
-/** The popup asks the worker to move the tab it was opened from to the alternatives. */
-export type ShowAlternativesMessage = { type: 'showAlternatives'; tabId: number; url: string };
+/** The head that the guard read from the stopped document, or null. */
+export type BlockedMessage = { type: 'blocked'; url: string; meta: PageMeta | null };
+/** The popup asks for the state of the page it was opened on. */
+export type PopupStateMessage = { type: 'popupState' };
+/** The block page asks for the state of the URL it shows. */
+export type PageStateMessage = { type: 'pageState'; url: string };
+/** The popup moves its tab to a route, because it cannot navigate it itself. */
+export type OpenRouteMessage = { type: 'openRoute'; url: string };
 export type AllowMessage = {
   type: 'allow';
   scope: AllowanceScope;
@@ -26,6 +32,8 @@ export type AllowMessage = {
 };
 /** One page opens once, and the tab gets no allowance. */
 export type PassMessage = { type: 'pass'; url: string };
+/** The reader chose a scope, and the next block page of the domain starts on it. */
+export type RememberScopeMessage = { type: 'rememberScope'; url: string; scope: ScopeChoice };
 export type RevokeMessage = {
   type: 'revoke';
   scope: AllowanceScope;
@@ -33,44 +41,44 @@ export type RevokeMessage = {
   tabId?: number;
 };
 export type SetSettingsMessage = { type: 'setSettings'; settings: Settings };
-/** `session` names the pause that the browser ends, and it carries no timestamp. */
-export type PauseMessage = { type: 'pause'; until: number; session: boolean };
 export type ClearCacheMessage = { type: 'clearCache' };
 
 export type Message =
   | IsBlockedMessage
   | BlockedMessage
-  | GetMetaMessage
-  | GetAlternativesMessage
-  | ShowAlternativesMessage
+  | PopupStateMessage
+  | PageStateMessage
+  | OpenRouteMessage
   | AllowMessage
   | PassMessage
+  | RememberScopeMessage
   | RevokeMessage
   | SetSettingsMessage
-  | PauseMessage
   | ClearCacheMessage;
 
 export type IsBlockedResponse = { ok: true; blocked: boolean; site: ListedSite | null };
 export type BlockedResponse = { ok: boolean; error?: MessageError; blockPageUrl?: string };
-export type GetMetaResponse = { ok: true; meta: PageMeta | null };
-export type AlternativesResponse =
-  { ok: true; answer: AlternativesAnswer | null } | { ok: false; error: MessageError };
+export type PopupStateResponse =
+  { ok: true; state: PopupState } | { ok: false; error: MessageError };
+export type PageStateResponse = { ok: true; state: PageState } | { ok: false; error: MessageError };
+export type OpenRouteResponse = { ok: true } | { ok: false; error: MessageError };
 export type AllowanceResponse = { ok: true; allowances: AllowanceState };
 export type PassResponse = { ok: true };
+export type RememberScopeResponse = { ok: true };
 export type SettingsResponse = { ok: true; settings: Settings };
-export type PauseResponse = { ok: true; pauseUntil: number; session: boolean };
 export type ClearCacheResponse = { ok: true; cleared: number };
 
 export type MessageResponse =
   | { ok: false; error: MessageError }
   | IsBlockedResponse
   | BlockedResponse
-  | GetMetaResponse
-  | AlternativesResponse
+  | PopupStateResponse
+  | PageStateResponse
+  | OpenRouteResponse
   | AllowanceResponse
   | PassResponse
+  | RememberScopeResponse
   | SettingsResponse
-  | PauseResponse
   | ClearCacheResponse;
 
 const SCOPE_VALUES: readonly AllowanceScope[] = ['tab', 'session', 'always'];
@@ -81,19 +89,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isAllowanceScope(value: unknown): value is AllowanceScope {
   return SCOPE_VALUES.includes(value as AllowanceScope);
-}
-
-function isSettings(value: unknown): value is Settings {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    typeof value.enabled === 'boolean' &&
-    typeof value.autoOpenBest === 'boolean' &&
-    typeof value.imagesEnabled === 'boolean' &&
-    isWallSettings(value.walls)
-  );
 }
 
 /**
@@ -107,23 +102,34 @@ export function parseMessage(value: unknown): Message | null {
 
   switch (value.type) {
     case MESSAGE.isBlocked:
-    case MESSAGE.blocked:
-    case MESSAGE.getMeta:
+    case MESSAGE.pageState:
+    case MESSAGE.openRoute:
       return typeof value.url === 'string' ? { type: value.type, url: value.url } : null;
-    case MESSAGE.getAlternatives:
-      return typeof value.url === 'string' && typeof value.title === 'string'
-        ? { type: MESSAGE.getAlternatives, url: value.url, title: value.title }
+    case MESSAGE.blocked: {
+      if (typeof value.url !== 'string') {
+        return null;
+      }
+
+      // A guard that read nothing sends `null`, and an absent field is the same
+      // answer: the card falls back to the URL alone.
+      const meta = value.meta ?? null;
+
+      return meta === null || isPageMeta(meta)
+        ? { type: MESSAGE.blocked, url: value.url, meta: meta as PageMeta | null }
         : null;
-    case MESSAGE.showAlternatives:
-      return typeof value.url === 'string' && typeof value.tabId === 'number'
-        ? { type: MESSAGE.showAlternatives, url: value.url, tabId: value.tabId }
-        : null;
+    }
+    case MESSAGE.popupState:
+      return { type: MESSAGE.popupState };
     case MESSAGE.allow:
       return typeof value.url === 'string' && isAllowanceScope(value.scope)
         ? { type: MESSAGE.allow, scope: value.scope, url: value.url }
         : null;
     case MESSAGE.pass:
       return typeof value.url === 'string' ? { type: MESSAGE.pass, url: value.url } : null;
+    case MESSAGE.rememberScope:
+      return typeof value.url === 'string' && isScopeChoice(value.scope)
+        ? { type: MESSAGE.rememberScope, url: value.url, scope: value.scope }
+        : null;
     case MESSAGE.revoke: {
       if (typeof value.host !== 'string' || value.host === '' || !isAllowanceScope(value.scope)) {
         return null;
@@ -140,10 +146,6 @@ export function parseMessage(value: unknown): Message | null {
     case MESSAGE.setSettings:
       return isSettings(value.settings)
         ? { type: MESSAGE.setSettings, settings: value.settings }
-        : null;
-    case MESSAGE.pause:
-      return typeof value.until === 'number' && typeof value.session === 'boolean'
-        ? { type: MESSAGE.pause, until: value.until, session: value.session }
         : null;
     case MESSAGE.clearCache:
       return { type: MESSAGE.clearCache };
@@ -196,18 +198,18 @@ export function isBlockedNavigationResponse(value: unknown): value is BlockedRes
   return value.blockPageUrl === undefined || typeof value.blockPageUrl === 'string';
 }
 
-export function isGetMetaResponse(value: unknown): value is GetMetaResponse {
-  return isRecord(value) && value.ok === true && (value.meta === null || isPageMeta(value.meta));
+/** A page renders only a state that carries every field its view needs. */
+export function isPopupStateResponse(value: unknown): value is { ok: true; state: PopupState } {
+  return isRecord(value) && value.ok === true && isPopupState(value.state);
 }
 
-export function isAlternativesResponse(
-  value: unknown,
-): value is { ok: true; answer: AlternativesAnswer | null } {
-  return (
-    isRecord(value) &&
-    value.ok === true &&
-    (value.answer === null || parseAlternativesAnswer(value.answer) !== null)
-  );
+export function isPageStateResponse(value: unknown): value is { ok: true; state: PageState } {
+  return isRecord(value) && value.ok === true && isPageState(value.state);
+}
+
+/** An open answer says only that the tab is moving. */
+export function isOpenRouteResponse(value: unknown): value is OpenRouteResponse {
+  return isRecord(value) && typeof value.ok === 'boolean';
 }
 
 /** A stored allowance is the only answer that lets a listed site open. */

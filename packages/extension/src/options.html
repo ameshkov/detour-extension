@@ -7,57 +7,71 @@
     <link rel="stylesheet" href="ui.css" />
   </head>
   <body data-page="options">
-    <header data-role="header">
-      <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
-      <span data-role="wordmark">Detour</span>
-    </header>
-    <main>
-      <h1 data-role="options-heading"></h1>
-      <h2 data-role="walls-heading"></h2>
-      <p data-role="walls-intro"></p>
-      <table data-role="walls-table">
-        <thead>
-          <tr>
-            <th data-role="th-why" scope="col"></th>
-            <th data-role="th-hard" scope="col"></th>
-            <th data-role="th-soft" scope="col"></th>
-            <th data-role="th-metered" scope="col"></th>
-          </tr>
-        </thead>
-        <tbody data-role="wall-rows"></tbody>
-      </table>
-      <p data-role="metered-note"></p>
-      <p data-role="no-wall-note"></p>
-      <h2 data-role="allowed-heading"></h2>
-      <p data-role="allowed-intro"></p>
-      <p data-role="allowed-empty" hidden></p>
-      <table data-role="allowance-table">
-        <thead>
-          <tr>
-            <th data-role="th-site" scope="col"></th>
-            <th data-role="th-scope" scope="col"></th>
-            <th data-role="th-added" scope="col"></th>
-            <th scope="col"></th>
-          </tr>
-        </thead>
-        <tbody data-role="allowance-rows"></tbody>
-      </table>
-      <h2 data-role="reading-heading"></h2>
-      <label data-role="auto-open-row">
-        <input data-role="auto-open" type="checkbox" />
-        <span data-role="auto-open-label"></span>
-        <span data-role="auto-open-detail"></span>
-      </label>
-      <label data-role="images-row">
-        <input data-role="images" type="checkbox" />
-        <span data-role="images-label"></span>
-        <span data-role="images-detail"></span>
-      </label>
-      <h2 data-role="cache-heading"></h2>
-      <p data-role="cache-detail"></p>
-      <button data-role="clear-cache" type="button"></button>
-      <p data-role="cache-status" role="status" hidden></p>
-    </main>
+    <div data-role="canvas">
+      <section data-role="card">
+        <header data-role="header">
+          <span data-role="mark" aria-hidden="true"><img src="logo-mark.png" alt="" /></span>
+          <span data-role="wordmark">Detour</span>
+        </header>
+        <main>
+          <h1 data-role="options-heading"></h1>
+          <h2 data-role="walls-heading"></h2>
+          <p data-role="walls-intro"></p>
+          <table data-role="walls-table">
+            <thead>
+              <tr>
+                <th data-role="th-why" scope="col"></th>
+                <th data-role="th-hard" scope="col"></th>
+                <th data-role="th-soft" scope="col"></th>
+                <th data-role="th-metered" scope="col"></th>
+              </tr>
+            </thead>
+            <tbody data-role="wall-rows"></tbody>
+          </table>
+          <p data-role="metered-note"></p>
+          <p data-role="no-wall-note"></p>
+          <h2 data-role="allowed-heading"></h2>
+          <p data-role="allowed-intro"></p>
+          <p data-role="allowed-empty" hidden></p>
+          <table data-role="allowance-table">
+            <thead>
+              <tr>
+                <th data-role="th-site" scope="col"></th>
+                <th data-role="th-scope" scope="col"></th>
+                <th data-role="th-added" scope="col"></th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody data-role="allowance-rows"></tbody>
+          </table>
+          <h2 data-role="reading-heading"></h2>
+          <label data-role="auto-open-row">
+            <input data-role="auto-open" type="checkbox" />
+            <span data-role="auto-open-label"></span>
+            <span data-role="auto-open-detail"></span>
+          </label>
+          <label data-role="images-row">
+            <input data-role="images" type="checkbox" />
+            <span data-role="images-label"></span>
+            <span data-role="images-detail"></span>
+          </label>
+          <h2 data-role="appearance-heading"></h2>
+          <div data-role="theme-row">
+            <p data-role="theme-label"></p>
+            <p data-role="theme-detail"></p>
+            <div data-role="theme-choices" role="group">
+              <button data-role="theme-system" type="button" aria-pressed="false"></button>
+              <button data-role="theme-light" type="button" aria-pressed="false"></button>
+              <button data-role="theme-dark" type="button" aria-pressed="false"></button>
+            </div>
+          </div>
+          <h2 data-role="cache-heading"></h2>
+          <p data-role="cache-detail"></p>
+          <button data-role="clear-cache" type="button"></button>
+          <p data-role="cache-status" role="status" hidden></p>
+        </main>
+      </section>
+    </div>
     <script src="options.js"></script>
   </body>
 </html>

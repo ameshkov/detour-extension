@@ -1,4 +1,13 @@
-import { BLOCK_PAGE, SITE_ORIGIN, expect, extensionId, test, waitForBlockPage } from './fixtures';
+import {
+  BLOCK_PAGE,
+  SITE_ORIGIN,
+  expect,
+  extensionId,
+  openNativePopup,
+  openPopupOver,
+  test,
+  waitForBlockPage,
+} from './fixtures';
 
 const LISTED_URL = `${SITE_ORIGIN}/walled/nvidia-custom-silicon`;
 const EMPTY_URL = `${SITE_ORIGIN}/walled/empty-state`;
@@ -20,42 +29,51 @@ test('blocks the listed fixture article and shows a signed result image', async 
   await expect(page).toHaveURL(BLOCK_PAGE);
   await expect(page.locator('[data-role="headline"]')).toContainText('Local fixture');
   await expect(page.locator('[data-role="headline"]')).toContainText('two walls');
+  await expect(page.locator('[data-role="wall-status-text"]')).toHaveText('2 walls detected');
+  await expect(page.locator('[data-role="wall-status-dot"]')).toBeVisible();
 
   const pills = page.locator('[data-role="wall"]');
 
   await expect(pills).toHaveCount(2);
   await expect(pills.first()).toContainText('Ad blocker');
-  await expect(pills.first()).toContainText('Hard');
   await expect(pills.nth(1)).toContainText('Paywall');
-  await expect(pills.nth(1)).toContainText('Metered');
+  await expect(pills.first().locator('[data-role="wall-icon"]')).toHaveCount(1);
+
+  // The type belongs to the opened detail, not to the pill.
+  await pills.first().click();
+  await expect(page.locator('[data-role="wall-detail-text"]')).toContainText(
+    'ad-blocker card covers the fixture page',
+  );
+  await expect(page.locator('[data-role="wall-type-badge"]')).toHaveText('Hard block');
+  await expect(page.locator('[data-role="wall-verified"]')).toContainText('Verified');
+  await expect(page.locator('[data-role="wall-report"]')).toBeVisible();
   await expect(page.locator('[data-role="lede"]')).toContainText(
     'An ad-blocker wall is an anti-user practice',
   );
   await expect(page.locator('[data-role="alternatives"]')).toHaveAttribute('data-state', 'results');
   expect(await page.locator('[data-role="list"] li').count()).toBeGreaterThan(0);
 
-  const hero = page.locator('[data-role="list"] li[data-variant="hero"] img');
-  await expect(hero).toHaveCount(1);
-  await hero.scrollIntoViewIfNeeded();
-  await expect
-    .poll(async () =>
-      hero.evaluate((image) => (image instanceof HTMLImageElement ? image.naturalWidth : 0)),
-    )
-    .toBeGreaterThan(0);
+  const rows = page.locator('[data-role="list"] li');
+  const favicons = rows.locator('[data-role="tile"] img');
 
-  const source = (await hero.getAttribute('src')) ?? '';
+  // The list carries none of the dummy publishers, so every row says so.
+  await expect(rows.first().locator('[data-role="result-walls"]')).toHaveText('No walls');
 
-  expect(source).toContain('/v1/img?u=');
+  // The answer names the story and the match of every row, and both reach the page.
+  await expect(rows.first().locator('[data-role="result-match"]')).toHaveText('Same story');
+  await expect(rows.nth(3).locator('[data-role="result-match"]')).toHaveText('Different story');
+  await expect(page.locator('[data-role="keyboard-hint"] [data-role="topic"]')).toHaveText(
+    'Topic: Custom silicon for the biggest customers',
+  );
 
-  const response = await context.request.get(source);
+  await expect(rows.first().locator('[data-role="tile"]')).toHaveCount(1);
+  await expect(favicons).toHaveCount(await rows.count());
+
+  const firstSource = (await favicons.first().getAttribute('src')) ?? '';
+  const response = await context.request.get(firstSource);
 
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('image/png');
-
-  const rows = page.locator('[data-role="list"] li[data-variant="row"]');
-  const favicons = rows.locator('[data-role="tile"] img');
-
-  await expect(favicons).toHaveCount(await rows.count());
 
   // The tile reuses the signed backend link of the answer, never a publisher
   // URL, so the favicon request tells the publisher nothing.
@@ -83,10 +101,29 @@ test('blocks the listed fixture article and shows a signed result image', async 
     .toBeGreaterThan(0);
 });
 
+test('goes back to the page before the stopped article', async ({ page }) => {
+  await page.goto(OPEN_URL);
+  await page.evaluate((url) => location.assign(url), LISTED_URL).catch(() => undefined);
+  await page.waitForURL(BLOCK_PAGE, { timeout: 20_000 });
+  await page.locator('[data-role="alternatives"][data-state="results"]').waitFor();
+
+  await page.locator('[data-role="back"]').click();
+
+  await expect(page).toHaveURL(OPEN_URL);
+});
+
 test('keeps the scope menu inside a short viewport', async ({ page }) => {
   await waitForBlockPage(page, LISTED_URL);
 
-  await page.setViewportSize({ width: 1000, height: 520 });
+  // The list and the source card grow when their answers arrive. Wait for the
+  // answer, so the case measures where the foot of the card sits at rest.
+  await expect(page.locator('[data-role="alternatives"]')).toHaveAttribute('data-state', 'results');
+
+  // The control sits in the foot of the card, so a short window that is
+  // scrolled to the bottom leaves it very little room below and the menu must
+  // open above it.
+  await page.setViewportSize({ width: 1000, height: 600 });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
   const caret = page.locator('[data-role="open-menu"]');
 
@@ -98,11 +135,11 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
 
   const box = await menu.boundingBox();
   const viewport = page.viewportSize();
-  const caretBox = await caret.boundingBox();
+  const flippedCaret = await caret.boundingBox();
 
   expect(box).not.toBeNull();
   expect(viewport).not.toBeNull();
-  expect(caretBox).not.toBeNull();
+  expect(flippedCaret).not.toBeNull();
   expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
 
@@ -112,8 +149,8 @@ test('keeps the scope menu inside a short viewport', async ({ page }) => {
   const side = await menu.getAttribute('data-side');
   const gap =
     side === 'top'
-      ? caretBox!.y - (box!.y + box!.height)
-      : box!.y - (caretBox!.y + caretBox!.height);
+      ? flippedCaret!.y - (box!.y + box!.height)
+      : box!.y - (flippedCaret!.y + flippedCaret!.height);
 
   expect(side, 'the menu flips above the control in a short window').toBe('top');
   expect(gap).toBeGreaterThanOrEqual(4);
@@ -181,6 +218,7 @@ test('opens the listed article once without an allowance', async ({ page, worker
 
   await page.locator('[data-role="open-menu"]').click();
   await page.locator('[data-role="scope-once"]').click();
+  await page.locator('[data-role="open-site"]').click();
 
   await expect(page).toHaveURL(LISTED_URL);
   await expect(page.locator('h1')).toHaveText(WALLED_TITLE);
@@ -198,6 +236,96 @@ test('opens the listed article once without an allowance', async ({ page, worker
   await waitForBlockPage(page, LISTED_URL);
 
   await expect(page).toHaveURL(BLOCK_PAGE);
+});
+
+test('takes the open search box back from the arrow keys and picks an engine', async ({ page }) => {
+  await waitForBlockPage(page, LISTED_URL);
+  await expect(page.locator('[data-role="search"]')).toBeVisible();
+
+  await page.locator('[data-role="search"]').click();
+
+  const engines = page.locator('[data-role="engines"] a');
+
+  await expect(engines.first()).toBeFocused();
+  await expect(engines.first()).toHaveAttribute('data-selected', 'true');
+
+  // The focus leaves the box when an engine opens its own tab, and the arrows
+  // still lead back to the box as the last stop.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('ArrowUp');
+
+  await expect(page.locator('[data-role="fallback"]')).toHaveAttribute('data-selected', 'true');
+
+  await page.keyboard.press('Enter');
+
+  await expect(engines.first()).toBeFocused();
+  await expect(page.locator('[data-role="fallback"]')).not.toHaveAttribute('data-selected', 'true');
+
+  // The digits pick an engine inside the box, and the ring names the choice.
+  await page.keyboard.press('3');
+
+  await expect(engines.nth(2)).toBeFocused();
+  await expect(engines.nth(2)).toHaveAttribute('data-selected', 'true');
+  await expect(engines.first()).not.toHaveAttribute('data-selected', 'true');
+});
+
+test('closes the search box on escape and reopens it', async ({ page }) => {
+  await waitForBlockPage(page, LISTED_URL);
+  await expect(page.locator('[data-role="search"]')).toBeVisible();
+
+  await page.locator('[data-role="search"]').click();
+  await expect(page.locator('[data-role="engines"] a').first()).toBeFocused();
+
+  await page.keyboard.press('Escape');
+
+  await expect(page.locator('[data-role="fallback"]')).toBeHidden();
+  await expect(page.locator('[data-role="fallback-note"]')).toBeHidden();
+  await expect(page.locator('[data-role="search"]')).toBeVisible();
+  await expect(page.locator('[data-role="search"]')).toHaveAttribute('data-selected', 'true');
+
+  await page.keyboard.press('Enter');
+
+  await expect(page.locator('[data-role="fallback"]')).toBeVisible();
+  await expect(page.locator('[data-role="engines"] a').first()).toBeFocused();
+});
+
+test('returns to the last alternative from the query field', async ({ page }) => {
+  await waitForBlockPage(page, LISTED_URL);
+  await expect(page.locator('[data-role="search"]')).toBeVisible();
+
+  await page.locator('[data-role="search"]').click();
+  await expect(page.locator('[data-role="engines"] a').first()).toBeFocused();
+
+  await page.keyboard.press('ArrowUp');
+  await expect(page.locator('[data-role="query"]')).toBeFocused();
+
+  await page.keyboard.press('ArrowUp');
+
+  const rows = page.locator('[data-role="list"] li');
+
+  await expect(rows.last()).toHaveAttribute('data-selected', 'true');
+  await expect(page.locator('[data-role="fallback"]')).toBeHidden();
+  await expect(page.locator('[data-role="search"]')).toBeVisible();
+});
+
+test('starts the scope selector on the choice kept for the site', async ({ page, worker }) => {
+  await waitForBlockPage(page, LISTED_URL);
+
+  await page.locator('[data-role="open-menu"]').click();
+  await page.locator('[data-role="scope-once"]').click();
+
+  await expect
+    .poll(() => worker.evaluate(() => chrome.storage.local.get(['scopeDefaults'])))
+    .toEqual({ scopeDefaults: { '127.0.0.1': 'once' } });
+
+  await waitForBlockPage(page, LISTED_URL);
+
+  await expect(page.locator('[data-role="open-menu-label"]')).toHaveText('Just once');
+
+  await page.locator('[data-role="open-menu"]').click();
+
+  await expect(page.locator('[data-role="scope-once"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('[data-role="scope-tab"]')).toHaveAttribute('aria-checked', 'false');
 });
 
 test('opens a result from every part of its row', async ({ page }) => {
@@ -260,73 +388,150 @@ test('shows the failure state on the failing fixture', async ({ page }) => {
   await expect(page.locator('[data-role="retry"]')).toBeVisible();
 });
 
-test('keeps the popup inside its 340 pixel frame', async ({ context }) => {
-  const popup = await context.newPage();
+test('keeps the popup inside its 340 pixel frame', async ({ worker, page }) => {
+  await page.goto(UNLISTED_URL);
 
-  await popup.setViewportSize({ width: 340, height: 620 });
-  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
-  await expect(popup.locator('[data-role="how-it-works"]')).toHaveText('How it works');
+  const popup = await openNativePopup(worker, page);
 
-  // The browser sizes a popup window to its content, so a footer that overflows
-  // its body widens the window past the papers behind it and leaves the sections
-  // short of the right edge.
+  // Chrome sizes a popup window to its document, so a footer that overflows its
+  // body widens the window past the page behind it and leaves the sections short
+  // of the right edge.
   const frame = await popup.evaluate(() => {
     const footer = document.querySelector('footer');
     const edges = [...(footer?.children ?? [])].map((child) => child.getBoundingClientRect().right);
 
     return {
+      width: window.innerWidth,
       bodyWidth: document.body.clientWidth,
       scrollWidth: document.body.scrollWidth,
       footerRight: Math.max(...edges),
     };
   });
 
+  expect(frame.width).toBe(340);
   expect(frame.bodyWidth).toBe(340);
   expect(frame.scrollWidth).toBe(frame.bodyWidth);
   expect(frame.footerRight).toBeLessThanOrEqual(frame.bodyWidth);
+});
+
+test('paints the listed page and its routes in the popup', async ({ worker, page }) => {
+  // The reader kept an allowance for the fixture host, so the page loads and the
+  // popup still answers for a site that the list carries.
+  await worker.evaluate(() =>
+    chrome.storage.local.set({ allowAlways: [{ host: '127.0.0.1', addedAt: Date.now() }] }),
+  );
+
+  await page.goto(LISTED_URL);
+  await expect(page.locator('h1')).toHaveText(WALLED_TITLE);
+
+  const popup = await openNativePopup(worker, page);
+
+  await expect(popup.locator('[data-role="state"]')).toHaveText('On');
+  await expect(popup.locator('[data-role="source-domain"]')).toHaveText('127.0.0.1');
+  await expect(popup.locator('[data-role="source-description"]')).toContainText('two walls');
+
+  // The pills of the site, then one row per alternative and the search card as
+  // the last number. The list keeps every row and scrolls past the third.
+  const pills = popup.locator('[data-role="wall"]');
+
+  await expect(pills).toHaveCount(2);
+  await expect(pills.first()).toContainText('Ad blocker');
+  await expect(pills.nth(1)).toContainText('Paywall');
+  await expect(popup.locator('[data-role="list"] > li')).toHaveCount(4);
+  await expect(popup.locator('[data-role="search"]')).toBeVisible();
+  await expect(popup.locator('[data-role="search-key"]')).toHaveText('5');
 
   await popup.close();
 });
 
-test('pauses from the popup and reports the time it has left', async ({ context }) => {
-  const popup = await context.newPage();
+test('paints the unlisted page with the report row and the search', async ({ worker, page }) => {
+  await page.goto(UNLISTED_URL);
 
-  await popup.setViewportSize({ width: 340, height: 620 });
-  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  const popup = await openNativePopup(worker, page);
 
-  const pause = popup.locator('[data-role="pause"]');
+  await expect(popup.locator('[data-role="source-domain"]')).toHaveText('forbes.test');
+  await expect(popup.locator('[data-role="source-description"]')).toHaveText(
+    'This site is not on the list',
+  );
+  await expect(popup.locator('[data-role="list"] > li')).toHaveCount(0);
+  await expect(popup.locator('[data-role="site-report"]')).toBeVisible();
+  await expect(popup.locator('[data-role="report-key"]')).toHaveText('1');
+  await expect(popup.locator('[data-role="search"]')).toBeVisible();
+  await expect(popup.locator('[data-role="search-key"]')).toHaveText('2');
 
-  await expect(pause).toHaveAttribute('aria-expanded', 'false');
-  await pause.click();
-  await expect(pause).toHaveAttribute('aria-expanded', 'true');
+  await popup.close();
+});
 
-  await popup.locator('[data-role="duration-5m"]').click();
+test('switches Detour off from the popup and back on', async ({ context, worker, page }) => {
+  await page.goto(UNLISTED_URL);
 
-  // The worker stores the pause, and the popup reads it back instead of trusting
-  // the press it just made.
-  await expect(popup.locator('[data-role="pause-label"]')).toHaveText(/^Paused · 0[45]:\d\d left$/);
-  await expect(popup.locator('[data-role="state"]')).toHaveAttribute('data-state', 'paused');
+  // A tab keeps a document that a reload can be asserted on, which a toolbar
+  // popup window does not: closing it is the end of that document.
+  const popup = await openPopupOver(context, worker, page);
+  const switchBox = popup.locator('[data-role="enabled"]');
+
+  await expect(popup.locator('[data-role="state"]')).toHaveText('On');
+  await expect(switchBox).toBeChecked();
+
+  await switchBox.uncheck();
+
+  // The worker stores the setting, and the popup asks for the state again
+  // instead of trusting the press it just made.
+  await expect(popup.locator('[data-role="state"]')).toHaveText('Off');
+  await expect(popup.locator('[data-role="state"]')).toHaveAttribute('data-state', 'off');
 
   await popup.reload();
 
-  await expect(popup.locator('[data-role="pause-label"]')).toHaveText(/^Paused · 0[45]:\d\d left$/);
-  await expect(popup.locator('[data-role="resume"]')).toBeVisible();
+  await expect(popup.locator('[data-role="state"]')).toHaveText('Off');
+  await expect(popup.locator('[data-role="enabled"]')).not.toBeChecked();
 
-  await popup.locator('[data-role="resume"]').click();
+  await popup.locator('[data-role="enabled"]').check();
 
-  await expect(popup.locator('[data-role="pause-label"]')).toHaveText('Pause the list');
-  await expect(popup.locator('[data-role="state"]')).toHaveAttribute('data-state', 'on');
+  await expect(popup.locator('[data-role="state"]')).toHaveText('On');
 
   await popup.close();
 });
 
-test('hides the site block on a page that names no site', async ({ context }) => {
-  const popup = await context.newPage();
+test('says why a page names no site', async ({ worker, page }) => {
+  await page.goto('chrome://settings/');
 
-  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  const popup = await openNativePopup(worker, page);
 
-  await expect(popup.locator('[data-role="pause"]')).toBeVisible();
-  await expect(popup.locator('[data-role="site"]')).toBeHidden();
+  await expect(popup.locator('[data-role="state"]')).toHaveText('On');
+  await expect(popup.locator('[data-role="source"]')).toBeHidden();
+  await expect(popup.locator('[data-role="search"]')).toBeHidden();
+  await expect(popup.locator('[data-role="list"] > li')).toHaveCount(0);
+  await expect(popup.locator('[data-role="status"]')).toHaveText(
+    'Detour works on websites. Open a site, then press the icon again.',
+  );
+  await expect(popup.locator('[data-role="how-it-works"]')).toHaveText('How it works');
 
   await popup.close();
+});
+
+test('opens a route from the toolbar popup over the page it answers for', async ({
+  worker,
+  page,
+}) => {
+  await worker.evaluate(() =>
+    chrome.storage.local.set({ allowAlways: [{ host: '127.0.0.1', addedAt: Date.now() }] }),
+  );
+
+  await page.goto(LISTED_URL);
+  await expect(page.locator('h1')).toHaveText(WALLED_TITLE);
+
+  const popup = await openNativePopup(worker, page);
+
+  // The popup has no tab of its own, so the state it paints is the state of the
+  // page in front of the reader, read through the worker.
+  await expect(popup.locator('[data-role="source-domain"]')).toHaveText('127.0.0.1');
+  await expect(popup.locator('[data-role="wall"]')).toHaveCount(2);
+  await expect(popup.locator('[data-role="list"] > li')).toHaveCount(4);
+  await expect(popup.locator('[data-role="search-key"]')).toHaveText('5');
+
+  // A row press moves the page the popup answers for, then closes the popup.
+  await popup.locator('[data-role="list"] > li > a').first().click();
+
+  await expect(page).toHaveURL(/niemanlab\.org/);
+  await expect.poll(() => popup.isClosed()).toBe(true);
 });

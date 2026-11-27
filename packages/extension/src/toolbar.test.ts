@@ -1,20 +1,37 @@
+import type { ListedSite } from '@detour/shared';
+import { sha256Hex } from '@detour/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import {
-  LISTED_BADGE,
-  TOOLBAR_OFF_TITLE,
-  TOOLBAR_PAUSED_TITLE,
-  TOOLBAR_TITLE,
-  listedTitle,
-} from './copy';
+import { TOOLBAR_OFF_TITLE, TOOLBAR_TITLE, loadTitle, stopTitle } from './copy';
 import { STORAGE } from './constants';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
-import { BADGE_COLOR, BADGE_TEXT_COLOR, refreshToolbar, toolbarView } from './toolbar';
+import type { ToolbarFacts } from './toolbar';
+import { refreshToolbar, toolbarView } from './toolbar';
+import { defaultWalls } from './walls';
 
-const NOW = 1_700_000_000_000;
 const CNET_URL = 'https://www.cnet.com/tech/services-and-software/best-ai-image-generators/';
 const UNLISTED_URL = 'https://example.test/an-article';
+const BLOCK_URL = `chrome-extension://jcncblagncbpbamfnekhdkomffdpehpk/block.html?u=${encodeURIComponent(CNET_URL)}&theme=light`;
+
+/** The fields of the CNET entry of the bundled list, which has one soft wall. */
+const CNET: Pick<ListedSite, 'domain' | 'walls'> = {
+  domain: 'cnet.com',
+  walls: [{ category: 'adblock', type: 'soft' }],
+};
+
+const NO_WALLS: ToolbarFacts['walls'] = { hard: [], soft: [], metered: [] };
+
+function facts(overrides: Partial<ToolbarFacts> = {}): ToolbarFacts {
+  return {
+    enabled: true,
+    listEnabled: true,
+    walls: defaultWalls(),
+    site: CNET,
+    allowed: false,
+    ...overrides,
+  };
+}
 
 afterEach(() => {
   resetFakeChrome();
@@ -22,67 +39,72 @@ afterEach(() => {
 
 describe('the toolbar view', () => {
   it('grays the mark while Detour is off', () => {
-    const view = toolbarView({ enabled: false, paused: false, site: null });
+    const view = toolbarView(facts({ enabled: false }));
 
     expect(view.icons[16]).toBe('icon-off-16.png');
     expect(view.icons[128]).toBe('icon-off-128.png');
-    expect(view.badge).toBe('');
     expect(view.title).toBe(TOOLBAR_OFF_TITLE);
   });
 
-  it('grays the mark while Detour is paused', () => {
-    const view = toolbarView({ enabled: true, paused: true, site: null });
-
-    expect(view.icons[16]).toBe('icon-off-16.png');
-    expect(view.title).toBe(TOOLBAR_PAUSED_TITLE);
-  });
-
-  it('marks a listed site with an exclamation mark', () => {
-    const view = toolbarView({
-      enabled: true,
-      paused: false,
-      site: { domain: 'cnet.com' },
-    });
+  it('shows the coloured route on a page that Detour will stop', () => {
+    const view = toolbarView(facts());
 
     expect(view.icons[16]).toBe('icon-16.png');
-    expect(view.badge).toBe(LISTED_BADGE);
-    expect(view.badge).toBe('!');
-    expect(view.title).toBe(listedTitle('cnet.com'));
-    expect(view.title).toBe('Detour — cnet.com is on the list');
+    expect(view.icons[128]).toBe('icon-128.png');
+    expect(view.title).toBe(stopTitle('cnet.com'));
+    expect(view.title).toBe('Detour will stop this page on cnet.com');
   });
 
-  it('leaves a site that the list does not carry without a badge', () => {
-    const view = toolbarView({ enabled: true, paused: false, site: null });
+  it('shows the faint route on a page that the list does not carry', () => {
+    const view = toolbarView(facts({ site: null }));
 
-    expect(view.icons[16]).toBe('icon-16.png');
-    expect(view.badge).toBe('');
+    expect(view.icons[16]).toBe('icon-plain-16.png');
+    expect(view.icons[128]).toBe('icon-plain-128.png');
     expect(view.title).toBe(TOOLBAR_TITLE);
   });
 
-  it('drops the badge of a listed site while Detour is off', () => {
-    const view = toolbarView({
-      enabled: false,
-      paused: false,
-      site: { domain: 'cnet.com' },
-    });
+  it('shows the faint route when no chosen wall stops the page', () => {
+    const view = toolbarView(facts({ walls: NO_WALLS }));
 
-    expect(view.badge).toBe('');
+    expect(view.icons[16]).toBe('icon-plain-16.png');
+    expect(view.title).toBe(loadTitle('cnet.com'));
+    expect(view.title).toBe('Detour will not stop this page on cnet.com');
+  });
+
+  it('shows the faint route when an allowance covers the site', () => {
+    const view = toolbarView(facts({ allowed: true }));
+
+    expect(view.icons[16]).toBe('icon-plain-16.png');
+    expect(view.title).toBe(loadTitle('cnet.com'));
+  });
+
+  it('shows the faint route while the list is disabled', () => {
+    const view = toolbarView(facts({ listEnabled: false }));
+
+    expect(view.icons[16]).toBe('icon-plain-16.png');
+    expect(view.title).toBe(loadTitle('cnet.com'));
+  });
+
+  it('drops the colour of a listed site while Detour is off', () => {
+    const view = toolbarView(facts({ enabled: false, site: CNET }));
+
+    expect(view.icons[16]).toBe('icon-off-16.png');
     expect(view.title).toBe(TOOLBAR_OFF_TITLE);
   });
 });
 
 async function painted(fake: FakeChrome): Promise<void> {
-  await refreshToolbar(() => NOW);
+  await refreshToolbar();
 
   expect(fake.calls.icons).toHaveLength(1);
-  expect(fake.calls.badges).toHaveLength(1);
-  expect(fake.calls.badgeColors).toEqual([BADGE_COLOR]);
-  expect(fake.calls.badgeTextColors).toEqual([BADGE_TEXT_COLOR]);
+  expect(fake.calls.badges).toEqual(['']);
+  expect(fake.calls.badgeColors).toEqual([]);
+  expect(fake.calls.badgeTextColors).toEqual([]);
   expect(fake.calls.titles).toHaveLength(1);
 }
 
 describe('the toolbar refresh', () => {
-  it('badges the page in front of the reader when the list carries it', async () => {
+  it('shows the coloured route on the page that Detour will stop', async () => {
     const fake = installFakeChrome();
 
     fake.activeTabUrl = CNET_URL;
@@ -90,19 +112,76 @@ describe('the toolbar refresh', () => {
     await painted(fake);
 
     expect(fake.calls.icons[0]?.[16]).toBe('icon-16.png');
-    expect(fake.calls.badges[0]).toBe(LISTED_BADGE);
-    expect(fake.calls.titles[0]).toBe(listedTitle('cnet.com'));
+    expect(fake.calls.titles[0]).toBe(stopTitle('cnet.com'));
   });
 
-  it('leaves the mark plain on a page that the list does not carry', async () => {
+  it('shows the faint route on a page that the list does not carry', async () => {
     const fake = installFakeChrome();
 
     fake.activeTabUrl = UNLISTED_URL;
 
     await painted(fake);
 
+    expect(fake.calls.icons[0]?.[16]).toBe('icon-plain-16.png');
+    expect(fake.calls.titles[0]).toBe(TOOLBAR_TITLE);
+  });
+
+  it('shows the faint route on a listed site that the reader allowed', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values[STORAGE.allowAlways] = [{ host: 'cnet.com', addedAt: 1 }];
+
+    await painted(fake);
+
+    expect(fake.calls.icons[0]?.[16]).toBe('icon-plain-16.png');
+    expect(fake.calls.titles[0]).toBe(loadTitle('cnet.com'));
+  });
+
+  it('shows the faint route on a tab that holds an allowance', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.session.values[STORAGE.allowTabs] = [
+      { host: 'cnet.com', tabId: fake.currentTabId, addedAt: 1 },
+    ];
+
+    await painted(fake);
+
+    expect(fake.calls.icons[0]?.[16]).toBe('icon-plain-16.png');
+    expect(fake.calls.titles[0]).toBe(loadTitle('cnet.com'));
+  });
+
+  it('shows the faint route when no chosen wall stops the page', async () => {
+    const fake = installFakeChrome();
+
+    fake.storage.local.values[STORAGE.settings] = { walls: NO_WALLS };
+
+    await painted(fake);
+
+    expect(fake.calls.icons[0]?.[16]).toBe('icon-plain-16.png');
+    expect(fake.calls.titles[0]).toBe(loadTitle('cnet.com'));
+  });
+
+  it('answers for the article of a block page while the tab holds its record', async () => {
+    const fake = installFakeChrome();
+
+    fake.activeTabUrl = BLOCK_URL;
+    fake.storage.session.values[`${STORAGE.capability}${fake.currentTabId}`] =
+      await sha256Hex(CNET_URL);
+
+    await painted(fake);
+
     expect(fake.calls.icons[0]?.[16]).toBe('icon-16.png');
-    expect(fake.calls.badges[0]).toBe('');
+    expect(fake.calls.titles[0]).toBe(stopTitle('cnet.com'));
+  });
+
+  it('keeps the mark plain on a block page without a record', async () => {
+    const fake = installFakeChrome();
+
+    fake.activeTabUrl = BLOCK_URL;
+
+    await painted(fake);
+
+    expect(fake.calls.icons[0]?.[16]).toBe('icon-plain-16.png');
     expect(fake.calls.titles[0]).toBe(TOOLBAR_TITLE);
   });
 
@@ -114,19 +193,7 @@ describe('the toolbar refresh', () => {
     await painted(fake);
 
     expect(fake.calls.icons[0]?.[16]).toBe('icon-off-16.png');
-    expect(fake.calls.badges[0]).toBe('');
     expect(fake.calls.titles[0]).toBe(TOOLBAR_OFF_TITLE);
-  });
-
-  it('names the pause while Detour is paused', async () => {
-    const fake = installFakeChrome();
-
-    fake.storage.local.values[STORAGE.pauseUntil] = NOW + 60_000;
-
-    await painted(fake);
-
-    expect(fake.calls.icons[0]?.[16]).toBe('icon-off-16.png');
-    expect(fake.calls.titles[0]).toBe(TOOLBAR_PAUSED_TITLE);
   });
 
   it('names no site on a page without an address', async () => {
@@ -136,7 +203,7 @@ describe('the toolbar refresh', () => {
 
     await painted(fake);
 
-    expect(fake.calls.badges[0]).toBe('');
+    expect(fake.calls.icons[0]?.[16]).toBe('icon-plain-16.png');
     expect(fake.calls.titles[0]).toBe(TOOLBAR_TITLE);
   });
 
@@ -147,7 +214,8 @@ describe('the toolbar refresh', () => {
       throw new Error('the window closed');
     };
 
-    await expect(refreshToolbar(() => NOW)).resolves.toBeUndefined();
+    await expect(refreshToolbar()).resolves.toBeUndefined();
+    expect(fake.calls.icons).toEqual([]);
     expect(fake.calls.badges).toEqual([]);
   });
 
@@ -171,11 +239,11 @@ describe('the toolbar refresh', () => {
       return [{ id: fake.currentTabId, url }];
     };
 
-    const older = refreshToolbar(() => NOW);
+    const older = refreshToolbar();
 
     fake.activeTabUrl = UNLISTED_URL;
 
-    await refreshToolbar(() => NOW);
+    await refreshToolbar();
     release();
     await older;
 

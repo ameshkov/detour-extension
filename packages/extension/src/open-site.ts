@@ -60,6 +60,20 @@ async function recordOpen(input: OpenSiteInput): Promise<boolean> {
 }
 
 /**
+ * The chosen scope travels to the worker, which stores it for the domain of the
+ * page. A page that the list does not carry writes nothing.
+ */
+export function rememberScopeChoice(url: string, kind: OpenSiteKind): void {
+  if (typeof chrome === 'undefined' || chrome.runtime === undefined) {
+    return;
+  }
+
+  void Promise.resolve()
+    .then(() => chrome.runtime.sendMessage({ type: MESSAGE.rememberScope, url, scope: kind }))
+    .catch(() => undefined);
+}
+
+/**
  * A listed site opens after its allowance or its one-time pass is stored, and
  * not before. An unlisted URL needs neither, so it opens at once. A failed or
  * late write keeps the page and shows the action error.

@@ -25,7 +25,7 @@ A wall is any refusal of the article: an ad-blocker wall, a paywall, a registrat
 
 What it does
 
-The toolbar icon turns gray while Detour is off or paused, and it carries a badge on a site that the list names.
+The toolbar icon carries a coloured route on a page that Detour will stop, a faint route on a page it lets load, and a gray mark while Detour is off.
 
 - Names every wall that the list records for a site, on the block page and in the popup.
 - Shows the same story from publishers that do not wall it, with the title, the publisher, and a short description.

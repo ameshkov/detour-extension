@@ -1,31 +1,176 @@
-:root {
-  --paper: #fbfaf8;
-  --surface: #ffffff;
-  --ink: #16161a;
-  --muted: #6e6c67;
-  --line: #e8e4dd;
-  --line-soft: #f0ece5;
-  --hover: #f4f0e9;
-  --control-line: #ded9d0;
-  --accent: #0b6b57;
-  --accent-deep: #0a5f4e;
-  --accent-ring: rgba(11, 107, 87, 0.16);
-  --blocked: #c0513f;
-  --notice-ink: #6b5322;
-  --notice-surface: #fdf6e7;
-  --notice-line: #efdfbc;
-  --serif: 'Iowan Old Style', Georgia, 'Palatino Linotype', Palatino, ui-serif, serif;
-  --sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
-    'Helvetica Neue', Arial, sans-serif;
-  --radius: 14px;
+/* One cascade for the block page, the popup, and the settings page. The palette
+   comes from docs/brand.md, and the public site mirrors the same tokens. */
 
-  /* Depth is mixed from the ink, so the palette keeps one colour source. A card
-     sits a hair above the paper, and a lifted row floats over it. */
-  --shadow-card: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
-  --shadow-lift:
-    0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent),
-    0 18px 40px -24px color-mix(in srgb, var(--ink) 34%, transparent);
+/* The interface face ships with the extension, because an extension page loads
+   no remote font and the system faces differ by platform. The file is the
+   latin subset of the variable Inter, under the SIL Open Font License. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('inter.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: light;
+
+  --paper: #f8fafc;
+  --surface: #ffffff;
+  --sunken: #f8fafc;
+  --ink: #0f172a;
+  --body: #475569;
+  --muted: #64748b;
+  --faint: #94a3b8;
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+  --hover: #f8fafc;
+  --control-line: #cbd5e1;
+  /* The mark tile: slate in the light set and a step above the card in the dark. */
+  --mark: #0f172a;
+  --accent: #2563eb;
+  --accent-deep: #1d4ed8;
+  --accent-ink: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.06);
+  --accent-line: rgba(37, 99, 235, 0.22);
+  --accent-ring: rgba(37, 99, 235, 0.2);
+  --blocked: #e11d48;
+  --clear-ink: #047857;
+  --notice-ink: #92400e;
+  --notice-surface: #fffbeb;
+  --notice-line: #fde68a;
+  --amber-dot: #f59e0b;
+  --dot: rgba(15, 23, 42, 0.05);
+
+  /* One tint per wall category, so the pills carry the data and not decoration. */
+  --wall-adblock-ink: #be123c;
+  --wall-adblock-surface: #fff1f2;
+  --wall-adblock-line: #fecdd3;
+  --wall-paywall-ink: #92400e;
+  --wall-paywall-surface: #fffbeb;
+  --wall-paywall-line: #fde68a;
+  --wall-registration-ink: #5b21b6;
+  --wall-registration-surface: #f5f3ff;
+  --wall-registration-line: #ddd6fe;
+  --wall-consent-ink: #075985;
+  --wall-consent-surface: #f0f9ff;
+  --wall-consent-line: #bae6fd;
+  --wall-region-ink: #1e40af;
+  --wall-region-surface: #eff6ff;
+  --wall-region-line: #bfdbfe;
+  --wall-vpn-ink: #065f46;
+  --wall-vpn-surface: #ecfdf5;
+  --wall-vpn-line: #a7f3d0;
+  --wall-age-ink: #9a3412;
+  --wall-age-surface: #fff7ed;
+  --wall-age-line: #fed7aa;
+
+  --sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --radius: 16px;
+  --radius-inner: 12px;
+  --radius-control: 8px;
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.03), 0 16px 40px -12px rgba(15, 23, 42, 0.08);
+  --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-menu: 0 16px 40px -12px rgba(15, 23, 42, 0.22);
+}
+
+/* The default theme follows the system before a page reads its stored choice.
+   The dark set is written twice because CSS cannot share a block across a media
+   query and an attribute selector. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --paper: #090d16;
+    --surface: #111827;
+    --sunken: #0f172b;
+    --ink: #f1f5f9;
+    --body: #cbd5e1;
+    --muted: #94a3b8;
+    --faint: #64748b;
+    --line: #1e293b;
+    --line-soft: #1e293b;
+    --hover: #1e293b;
+    --control-line: #475569;
+    --mark: #1e293b;
+    --accent: #3b82f6;
+    --accent-deep: #60a5fa;
+    --accent-ink: #93c5fd;
+    --accent-soft: rgba(59, 130, 246, 0.12);
+    --accent-line: rgba(96, 165, 250, 0.32);
+    --accent-ring: rgba(59, 130, 246, 0.35);
+    --blocked: #fb7185;
+    --clear-ink: #34d399;
+    --notice-ink: #fcd34d;
+    --notice-surface: rgba(249, 156, 0, 0.12);
+    --notice-line: rgba(249, 156, 0, 0.25);
+    --amber-dot: #fbbf24;
+    --dot: rgba(148, 163, 184, 0.08);
+
+    --shadow-card: 0 16px 48px -12px rgba(0, 0, 0, 0.55);
+    --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-menu: 0 24px 60px -12px rgba(0, 0, 0, 0.75);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper: #090d16;
+  --surface: #111827;
+  --sunken: #0f172b;
+  --ink: #f1f5f9;
+  --body: #cbd5e1;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  --line: #1e293b;
+  --line-soft: #1e293b;
+  --hover: #1e293b;
+  --control-line: #475569;
+  --mark: #1e293b;
+  --accent: #3b82f6;
+  --accent-deep: #60a5fa;
+  --accent-ink: #93c5fd;
+  --accent-soft: rgba(59, 130, 246, 0.12);
+  --accent-line: rgba(96, 165, 250, 0.32);
+  --accent-ring: rgba(59, 130, 246, 0.35);
+  --blocked: #fb7185;
+  --clear-ink: #34d399;
+  --notice-ink: #fcd34d;
+  --notice-surface: rgba(249, 156, 0, 0.12);
+  --notice-line: rgba(249, 156, 0, 0.25);
+  --amber-dot: #fbbf24;
+  --dot: rgba(148, 163, 184, 0.08);
+
+  --wall-adblock-ink: #fda4af;
+  --wall-adblock-surface: rgba(244, 63, 94, 0.12);
+  --wall-adblock-line: rgba(244, 63, 94, 0.25);
+  --wall-paywall-ink: #fcd34d;
+  --wall-paywall-surface: rgba(249, 156, 0, 0.12);
+  --wall-paywall-line: rgba(249, 156, 0, 0.25);
+  --wall-registration-ink: #c4b5fd;
+  --wall-registration-surface: rgba(139, 92, 246, 0.14);
+  --wall-registration-line: rgba(139, 92, 246, 0.28);
+  --wall-consent-ink: #7dd3fc;
+  --wall-consent-surface: rgba(14, 165, 233, 0.12);
+  --wall-consent-line: rgba(14, 165, 233, 0.25);
+  --wall-region-ink: #93c5fd;
+  --wall-region-surface: rgba(59, 130, 246, 0.12);
+  --wall-region-line: rgba(59, 130, 246, 0.25);
+  --wall-vpn-ink: #6ee7b7;
+  --wall-vpn-surface: rgba(16, 185, 129, 0.12);
+  --wall-vpn-line: rgba(16, 185, 129, 0.25);
+  --wall-age-ink: #fdba74;
+  --wall-age-surface: rgba(249, 115, 22, 0.12);
+  --wall-age-line: rgba(249, 115, 22, 0.25);
+
+  --shadow-card: 0 16px 48px -12px rgba(0, 0, 0, 0.55);
+  --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-menu: 0 24px 60px -12px rgba(0, 0, 0, 0.75);
 }
 
 /* The attribute closes an author display rule, which wins on specificity. */
@@ -33,13 +178,18 @@
   display: none !important;
 }
 
-html {
-  color-scheme: light;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html,
 body {
   margin: 0;
+}
+
+body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
@@ -51,11 +201,11 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: var(--accent-ring);
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: none;
 }
 
@@ -73,599 +223,834 @@ button {
   cursor: pointer;
 }
 
-/* The header follows a long list of results and stays glassy over it, so the
-   wordmark is never scrolled away. */
-[data-role='header'] {
-  position: sticky;
-  top: 0;
-  z-index: 3;
+img {
+  max-width: 100%;
+}
+
+/* The page sits on a dotted canvas, and the card is the whole page. The auto
+   margins centre a short card and leave the top reachable when it is long. */
+body[data-page='block'],
+body[data-page='options'] {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  height: 60px;
-  padding: 0 32px;
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--paper) 86%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
+  min-height: 100vh;
+  padding: 40px 24px 48px;
+  background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
-[data-role='mark'] {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 30%;
-  background: var(--accent);
-}
-
-[data-role='mark'] img {
-  display: block;
-  width: 19px;
-  height: 19px;
-  filter: brightness(0) invert(1);
-}
-
-[data-role='wordmark'] {
-  font-size: 15.5px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  line-height: 1;
-}
-
-main {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 44px 32px 36px;
-}
-
-/* The page title is the one display line: a fluid serif that fills the column
-   on a wide screen and keeps its weight on a phone. */
-[data-role='headline'] {
-  max-width: 660px;
-  margin: 0 0 14px;
-  font-family: var(--serif);
-  font-size: 40px;
-  font-size: clamp(32px, 4.4vw, 44px);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-}
-
-/* The one pill that names a wall: the category in ink, a middot, and the type in
-   grey. The block page and the popup draw it, so the words never drift apart. */
-[data-role='walls'] {
+[data-role='canvas'] {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-width: 660px;
-  margin: 0 0 18px;
-}
-
-[data-role='wall'] {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 6px 13px;
-  border: 1px solid var(--control-line);
-  border-radius: 99px;
-  background: var(--surface);
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-[data-role='wall-category'] {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-[data-role='wall-sep'] {
-  color: var(--control-line);
-}
-
-[data-role='wall-type'] {
-  color: var(--muted);
-}
-
-/* The judgement is the only paragraph left, so it takes the ink and the size of
-   a paragraph a reader reads rather than scans. */
-[data-role='lede'] {
-  max-width: 620px;
-  margin: 0 0 24px;
-  color: var(--ink);
-  font-size: 19px;
-  line-height: 1.55;
-  letter-spacing: -0.003em;
-}
-
-/* The page the reader tried to open, with the control that opens it anyway
-   beside it: the way back sits with the page it belongs to, not under the
-   whole list. */
-[data-role='source'] {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 20px;
-  row-gap: 10px;
+  flex-direction: column;
   align-items: center;
-  padding: 18px 20px;
+  width: 100%;
+  margin-block: auto;
+}
+
+[data-role='card'] {
+  width: 100%;
+  max-width: 664px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-card);
+}
+
+/* The header is a strip of the card: the mark, the wordmark, and the one control
+   that the page owns. */
+[data-role='header'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+[data-role='mark'] {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--mark);
+  box-shadow: var(--shadow-control);
+}
+
+/* The dark set lifts the tile a step above the card, so the edge of the tile
+   carries it and the mark keeps its shape on a dark surface. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) [data-role='mark'] {
+    box-shadow:
+      var(--shadow-control),
+      inset 0 0 0 1px rgba(248, 250, 252, 0.1);
+  }
+}
+
+:root[data-theme='dark'] [data-role='mark'] {
+  box-shadow:
+    var(--shadow-control),
+    inset 0 0 0 1px rgba(248, 250, 252, 0.1);
+}
+
+[data-role='mark'] img {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+[data-role='wordmark'] {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+/* The header names the count, and one amber dot carries the indication that
+   the list has something to say about this page. */
+[data-role='wall-status'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+[data-role='header-sep'] {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  margin-right: 2px;
+  background: var(--line);
+}
+
+[data-role='wall-status-dot'] {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber-dot);
+}
+
+[data-role='wall-status-text'] {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-role='theme'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+[data-role='theme']:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+[data-role='theme-icon'] {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+
+[data-role='theme-icon'] svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The button shows the theme that a press moves to, so the icon states the
+   result and the label states the same result in words. */
+[data-role='theme-icon'] [data-icon='sun'] {
+  display: none;
+}
+
+[data-theme='dark'] [data-role='theme-icon'] [data-icon='moon'] {
+  display: none;
+}
+
+[data-theme='dark'] [data-role='theme-icon'] [data-icon='sun'] {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) [data-role='theme-icon'] [data-icon='moon'] {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) [data-role='theme-icon'] [data-icon='sun'] {
+    display: block;
+  }
+}
+
+main {
+  padding: 24px 28px;
+}
+
+/* The headline is the one big line of the page, and the judgement under it is
+   the only paragraph that follows it. */
+[data-role='headline'] {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+[data-role='lede'] {
+  max-width: 560px;
+  margin: 6px 0 0;
+  color: var(--body);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* The page that the reader tried to open. The control that opens it anyway sits
+   beside it, because the way back belongs to the page it belongs to. */
+[data-role='source'] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 16px;
+  row-gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--sunken);
 }
 
 [data-role='source-text'] {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   min-width: 0;
 }
 
-[data-role='source-label'] {
-  margin: 0;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+/* The address and its copy control share one line, so the control sits at the
+   end of the data that it copies. */
+[data-role='source-line'] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-/* The stopped page stays in sans: the serif belongs to the headline and to the
-   stories the reader is offered. */
+/* The mark of the stopped page, as the reference draws it: one letter on the
+   colour that the domain earns. */
+[data-role='source-tile'] {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* The address is the data of this card, so it takes the mono face. The host is
+   ink, the path is grey, and a longer path ends in an ellipsis. The title and
+   the href carry the whole address. */
+[data-role='source-address'] {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+[data-role='source-domain'] {
+  flex: none;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+[data-role='source-path'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--faint);
+  font-weight: 400;
+  text-overflow: ellipsis;
+}
+
 [data-role='source-title'] {
   margin: 0;
-  font-family: var(--sans);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-}
-
-/* The host and the path on one line. A longer address ends in an ellipsis, and
-   the title of the link carries the whole address. */
-[data-role='source-link'] {
-  display: block;
-  max-width: 100%;
   overflow: hidden;
-  color: var(--muted);
-  font-size: 13.5px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-[data-role='action-error'] {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--blocked);
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-[data-role='list-head'] {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin: 44px 0 18px;
-}
-
-[data-role='alternatives-heading'] {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 27px;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
-[data-role='count'] {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-[data-role='status'] {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.01em;
-}
-
-[data-role='detail'] {
-  max-width: 620px;
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-[data-role='alternatives'][data-state='error'] [data-role='status'] {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1px solid var(--notice-line);
-  border-radius: 12px;
-  background: var(--notice-surface);
-  color: var(--notice-ink);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.55;
-}
-
-/* The notice is a failure the reader has to read, so it leads with the mark the
-   wireframe draws rather than with its first word. */
-[data-role='alternatives'][data-state='error'] [data-role='status']::before {
-  content: '!';
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 17px;
-  height: 17px;
-  margin-top: 1px;
-  border: 1.5px solid var(--notice-ink);
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-[data-role='list'] {
-  margin: 14px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* The row is one link, so the title, the domain, the description, and the image
-   all open the story. The padding and the border live on that link, and the
-   item is only the slot that carries the divider. */
-[data-role='list'] > li > a {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 128px;
-  column-gap: 16px;
-  align-items: start;
-  padding: 16px 14px;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  color: var(--ink);
-  transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    box-shadow 140ms ease;
-}
-
-[data-role='list'] > li + li {
-  border-top: 1px solid var(--line-soft);
-}
-
-/* A pressed row lifts into a card of its own, and the raised card closes its
-   edge, so the next divider does not cut it. */
-[data-role='list'] > li:hover > a,
-[data-role='list'] > li:focus-within > a {
-  border-color: var(--line);
-  background: var(--surface);
-  box-shadow: var(--shadow-lift);
-}
-
-[data-role='list'] > li:hover + li,
-[data-role='list'] > li:focus-within + li {
-  border-top-color: transparent;
-}
-
-/* The hero is a card already, so it answers with its edge and not with a fill. */
-[data-role='list'] > li[data-variant='hero'] > a {
-  grid-template-columns: 264px minmax(0, 1fr);
-  column-gap: 22px;
-  align-items: center;
-  padding: 16px;
-  border-color: var(--line);
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-}
-
-[data-role='list'] > li[data-variant='hero']:hover > a,
-[data-role='list'] > li[data-variant='hero']:focus-within > a {
-  border-color: var(--control-line);
-  background: var(--surface);
-  box-shadow: var(--shadow-lift);
-}
-
-[data-role='list'] > li[data-layout='text'] > a {
-  grid-template-columns: 30px minmax(0, 1fr);
-}
-
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-[data-role='list'] > li > a > [data-role='tile'] {
-  display: grid;
-  grid-column: 1;
-  grid-row: 1 / span 2;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  margin-top: 2px;
-  border-radius: 8px;
-  color: var(--surface);
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-/* The favicon the backend serves is the tile: it fills the box, and the letter
-   tile takes over only when the answer carries none or the image fails. */
-[data-role='list'] > li > a > [data-role='tile'] img {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-[data-role='list'] > li > a > [data-role='result-title'] {
-  grid-column: 2;
-  grid-row: 1;
-  font-size: 17.5px;
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.011em;
-}
-
-[data-role='list'] > li[data-variant='hero'] > a > [data-role='result-title'] {
-  font-family: var(--serif);
-  font-size: 24px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a > [data-role='result-title'],
-[data-role='list'] > li[data-variant='hero'][data-layout='text'] > a > [data-role='result-meta'] {
-  grid-column: 1;
-}
-
-/* Two lines of description keep every row at a height a reader can scan. */
-[data-role='list'] > li > a > [data-role='result-meta'] {
+/* The description is the one line that says what the story is, so a phone
+   keeps two lines of it and the card cuts no further. */
+[data-role='source-description'] {
   display: -webkit-box;
-  grid-column: 2;
-  grid-row: 2;
   margin: 0;
   overflow: hidden;
-  color: var(--muted);
-  font-size: 14.5px;
-  line-height: 1.55;
+  color: var(--body);
+  font-size: 12.5px;
+  line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-[data-role='result-domain'] {
-  color: var(--ink);
-  font-weight: 550;
-}
-
-[data-role='list'] > li > a > img {
-  grid-column: 3;
-  grid-row: 1 / span 2;
-  width: 128px;
-  height: 80px;
-  border-radius: 10px;
-  object-fit: cover;
-}
-
-[data-role='list'] > li[data-variant='hero'] > a > img {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-  width: 264px;
-  height: 148px;
-  border-radius: 12px;
-}
-
-[data-role='fallback'] {
-  margin-top: 18px;
-  padding: 18px;
+/* The icon of the publisher takes the 28 pixel tile of the letter, and the
+   letter returns when the image fails. */
+[data-role='source-tile'][data-icon='true'] {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
   background: var(--surface);
 }
 
-[data-role='fallback-heading'] {
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 600;
+[data-role='source-tile'] img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
-[data-role='query-label'] {
-  display: block;
-  margin-bottom: 7px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-[data-role='query'] {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--control-line);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  font-size: 14.5px;
-}
-
-[data-role='engines'] {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-[data-role='engines'] a {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 13px;
-  border: 1px solid var(--control-line);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13.5px;
-  font-weight: 500;
-  transition: background-color 120ms ease;
-}
-
-/* An engine link leaves the page, and the arrow says so without a second label. */
-[data-role='engines'] a::after {
-  content: '↗';
-  color: var(--muted);
-  font-size: 12px;
-}
-
-[data-role='engines'] a:hover {
-  background: var(--paper);
-  color: var(--ink);
-}
-
-[data-role='fallback-note'] {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-[data-role='slow-note'] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-top: 18px;
-  padding: 12px 14px;
-  border: 1px solid var(--accent);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--accent);
-  font-size: 14px;
-}
-
-[data-role='slow-text'] {
-  margin: 0;
-}
-
-[data-role='open-instead'],
-[data-role='keep-waiting'],
-[data-role='countdown-cancel'] {
-  color: var(--accent);
-  font-size: 13.5px;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-[data-role='countdown'] {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0 14px;
-  padding: 14px 16px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--accent);
-  font-size: 14px;
-}
-
-[data-role='countdown-number'] {
+/* The copy control sits beside the address, quiet until the pointer reaches it,
+   and it marks a copied address with a check. */
+[data-role='copy'] {
   display: grid;
-  place-items: center;
   flex: none;
+  place-items: center;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--surface);
-  font-size: 12.5px;
-  font-weight: 700;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--faint);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
-[data-role='countdown-text'] {
-  flex: 1;
+[data-role='copy']:hover {
+  background: var(--line-soft);
+  color: var(--ink);
 }
 
-[data-role='countdown-cancel'] {
-  margin-left: auto;
+[data-role='copy'] svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-[data-role='retry-row'] {
+[data-role='copy'] [data-role='copy-check'] {
+  display: none;
+}
+
+[data-role='copy'][data-copied='true'] {
+  color: var(--accent-ink);
+}
+
+[data-role='copy'][data-copied='true'] [data-role='copy-icon'] {
+  display: none;
+}
+
+[data-role='copy'][data-copied='true'] [data-role='copy-check'] {
+  display: block;
+}
+
+/* The confirmation is read aloud, and the check is what the screen shows. */
+[data-role='copy-status'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A block page whose tab record is gone keeps the source card and explains the
+   empty list. The link is the article itself, so a new navigation can record a
+   fresh capability and show the routes. */
+[data-role='notice'] {
   display: flex;
-  gap: 12px;
-  margin-top: 18px;
-  padding-top: 16px;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--sunken);
+  color: var(--body);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+[data-role='notice-icon'] {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border: 1px solid var(--accent-line);
+  border-radius: 50%;
+  color: var(--accent-ink);
+  font-family: Georgia, serif;
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1;
+}
+
+[data-role='notice'] a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-role='walls-row'] {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
-[data-role='retry'] {
-  padding: 11px 18px;
-  border: 1px solid var(--ink);
-  border-radius: 10px;
-  background: var(--ink);
-  color: var(--surface);
-  font-size: 14px;
-  font-weight: 550;
+[data-role='walls-label'] {
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-[data-role='retry']:disabled {
-  opacity: 0.5;
+/* The hint says that the pills are controls, and a phone has no room for it. */
+[data-role='walls-hint'] {
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 11px;
 }
 
-/* The foot of the page: the privacy note and the report link, one line. */
-[data-role='actions'] {
+/* The open wall: the category and its icon, the type as a badge, the checked
+   date, the site's own note, and the link that reports a wrong detection. */
+[data-role='walls-detail'] {
+  display: block;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+[data-role='walls-detail']:not([hidden]) {
+  animation: wall-detail-expand 160ms ease-out;
+}
+
+@keyframes wall-detail-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-role='wall-detail-head'] {
   display: flex;
   align-items: flex-start;
-  gap: 18px;
-  margin-top: 30px;
-  padding-top: 18px;
+  gap: 8px;
+}
+
+[data-role='wall-detail-icon'] {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+[data-role='wall-detail-icon'] svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='wall-detail-body'] {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-role='wall-detail-title'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-role='wall-detail-title'] strong {
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* The type badge is a word and a dot, as the reference draws it. */
+[data-role='wall-type-badge'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--type-surface, var(--line-soft));
+  color: var(--type-ink, var(--muted));
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+[data-role='wall-type-badge']::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--type-dot, currentColor);
+  opacity: 0.9;
+}
+
+[data-role='wall-type-badge'][data-type='hard'] {
+  --type-dot: var(--amber-dot);
+  --type-surface: var(--wall-adblock-surface);
+  --type-ink: var(--wall-adblock-ink);
+}
+
+[data-role='wall-type-badge'][data-type='soft'] {
+  --type-surface: var(--wall-region-surface);
+  --type-ink: var(--wall-region-ink);
+}
+
+[data-role='wall-type-badge'][data-type='metered'] {
+  --type-surface: var(--wall-paywall-surface);
+  --type-ink: var(--wall-paywall-ink);
+}
+
+[data-role='wall-verified'] {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+[data-role='wall-detail-text'] {
+  margin: 4px 0 0;
+  color: var(--body);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+[data-role='wall-detail-foot'] {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--line-soft);
 }
 
-/* The menu belongs to the split control, so its 100% is the height of the two
-   buttons and not the height of the row above it. */
+[data-role='wall-report'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+[data-role='wall-report']:hover {
+  color: var(--ink);
+}
+
+[data-role='wall-report'] svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='walls'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+/* One pill per wall: the category and the type, tinted by the category. The
+   block page and the popup draw the same element. */
+[data-role='wall'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--wall-line, var(--line));
+  border-radius: 999px;
+  background: var(--wall-surface, var(--surface));
+  color: var(--wall-ink, var(--ink));
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+[data-role='wall'][data-category='adblock'] {
+  --wall-ink: var(--wall-adblock-ink);
+  --wall-surface: var(--wall-adblock-surface);
+  --wall-line: var(--wall-adblock-line);
+}
+
+[data-role='wall'][data-category='paywall'] {
+  --wall-ink: var(--wall-paywall-ink);
+  --wall-surface: var(--wall-paywall-surface);
+  --wall-line: var(--wall-paywall-line);
+}
+
+[data-role='wall'][data-category='registration'] {
+  --wall-ink: var(--wall-registration-ink);
+  --wall-surface: var(--wall-registration-surface);
+  --wall-line: var(--wall-registration-line);
+}
+
+[data-role='wall'][data-category='consent'] {
+  --wall-ink: var(--wall-consent-ink);
+  --wall-surface: var(--wall-consent-surface);
+  --wall-line: var(--wall-consent-line);
+}
+
+[data-role='wall'][data-category='region'] {
+  --wall-ink: var(--wall-region-ink);
+  --wall-surface: var(--wall-region-surface);
+  --wall-line: var(--wall-region-line);
+}
+
+[data-role='wall'][data-category='vpn'] {
+  --wall-ink: var(--wall-vpn-ink);
+  --wall-surface: var(--wall-vpn-surface);
+  --wall-line: var(--wall-vpn-line);
+}
+
+[data-role='wall'][data-category='age'] {
+  --wall-ink: var(--wall-age-ink);
+  --wall-surface: var(--wall-age-surface);
+  --wall-line: var(--wall-age-line);
+}
+
+[data-role='wall-icon'] {
+  display: inline-flex;
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+
+[data-role='wall-icon'] svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='wall-category'] {
+  font-weight: 600;
+}
+
+[data-role='wall-sep'] {
+  opacity: 0.45;
+}
+
+[data-role='wall-type'] {
+  opacity: 0.85;
+}
+
+button[data-role='wall'] {
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+button[data-role='wall']:hover {
+  filter: brightness(0.97);
+}
+
+:root[data-theme='dark'] button[data-role='wall']:hover {
+  filter: brightness(1.12);
+}
+
+[data-role='wall-caret'] {
+  display: inline-flex;
+  width: 10px;
+  height: 10px;
+  margin-left: 1px;
+  opacity: 0.7;
+  transition: transform 120ms ease;
+}
+
+[data-role='wall-caret'] svg {
+  display: block;
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+button[data-role='wall'][aria-expanded='true'] [data-role='wall-caret'] {
+  transform: rotate(180deg);
+}
+
+[data-role='action-error'] {
+  flex-basis: 100%;
+  order: -1;
+  margin: 0 0 4px;
+  color: var(--blocked);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* The foot of the card keeps the way back on the left and the way out on the
+   right: an outlined Go back, and a quiet Continue beside the scope selector,
+   so the scope sits next to the button that applies it. */
 [data-role='open-group'] {
   position: relative;
   display: flex;
-  align-items: stretch;
+  align-items: center;
 }
 
-[data-role='open-site'] {
-  padding: 11px 16px;
-  border: 1px solid var(--control-line);
-  border-radius: 10px 0 0 10px;
+[data-role='back'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
   background: var(--surface);
+  box-shadow: var(--shadow-control);
   color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 500;
   transition: background-color 120ms ease;
 }
 
-[data-role='open-menu'] {
+[data-role='back']:hover {
+  border-color: var(--control-line);
+  background: var(--hover);
+}
+
+[data-role='back'] svg,
+[data-role='open-site'] svg,
+[data-role='open-menu'] > svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='back-key'] {
   display: inline-flex;
-  align-self: stretch;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  margin-left: -1px;
-  padding: 0;
-  border: 1px solid var(--control-line);
-  border-radius: 0 10px 10px 0;
-  background: var(--surface);
+  min-width: 18px;
+  height: 17px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--sunken);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1;
+}
+
+[data-role='open-site'],
+[data-role='open-menu'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+[data-role='open-site']:hover,
+[data-role='open-menu']:hover {
+  background: var(--line-soft);
   color: var(--ink);
-  font-size: 14px;
-  transition: background-color 120ms ease;
+}
+
+[data-role='open-menu'] > svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* A typed arrowhead carries the side bearings of its font, which leave it off
-   centre by a pixel or two at this size. The caret is drawn instead, from a
-   path that is symmetric about the centre of its box. */
+   centre at this size. The caret is drawn from a symmetric path instead. */
 [data-role='open-menu-caret'] {
   display: inline-flex;
   width: 12px;
@@ -688,84 +1073,1250 @@ main {
   transform: rotate(180deg);
 }
 
-[data-role='open-site']:hover,
-[data-role='open-menu']:hover {
-  background: var(--hover);
-}
-
 [data-role='scope-menu'] {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  right: 0;
   z-index: 4;
   display: flex;
   flex-direction: column;
-  min-width: 260px;
+  width: 300px;
+  max-width: calc(100vw - 32px);
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-inner);
   background: var(--surface);
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--shadow-menu);
 }
 
-/* The action row sits at the foot of the page, so a menu that would leave the
-   viewport opens above the row instead of past its bottom edge. */
+/* The scope sentences explain the labels, so each item is two lines. The
+   caret's own placement caps the menu and lets this axis scroll. */
+[data-role='scope-menu'] .scope-text {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+[data-role='scope-menu'] .scope-label {
+  display: block;
+}
+
+[data-role='scope-menu'] .scope-detail {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
 [data-role='scope-menu'][data-side='top'] {
   top: auto;
   bottom: calc(100% + 6px);
 }
 
 [data-role='scope-menu'] button {
-  padding: 10px 12px;
-  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 6px;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 13px;
   text-align: left;
   transition: background-color 120ms ease;
 }
 
+/* The chosen scope carries a check, so the trigger label has a second sign. */
+[data-role='scope-menu'] button[aria-checked='true']::after {
+  content: '✓';
+  margin-top: 1px;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
 [data-role='scope-menu'] button:hover {
-  background: var(--paper);
+  background: var(--hover);
 }
 
-[data-role='report'] {
-  margin-left: auto;
-  padding-left: 20px;
-  color: var(--muted);
-  font-size: 12.5px;
+/* The alternatives lead with a small label and a count, the way a section of a
+   settings page does. */
+[data-role='list-head'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 28px 0 12px;
 }
 
-[data-role='report']:hover {
-  color: var(--accent);
-}
-
-[data-role='footnote'] {
-  max-width: 540px;
+[data-role='alternatives-heading'] {
   margin: 0;
   color: var(--muted);
   font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+[data-role='count'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+[data-role='status'] {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+[data-role='detail'] {
+  max-width: 540px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
   line-height: 1.6;
 }
 
-body[data-page='popup'] {
-  width: 340px;
+/* A failure is a notice the reader has to read, so it leads with the mark the
+   reference draws rather than with its first word. */
+[data-role='alternatives'][data-state='empty'] [data-role='status'] {
+  color: var(--ink);
+  font-weight: 500;
 }
 
-body[data-page='popup'] main {
-  max-width: none;
+[data-role='alternatives'][data-state='error'] [data-role='status'] {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--notice-line);
+  border-radius: var(--radius-inner);
+  background: var(--notice-surface);
+  color: var(--notice-ink);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+[data-role='alternatives'][data-state='error'] [data-role='status']::before {
+  content: '!';
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Every row is one link. The tile, the title, the description, the domain, and
+   the image all belong to that link, so the reader aims at the row. */
+[data-role='list'] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
-/* A popup never scrolls its header away, and a blur over the paper would only
-   cost a layer, so the popup header is plain paper. */
-body[data-page='popup'] [data-role='header'] {
-  position: static;
-  height: 52px;
-  padding: 0 16px;
+[data-role='list'] > li > a {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  column-gap: 14px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--surface);
+  color: var(--ink);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+[data-role='list'] > li > a:hover,
+[data-role='list'] > li > a:focus-visible {
+  border-color: var(--control-line);
+  background: var(--hover);
+  color: var(--ink);
+}
+
+[data-role='list'] > li > a:hover [data-role='result-title'] {
+  color: var(--accent-ink);
+}
+
+[data-role='list'] > li[data-selected='true'] > a {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+[data-role='list'] > li > a > [data-role='tile'] {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+[data-role='list'] > li > a > [data-role='tile'] img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+[data-role='result-title'] {
+  grid-column: 2;
+  grid-row: 1;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 120ms ease;
+}
+
+[data-role='result-description'] {
+  display: -webkit-box;
+  grid-column: 2;
+  grid-row: 2;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--body);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+[data-role='result-meta'] {
+  display: flex;
+  grid-column: 2;
+  grid-row: 3;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
-  background: var(--paper);
-  backdrop-filter: none;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* The match label closes the meta line, after the verdict of the walls. */
+[data-role='result-match'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+[data-role='result-match']::before {
+  content: '·';
+  color: var(--faint);
+}
+
+[data-role='result-domain'] {
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+/* The one positive claim of a row: the list carries no wall for this route. It
+   is the clear ink, not a wall tint, because it names the absence of a wall. */
+[data-role='result-walls'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--clear-ink);
+  font-weight: 500;
+}
+
+[data-role='result-walls'] svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+/* The number and the arrow sit at the end of the row and centre over its
+   lines. A press of the row turns the arrow into the accent. */
+[data-role='result-action'] {
+  display: flex;
+  grid-row: 1 / span 3;
+  align-self: center;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+
+[data-role='result-key'],
+[data-role='search-key'],
+[data-role='engine-key'],
+[data-role='report-key'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--sunken);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+/* The number takes the accent with its row or engine chip, so the shortcut
+   reads as part of the control that the pointer or the keyboard is on. */
+[data-role='engines'] a:hover [data-role='engine-key'],
+[data-role='engines'] a[data-selected='true'] [data-role='engine-key'],
+[data-role='list'] > li > a:hover [data-role='result-key'],
+[data-role='list'] > li > a:focus-visible [data-role='result-key'],
+[data-role='list'] > li[data-selected='true'] > a [data-role='result-key'],
+[data-role='search']:hover [data-role='search-key'],
+[data-role='search'][data-selected='true'] [data-role='search-key'] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+[data-role='result-arrow'] {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--line-soft);
+  color: var(--muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+[data-role='result-arrow'] svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+[data-role='list'] > li > a:hover [data-role='result-arrow'] {
+  background: var(--accent);
+  color: #ffffff;
+  transform: translate(1px, -1px);
+}
+
+/* The search card closes the list. It is the same card as a result, without a
+   number, and a press opens the query form that the empty state shows. */
+[data-role='search'] {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  column-gap: 14px;
+  align-items: center;
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+[data-role='search']:hover {
+  border-color: var(--control-line);
+  background: var(--hover);
+}
+
+/* The search card is the last stop of the keyboard, so it takes the same ring
+   as a selected row. */
+[data-role='search'][data-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+[data-role='search-icon'] {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--line-soft);
+  color: var(--muted);
+}
+
+[data-role='search-icon'] svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='search-body'] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+[data-role='search-title'] {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 120ms ease;
+}
+
+[data-role='search']:hover [data-role='search-title'] {
+  color: var(--accent-ink);
+}
+
+[data-role='search-detail'] {
+  overflow: hidden;
+  color: var(--body);
+  font-size: 13px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The search card ends with its number and its arrow, as a result row does. */
+[data-role='search-action'] {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+}
+
+[data-role='search-arrow'] {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--line-soft);
+  color: var(--muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+[data-role='search-arrow'] svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-role='search']:hover [data-role='search-arrow'] {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* The keyboard line and the story of the article share one line: the keys at
+   the near end, and the topic at the far end. */
+[data-role='keyboard-hint'] {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin: 10px 2px 0;
+  color: var(--faint);
+  font-size: 11px;
+}
+
+/* The keys keep one line, and the story shrinks into its ellipsis. */
+[data-role='keyboard-keys'] {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+[data-role='topic'] {
+  min-width: 0;
+  max-width: 55%;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A key is a cap in every keyboard line, not a glyph in the sentence, so the
+   reader sees what to press. */
+[data-role='keyboard-hint'] kbd,
+[data-role='fallback-note'] kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--sunken);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1;
+  vertical-align: 1px;
+}
+
+/* The fallback owns a sunken card of its own: a query field and four engines. */
+[data-role='fallback'] {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--sunken);
+}
+
+/* The open box takes the search card's place as the last stop, so it takes the
+   card's ring when the arrows select it. */
+[data-role='fallback'][data-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+[data-role='fallback-heading'] {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+[data-role='query-label'] {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+[data-role='query'] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+[data-role='query']:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+[data-role='engines'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+[data-role='engines'] a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background-color 120ms ease;
+}
+
+/* An engine link leaves the page, and the arrow says so without a second label. */
+[data-role='engines'] a::after {
+  content: '↗';
+  color: var(--muted);
+  font-size: 11px;
+}
+
+[data-role='engines'] a:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+/* The chosen engine is the one that Enter opens, so it carries the ring that a
+   selected row does. */
+[data-role='engines'] a[data-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+[data-role='fallback-note'] {
+  margin: 10px 2px 0;
+  color: var(--faint);
+  font-size: 11px;
+}
+
+/* The slow note and the countdown are the same notice in two shapes. */
+[data-role='slow-note'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-inner);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 13px;
+}
+
+[data-role='slow-text'] {
+  margin: 0;
+}
+
+[data-role='open-instead'],
+[data-role='keep-waiting'],
+[data-role='countdown-cancel'] {
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+[data-role='countdown'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-inner);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 13px;
+}
+
+[data-role='countdown-number'] {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+[data-role='countdown-text'] {
+  flex: 1;
+}
+
+[data-role='countdown-cancel'] {
+  margin-left: auto;
+}
+
+[data-role='retry-row'] {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+[data-role='retry'] {
+  padding: 9px 14px;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 120ms ease;
+}
+
+[data-role='retry']:hover {
+  background: var(--accent-deep);
+}
+
+[data-role='retry']:disabled {
+  opacity: 0.5;
+}
+
+/* The foot of the card: the privacy note and the report link on one bar. */
+[data-role='actions'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 28px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--sunken);
+}
+
+[data-role='actions-start'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The way out and the scope that it applies share the right end of the bar, so
+   the reader reads the sentence and its scope as one control. */
+[data-role='actions-end'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* The note leaves the card, as the reference drops its own line under it. Both
+   lines sit centred under the card, so the words read as one footnote. */
+[data-role='note'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 664px;
+  margin: 14px auto 0;
+  padding: 0 4px;
+  color: var(--muted);
+  text-align: center;
+}
+
+[data-role='footnote'] {
+  max-width: 600px;
+  margin: 0;
+  color: var(--faint);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+[data-role='report'] {
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+[data-role='report']:hover {
+  color: var(--accent-ink);
+}
+
+/* The settings page is the same card with longer sections. */
+body[data-page='options'] [data-role='card'] {
+  max-width: 640px;
+}
+
+body[data-page='options'] [data-role='options-heading'] {
+  margin: 0 0 2px;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+/* A section is a label over its contents: small caps, a hairline above, and the
+   gap from the section before it. */
+body[data-page='options'] [data-role='allowed-heading'],
+body[data-page='options'] [data-role='appearance-heading'],
+body[data-page='options'] [data-role='cache-heading'],
+body[data-page='options'] [data-role='reading-heading'],
+body[data-page='options'] [data-role='walls-heading'] {
+  margin: 28px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body[data-page='options'] [data-role='allowed-intro'],
+body[data-page='options'] [data-role='allowed-empty'],
+body[data-page='options'] [data-role='walls-intro'] {
+  max-width: 520px;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+body[data-page='options'] [data-role='allowance-table'],
+body[data-page='options'] [data-role='walls-table'] {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+body[data-page='options'] th {
+  padding: 0 0 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+body[data-page='options'] td {
+  padding: 11px 0;
+  border-top: 1px solid var(--line-soft);
+  font-size: 13.5px;
+}
+
+body[data-page='options'] th[data-role='th-added'],
+body[data-page='options'] [data-role='allowance-table'] td:nth-child(3) {
+  text-align: right;
+}
+
+/* The walls table puts one category on each row and one type in each column, so
+   the reader's choice reads as a grid and the page keeps one drawn checkbox. */
+body[data-page='options'] [data-role='walls-table'] tbody th {
+  padding: 11px 0;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+}
+
+body[data-page='options'] [data-role='wall-name'] {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+body[data-page='options'] [data-role='wall-detail'] {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+
+body[data-page='options'] [data-role='walls-table'] th[data-role='th-hard'],
+body[data-page='options'] [data-role='walls-table'] th[data-role='th-metered'],
+body[data-page='options'] [data-role='walls-table'] th[data-role='th-soft'] {
+  width: 76px;
+  text-align: center;
+}
+
+body[data-page='options'] [data-role='wall-cell'] {
+  width: 76px;
+  padding: 11px 0;
+  text-align: center;
+}
+
+/* A cell that the list cannot hold keeps the column, and the dashed edge says
+   why it holds no box. */
+body[data-page='options'] [data-role='wall-cell'][data-empty='true']::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px dashed var(--control-line);
+  border-radius: 4px;
+}
+
+body[data-page='options'] [data-role='wall-cell'] [data-role='wall-check'] {
+  display: inline-block;
+  margin: 0;
+  vertical-align: middle;
+}
+
+body[data-page='options'] [data-role='wall-cell']:hover [data-role='wall-check'] {
+  border-color: var(--accent);
+}
+
+body[data-page='options'] [data-role='metered-note'],
+body[data-page='options'] [data-role='no-wall-note'] {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+body[data-page='options'] [data-role='allowance-table'] td:last-child {
+  padding-left: 16px;
+  text-align: right;
+}
+
+body[data-page='options'] [data-role='allowance-rows'] button {
+  color: var(--muted);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 120ms ease;
+}
+
+/* A removal is the one destructive press on the page, so it takes the blocked
+   red and nothing louder than that. */
+body[data-page='options'] [data-role='allowance-rows'] button:hover {
+  color: var(--blocked);
+}
+
+body[data-page='options'] [data-role='auto-open-row'],
+body[data-page='options'] [data-role='images-row'] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+  cursor: pointer;
+}
+
+/* The platform draws a box of its own size. The sheet draws the one the product
+   uses: 16 px, a quiet edge, and the accent with a white check when on. */
+body[data-page='options'] [data-role='auto-open'],
+body[data-page='options'] [data-role='images'],
+body[data-page='options'] [data-role='wall-check'] {
+  position: relative;
+  grid-row: 1 / span 2;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  appearance: none;
+  border: 1px solid var(--control-line);
+  border-radius: 4px;
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+body[data-page='options'] [data-role='auto-open']::after,
+body[data-page='options'] [data-role='images']::after,
+body[data-page='options'] [data-role='wall-check']::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, calc(-50% - 1.4px)) rotate(45deg);
+}
+
+body[data-page='options'] [data-role='auto-open']:not(:checked)::after,
+body[data-page='options'] [data-role='images']:not(:checked)::after,
+body[data-page='options'] [data-role='wall-check']:not(:checked)::after {
+  display: none;
+}
+
+body[data-page='options'] [data-role='auto-open']:checked,
+body[data-page='options'] [data-role='images']:checked,
+body[data-page='options'] [data-role='wall-check']:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+body[data-page='options'] [data-role='auto-open-row']:hover [data-role='auto-open'],
+body[data-page='options'] [data-role='images-row']:hover [data-role='images'] {
+  border-color: var(--accent);
+}
+
+body[data-page='options'] [data-role='auto-open']:checked:hover,
+body[data-page='options'] [data-role='images']:checked:hover,
+body[data-page='options'] [data-role='wall-cell']:hover [data-role='wall-check']:checked,
+body[data-page='options'] [data-role='auto-open-row']:hover [data-role='auto-open']:checked,
+body[data-page='options'] [data-role='images-row']:hover [data-role='images']:checked {
+  border-color: var(--accent-deep);
+  background: var(--accent-deep);
+}
+
+/* The first setting opens its section, so the hairline belongs to the rows that
+   follow it. */
+body[data-page='options'] [data-role='auto-open-row'] {
+  border-top: 0;
+}
+
+body[data-page='options'] [data-role='auto-open-label'],
+body[data-page='options'] [data-role='images-label'] {
+  grid-column: 2;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+body[data-page='options'] [data-role='auto-open-detail'],
+body[data-page='options'] [data-role='images-detail'] {
+  grid-column: 2;
+  max-width: 420px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* The theme is one choice of three, so it takes the segmented control of the
+   reference: the chosen segment lifts onto the surface. */
+body[data-page='options'] [data-role='theme-row'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 16px;
+  padding: 4px 0 0;
+}
+
+body[data-page='options'] [data-role='theme-label'] {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+body[data-page='options'] [data-role='theme-detail'] {
+  max-width: 420px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+body[data-page='options'] [data-role='theme-choices'] {
+  display: inline-flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--sunken);
+}
+
+body[data-page='options'] [data-role='theme-choices'] button {
+  padding: 5px 10px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+body[data-page='options'] [data-role='theme-choices'] button:hover {
+  color: var(--ink);
+}
+
+body[data-page='options'] [data-role='theme-choices'] button[aria-pressed='true'] {
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+  color: var(--ink);
+}
+
+body[data-page='options'] [data-role='cache-detail'] {
+  max-width: 520px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+body[data-page='options'] [data-role='clear-cache'] {
+  padding: 8px 14px;
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+body[data-page='options'] [data-role='clear-cache']:hover {
+  border-color: var(--muted);
+  background: var(--hover);
+}
+
+body[data-page='options'] [data-role='clear-cache']:active {
+  background: var(--line-soft);
+}
+
+body[data-page='options'] [data-role='cache-status'] {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  body[data-page='block'],
+  body[data-page='options'] {
+    padding: 16px 12px 24px;
+  }
+
+  [data-role='header'] {
+    padding: 12px 20px;
+  }
+
+  main {
+    padding: 20px;
+  }
+
+  [data-role='headline'] {
+    font-size: 21px;
+  }
+
+  /* The bar stacks, and the open control takes the row under the address. */
+  [data-role='source'] {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  /* The heading and its count stay on one line, and the count keeps its pill. */
+  [data-role='list-head'] {
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  /* A phone gives a long title two lines, because one cut line hides the story
+     that the row is about. */
+  [data-role='result-title'] {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* A phone shows the title and the domain: the description would cut a
+     sentence in the middle of a narrow row. */
+  [data-role='result-description'] {
+    display: none;
+  }
+
+  [data-role='list'] > li > a {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  /* A phone has no keyboard, so it carries no number, no arrow, and no hint. */
+  [data-role='result-action'],
+  [data-role='keyboard-hint'],
+  [data-role='fallback-note'],
+  [data-role='walls-hint'],
+  [data-role='search-action'] {
+    display: none;
+  }
+
+  [data-role='search'] {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  /* The foot stacks: the report link leaves the note for its own line. */
+  [data-role='actions'] {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 20px;
+  }
+
+  [data-role='actions-start'] {
+    flex-wrap: wrap;
+  }
+
+  [data-role='actions-end'] {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  [data-role='open-group'] {
+    justify-content: flex-start;
+  }
+
+  body[data-page='options'] [data-role='theme-row'] {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 10px;
+  }
+
+  body[data-page='options'] [data-role='theme-choices'] {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* The popup is its own window: 340 px wide, with no page padding, and its own
+   density over the shared card, row, and search shapes. It comes last in the
+   sheet because it is not a page in a tab: a narrow-screen rule of the block
+   page must never reach it, or the frame widens and the rows lose their caps. */
+body[data-page='popup'] {
+  width: 340px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+body[data-page='popup'] [data-role='header'] {
+  gap: 8px;
+  padding: 0 16px;
+  height: 52px;
+  border-bottom: 1px solid var(--line);
 }
 
 body[data-page='popup'] [data-role='mark'] {
@@ -779,13 +2330,17 @@ body[data-page='popup'] [data-role='mark'] img {
 }
 
 body[data-page='popup'] [data-role='wordmark'] {
-  font-size: 14.5px;
+  font-size: 13.5px;
+}
+
+body[data-page='popup'] main {
+  padding: 0;
 }
 
 body[data-page='popup'] [data-role='state'] {
   margin-left: auto;
-  color: var(--accent);
-  font-size: 12.5px;
+  color: var(--accent-ink);
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -793,12 +2348,8 @@ body[data-page='popup'] [data-role='state'][data-state='off'] {
   color: var(--muted);
 }
 
-body[data-page='popup'] [data-role='state'][data-state='paused'] {
-  color: var(--notice-ink);
-}
-
-/* The reader reads the state before the switch, so the on state carries the dot
-   the wireframe draws and the other two states stay words. */
+/* The reader reads the state before the switch, so the on state carries a dot
+   and the off state stays a word. */
 body[data-page='popup'] [data-role='state'][data-state='on'] {
   display: inline-flex;
   align-items: center;
@@ -807,8 +2358,8 @@ body[data-page='popup'] [data-role='state'][data-state='on'] {
 
 body[data-page='popup'] [data-role='state'][data-state='on']::before {
   content: '';
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--accent);
 }
@@ -820,20 +2371,22 @@ body[data-page='popup'] [data-role='enabled'] {
   height: 20px;
   margin: 0;
   appearance: none;
-  border-radius: 99px;
+  border-radius: 999px;
   background: var(--line);
   cursor: pointer;
   transition: background-color 120ms ease;
 }
 
-/* The switch answers the pointer the way a row does: a soft ring around the
-   track, and a track that deepens under it. */
 body[data-page='popup'] [data-role='enabled']:hover {
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 body[data-page='popup'] [data-role='enabled']:not(:checked):hover {
   background: var(--control-line);
+}
+
+body[data-page='popup'] [data-role='enabled']:checked {
+  background: var(--accent);
 }
 
 body[data-page='popup'] [data-role='enabled']:checked:hover {
@@ -852,626 +2405,388 @@ body[data-page='popup'] [data-role='enabled']::after {
   transition: transform 120ms ease;
 }
 
-body[data-page='popup'] [data-role='enabled']:checked {
-  background: var(--accent);
-}
-
 body[data-page='popup'] [data-role='enabled']:checked::after {
   transform: translateX(16px);
 }
 
-/* The site block answers for the page in front of the reader, so it leads the
-   body in both states, and each state carries exactly one action. */
-body[data-page='popup'] [data-role='site-row'] {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 14px 16px 0;
-  font-size: 13.5px;
-  font-weight: 600;
+body[data-page='popup'] [data-role='popup-pad'] {
+  padding: 12px 14px;
 }
 
-/* The popup repeats the toolbar badge beside the verdict, so the mark on the
-   toolbar and the mark here are one sign. The verdict words say the same thing,
-   and the badge is hidden when the list does not carry the site. */
-body[data-page='popup'] [data-role='site-badge'] {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  background: var(--accent);
-  color: var(--surface);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
+/* The card keeps the shared shape at the popup's size: a smaller tile, a tighter
+   gap, and the pills on a hairline of their own. */
+body[data-page='popup'] [data-role='popup-pad'] > [data-role='source'] {
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 6px;
+  margin-top: 0;
+  padding: 10px 12px;
 }
 
-/* The verdict is the one thing the eye needs here, so the site the list carries
-   takes the accent and the site it does not takes the muted tone. The words say
-   the same thing, so the colour never carries the answer alone. */
-body[data-page='popup'] [data-role='site-text'] {
-  color: var(--accent);
+body[data-page='popup'] [data-role='source-tile'] {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 9.5px;
 }
 
-body[data-page='popup'] [data-role='site-row'][data-listed='false'] [data-role='site-text'] {
-  color: var(--muted);
+body[data-page='popup'] [data-role='source-domain'] {
+  font-size: 13px;
 }
 
-/* The pills under the verdict name the walls, and they are the last line of the
-   block: two of them fit the 340 px frame, and more wrap. The 14 px above and
-   below the pair are the same, so the block reads as one centred group. */
-body[data-page='popup'] [data-role='site-walls'] {
-  gap: 6px;
-  margin: 8px 0 0;
-  padding: 0 16px 14px;
-}
-
-body[data-page='popup'] [data-role='wall'] {
-  padding: 4px 9px;
-  font-size: 11.5px;
-}
-
-/* The report is the sentence the block already says, so it reads as a line that
-   happens to be a link and not as one more row. */
-body[data-page='popup'] [data-role='site-report'] {
-  display: block;
-  margin: 0;
-  padding: 0 16px 14px;
-  color: var(--accent);
+body[data-page='popup'] [data-role='source-description'] {
   font-size: 12.5px;
-  line-height: 1.5;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
-body[data-page='popup'] [data-role='site-report']:hover {
-  color: var(--accent-deep);
-}
-
-/* One row per action: the alternatives, the pause, the settings. A row that
-   leaves the popup ends with `›`, and the pause row ends with `⌄`. */
-body[data-page='popup'] [data-role='site-alternatives'],
-body[data-page='popup'] [data-role='pause'],
-body[data-page='popup'] [data-role='settings'],
-body[data-page='popup'] [data-role='durations'] button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 46px;
-  margin: 0;
-  padding: 0 16px;
-  border: 0;
-  border-top: 1px solid var(--line-soft);
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 120ms ease;
-}
-
-/* Every row is a button, so every row answers the pointer: the surface lifts it
-   off the paper and the chevron takes the ink. */
-body[data-page='popup'] [data-role='site-alternatives']:hover,
-body[data-page='popup'] [data-role='pause']:hover,
-body[data-page='popup'] [data-role='settings']:hover,
-body[data-page='popup'] [data-role='durations'] button:hover {
-  background: var(--hover);
-}
-
-body[data-page='popup'] [data-role='site-alternatives']:hover .chevron,
-body[data-page='popup'] [data-role='pause']:hover .chevron,
-body[data-page='popup'] [data-role='settings']:hover .chevron {
-  color: var(--ink);
-}
-
-/* The settings row closes the body, so the footer needs the hairline above it. */
-body[data-page='popup'] main > [data-role='settings'] {
-  border-bottom: 1px solid var(--line-soft);
-}
-
-body[data-page='popup'] [data-role='pause-row'] {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  border-top: 1px solid var(--line-soft);
-}
-
-body[data-page='popup'] [data-role='pause'] {
+body[data-page='popup'] [data-role='walls-row'] {
+  padding-top: 4px;
   border-top: 0;
 }
 
-body[data-page='popup'] [data-role='resume'] {
-  padding: 0 16px 0 6px;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font-family: var(--sans);
-  font-size: 12.5px;
-  font-weight: 550;
-  cursor: pointer;
+body[data-page='popup'] [data-role='wall'] {
+  padding: 3px 8px;
+  font-size: 11px;
 }
 
-/* The resume is words and not a row, so it answers the pointer with its own
-   underline rather than with a block of surface. */
-body[data-page='popup'] [data-role='resume']:hover {
-  color: var(--accent-deep);
-  text-decoration: underline;
+body[data-page='popup'] [data-role='wall-icon'],
+body[data-page='popup'] [data-role='wall-icon'] svg {
+  width: 11px;
+  height: 11px;
 }
 
-body[data-page='popup'] .chevron {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
+body[data-page='popup'] [data-role='walls-detail'] {
+  padding: 10px;
+  row-gap: 8px;
+  font-size: 11.5px;
 }
 
-/* The pause row carries the same chevron as every other row, and a quarter turn
-   points it down while the row is closed and up while the durations are open.
-   The glyph is the sheet's one chevron, so its weight matches the rows beside
-   it, which a typed arrowhead does not. */
-body[data-page='popup'] [data-role='pause-chevron'] {
-  display: inline-flex;
+/* The report is a row of the search card's family, so no surface in the popup is
+   a bare line of text between two cards. */
+body[data-page='popup'] [data-role='site-report'] {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  column-gap: 10px;
   align-items: center;
-  justify-content: center;
-  width: 12px;
-  transform: rotate(90deg);
-  transition: transform 120ms ease;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--surface);
+  color: var(--body);
+  font-size: 12px;
+  line-height: 1.35;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
-body[data-page='popup'] [data-role='pause'][aria-expanded='true'] [data-role='pause-chevron'] {
-  transform: rotate(-90deg);
+body[data-page='popup'] [data-role='site-report']:hover,
+body[data-page='popup'] [data-role='site-report']:focus-visible {
+  border-color: var(--control-line);
+  background: var(--hover);
+  color: var(--ink);
 }
 
-body[data-page='popup'] [data-role='pause-label'] {
+body[data-page='popup'] [data-role='site-report']:hover [data-role='report-title'],
+body[data-page='popup'] [data-role='site-report']:focus-visible [data-role='report-title'] {
+  color: var(--accent-ink);
+}
+
+body[data-page='popup'] [data-role='site-report'][data-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+  color: var(--ink);
+}
+
+body[data-page='popup'] [data-role='report-icon'],
+body[data-page='popup'] [data-role='report-arrow'] {
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--line-soft);
+  color: var(--muted);
+}
+
+body[data-page='popup'] [data-role='report-icon'] {
+  width: 24px;
+  height: 24px;
+}
+
+body[data-page='popup'] [data-role='report-arrow'] {
+  width: 22px;
+  height: 22px;
+}
+
+body[data-page='popup'] [data-role='report-icon'] svg,
+body[data-page='popup'] [data-role='report-arrow'] svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page='popup'] [data-role='report-title'] {
+  min-width: 0;
+  color: var(--body);
+}
+
+body[data-page='popup'] [data-role='report-action'] {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+}
+
+body[data-page='popup'] [data-role='report-key'],
+body[data-page='popup'] [data-role='search-key'],
+body[data-page='popup'] [data-role='result-key'] {
+  min-width: 18px;
+  height: 18px;
+  font-size: 9.5px;
+}
+
+body[data-page='popup'] [data-role='site-report']:hover [data-role='report-key'],
+body[data-page='popup'] [data-role='site-report']:focus-visible [data-role='report-key'],
+body[data-page='popup'] [data-role='site-report'][data-selected='true'] [data-role='report-key'] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+body[data-page='popup'] [data-role='site-report']:hover [data-role='report-arrow'],
+body[data-page='popup'] [data-role='site-report']:focus-visible [data-role='report-arrow'] {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* The list area keeps the block page's shapes at the popup's density. */
+body[data-page='popup'] [data-role='status'] {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+body[data-page='popup'] [data-role='alternatives'][data-state='error'] [data-role='status'] {
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+
+/* A browser page has no site to answer for, so the frame itself says why. */
+body[data-page='popup'] [data-role='alternatives'][data-state='no-site'] [data-role='status'] {
+  padding: 18px 6px;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+body[data-page='popup'] [data-role='list-head'] {
+  margin: 10px 0 6px;
+}
+
+/* Three rows fit the frame, and a longer answer scrolls the list instead of
+   pushing the footer past the edge of a popup window. */
+body[data-page='popup'] [data-role='list'] {
+  gap: 6px;
+  max-height: calc(3 * 59px + 2 * 6px);
+  overflow-y: auto;
+}
+
+body[data-page='popup'] [data-role='list'] > li > a {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  padding: 8px 10px;
+}
+
+body[data-page='popup'] [data-role='list'] > li > a > [data-role='tile'] {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 9px;
+  box-shadow: none;
+}
+
+body[data-page='popup'] [data-role='list'] > li > a > [data-role='tile'] img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+body[data-page='popup'] [data-role='result-title'] {
+  display: block;
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
+  -webkit-line-clamp: unset;
+}
+
+body[data-page='popup'] [data-role='result-description'] {
+  display: none;
+}
+
+body[data-page='popup'] [data-role='result-meta'] {
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 2px;
   white-space: nowrap;
 }
 
-body[data-page='popup'] [data-role='durations'] button {
-  padding-left: 16px;
-  font-weight: 400;
+/* The popup has no room for the match label, and its rows stay one line. */
+body[data-page='popup'] [data-role='result-match'] {
+  display: none;
 }
 
-body[data-page='popup'] [data-role='duration-today'] {
-  justify-content: space-between;
+body[data-page='popup'] [data-role='result-domain'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-body[data-page='popup'] [data-role='duration-today-note'] {
-  color: var(--muted);
+body[data-page='popup'] [data-role='result-action'] {
+  display: flex;
+}
+
+body[data-page='popup'] [data-role='result-arrow'],
+body[data-page='popup'] [data-role='search-arrow'] {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+body[data-page='popup'] [data-role='result-arrow'] svg,
+body[data-page='popup'] [data-role='search-arrow'] svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* The search card closes the routes, so it carries the last number. */
+body[data-page='popup'] [data-role='search'] {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  margin-top: 6px;
+  padding: 8px 10px;
+}
+
+body[data-page='popup'] [data-role='search-icon'] {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+body[data-page='popup'] [data-role='search-icon'] svg {
+  width: 13px;
+  height: 13px;
+}
+
+body[data-page='popup'] [data-role='search-title'] {
+  font-size: 12.5px;
+}
+
+body[data-page='popup'] [data-role='search-detail'] {
+  font-size: 11px;
+}
+
+body[data-page='popup'] [data-role='search-action'] {
+  display: flex;
+}
+
+body[data-page='popup'] [data-role='fallback'] {
+  margin-top: 6px;
+  padding: 10px 12px;
+}
+
+body[data-page='popup'] [data-role='fallback-heading'] {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+
+body[data-page='popup'] [data-role='engines'] {
+  margin-top: 6px;
+  gap: 5px;
+}
+
+body[data-page='popup'] [data-role='engines'] a {
+  gap: 5px;
+  padding: 5px 8px;
+  font-size: 11.5px;
+}
+
+body[data-page='popup'] [data-role='engines'] a::after {
+  font-size: 10px;
+}
+
+body[data-page='popup'] [data-role='retry-row'] {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+body[data-page='popup'] [data-role='retry'] {
+  padding: 7px 12px;
   font-size: 12px;
 }
 
+/* The footer: the two links on the left, the theme and Settings on the right, on
+   one row. A plain block puts the group on a second line, and the wrap keeps a
+   longer label from widening the 340 px frame. */
 body[data-page='popup'] footer {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 14px;
   padding: 12px 16px;
+  border-top: 1px solid var(--line);
 }
 
 body[data-page='popup'] footer a {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 body[data-page='popup'] footer a:hover {
   color: var(--ink);
 }
 
-body[data-page='options'] main {
-  max-width: 640px;
-  padding: 28px 24px 28px;
+body[data-page='popup'] footer [data-role='footer-end'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
-body[data-page='options'] [data-role='header'] {
-  padding: 0 24px;
+body[data-page='popup'] footer [data-role='theme'] {
+  width: 26px;
+  height: 26px;
 }
 
-body[data-page='options'] [data-role='options-heading'] {
-  margin: 0 0 4px;
-  font-family: var(--serif);
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+body[data-page='popup'] footer [data-role='theme'] svg {
+  width: 16px;
+  height: 16px;
 }
 
-/* A section is a label over its contents, so it takes the small caps of the
-   table's column labels and leaves the serif to the page title alone. The gap
-   in size is what says which of the two is the page. */
-body[data-page='options'] [data-role='allowed-heading'],
-body[data-page='options'] [data-role='reading-heading'],
-body[data-page='options'] [data-role='walls-heading'],
-body[data-page='options'] [data-role='cache-heading'] {
-  margin: 30px 0 12px;
-  color: var(--ink);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-body[data-page='options'] [data-role='allowed-intro'],
-body[data-page='options'] [data-role='allowed-empty'],
-body[data-page='options'] [data-role='walls-intro'] {
-  max-width: 520px;
-  margin: 0 0 16px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-body[data-page='options'] [data-role='allowance-table'] {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-body[data-page='options'] th {
-  padding: 0 0 10px;
-  color: var(--muted);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-align: left;
-  text-transform: uppercase;
-}
-
-body[data-page='options'] td {
-  padding: 13px 0;
-  border-top: 1px solid var(--line-soft);
-  font-size: 14px;
-}
-
-body[data-page='options'] th[data-role='th-added'] {
-  text-align: right;
-}
-
-body[data-page='options'] [data-role='allowance-table'] td:nth-child(3) {
-  text-align: right;
-}
-
-/* The walls table puts one category on each row and one type in each column, so
-   the reader's choice reads as a grid and the page keeps one drawn checkbox. */
-body[data-page='options'] [data-role='walls-table'] {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-body[data-page='options'] [data-role='walls-table'] tbody th {
-  padding: 13px 0;
-  border-top: 1px solid var(--line-soft);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 550;
-  letter-spacing: normal;
-  text-align: left;
-  text-transform: none;
-}
-
-body[data-page='options'] [data-role='wall-name'] {
-  display: block;
-  font-size: 14px;
-  font-weight: 550;
-}
-
-body[data-page='options'] [data-role='wall-detail'] {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-body[data-page='options'] [data-role='walls-table'] th[data-role='th-hard'],
-body[data-page='options'] [data-role='walls-table'] th[data-role='th-soft'],
-body[data-page='options'] [data-role='walls-table'] th[data-role='th-metered'] {
-  width: 82px;
-  text-align: center;
-}
-
-body[data-page='options'] [data-role='wall-cell'] {
-  width: 82px;
-  padding: 13px 0;
-  text-align: center;
-}
-
-/* A cell that the list cannot hold still keeps the column, and the dashed edge
-   says why it holds no box. */
-body[data-page='options'] [data-role='wall-cell'][data-empty='true']::after {
-  content: '';
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border: 1px dashed var(--line);
-  border-radius: 6px;
-}
-
-body[data-page='options'] [data-role='wall-cell'] [data-role='wall-check'] {
-  display: inline-block;
-  margin: 0;
-  vertical-align: middle;
-}
-
-body[data-page='options'] [data-role='wall-cell']:hover [data-role='wall-check'] {
-  border-color: var(--accent);
-}
-
-body[data-page='options'] [data-role='metered-note'],
-body[data-page='options'] [data-role='no-wall-note'] {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.55;
-}
-
-/* The remove control sits at the table's edge, clear of the date in the cell before it. */
-body[data-page='options'] [data-role='allowance-table'] td:last-child {
-  padding-left: 18px;
-  text-align: right;
-}
-
-body[data-page='options'] [data-role='allowance-rows'] button {
-  color: var(--muted);
-  font-size: 13.5px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color 120ms ease;
-}
-
-/* A removal is the one destructive press on the page, so it takes the blocked
-   red and nothing louder than that. */
-body[data-page='options'] [data-role='allowance-rows'] button:hover {
-  color: var(--blocked);
-}
-
-body[data-page='options'] [data-role='auto-open-row'],
-body[data-page='options'] [data-role='images-row'] {
+body[data-page='popup'] footer [data-role='settings'] {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 14px;
-  align-items: start;
-  padding: 14px 0;
-  border-top: 1px solid var(--line-soft);
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
   cursor: pointer;
 }
 
-/* The platform draws a blue box of its own size. The sheet draws the one the
-   product uses: 18 px, a quiet edge, and the accent with a white check when on. */
-body[data-page='options'] [data-role='auto-open'],
-body[data-page='options'] [data-role='images'],
-body[data-page='options'] [data-role='wall-check'] {
-  position: relative;
-  grid-row: 1 / span 2;
-  box-sizing: border-box;
+body[data-page='popup'] footer [data-role='settings']:hover {
+  color: var(--ink);
+}
+
+body[data-page='popup'] footer [data-role='settings'] svg {
   width: 18px;
   height: 18px;
-  margin: 1px 0 0;
-  appearance: none;
-  border: 1px solid var(--control-line);
-  border-radius: 6px;
-  background: var(--surface);
-  cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-
-body[data-page='options'] [data-role='auto-open']::after,
-body[data-page='options'] [data-role='images']::after,
-body[data-page='options'] [data-role='wall-check']::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 9px;
-  border: solid var(--surface);
-  border-width: 0 2px 2px 0;
-
-  /* The box centres on its own middle, and the turn is about that same point,
-     but the drawn L hangs below it. Its 5 px content width puts the check
-     5 / 2√2, or 1.77 px, under the middle, and the shift lifts the drawing onto
-     the centre of the control. */
-  transform: translate(-50%, calc(-50% - 1.77px)) rotate(45deg);
-}
-
-body[data-page='options'] [data-role='auto-open']:not(:checked)::after,
-body[data-page='options'] [data-role='images']:not(:checked)::after,
-body[data-page='options'] [data-role='wall-check']:not(:checked)::after {
-  display: none;
-}
-
-body[data-page='options'] [data-role='auto-open']:checked,
-body[data-page='options'] [data-role='images']:checked,
-body[data-page='options'] [data-role='wall-check']:checked {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-
-/* The whole row is the label, so a pointer anywhere on it lights the box. */
-body[data-page='options'] [data-role='auto-open-row']:hover [data-role='auto-open'],
-body[data-page='options'] [data-role='images-row']:hover [data-role='images'] {
-  border-color: var(--accent);
-}
-
-body[data-page='options'] [data-role='auto-open']:checked:hover,
-body[data-page='options'] [data-role='images']:checked:hover,
-body[data-page='options'] [data-role='wall-cell']:hover [data-role='wall-check']:checked,
-body[data-page='options'] [data-role='auto-open-row']:hover [data-role='auto-open']:checked,
-body[data-page='options'] [data-role='images-row']:hover [data-role='images']:checked {
-  border-color: var(--accent-deep);
-  background: var(--accent-deep);
-}
-
-/* The first setting opens its section, and the label above it already divides
-   it from what came before, so the hairline belongs to the second row alone. */
-body[data-page='options'] [data-role='auto-open-row'] {
-  border-top: 0;
-}
-
-body[data-page='options'] [data-role='auto-open-label'],
-body[data-page='options'] [data-role='images-label'] {
-  grid-column: 2;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-body[data-page='options'] [data-role='auto-open-detail'],
-body[data-page='options'] [data-role='images-detail'] {
-  grid-column: 2;
-  max-width: 400px;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-
-body[data-page='options'] [data-role='cache-detail'] {
-  max-width: 520px;
-  margin: 0 0 14px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-body[data-page='options'] [data-role='clear-cache'] {
-  padding: 10px 16px;
-  border: 1px solid var(--control-line);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 550;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-
-body[data-page='options'] [data-role='clear-cache']:hover {
-  border-color: var(--muted);
-  background: var(--hover);
-}
-
-body[data-page='options'] [data-role='clear-cache']:active {
-  background: var(--line-soft);
-}
-
-body[data-page='options'] [data-role='cache-status'] {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-@media (max-width: 520px) {
-  [data-role='header'] {
-    padding: 0 20px;
-  }
-
-  main {
-    padding: 30px 20px 28px;
-  }
-
-  [data-role='headline'] {
-    margin: 12px 0;
-    font-size: 32px;
-  }
-
-  [data-role='lede'] {
-    margin-bottom: 20px;
-    font-size: 18px;
-  }
-
-  /* The bar stacks, and the open control takes the row under the address. */
-  [data-role='source'] {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 16px;
-  }
-
-  [data-role='open-group'] {
-    width: 100%;
-  }
-
-  [data-role='open-site'] {
-    flex: 1 1 auto;
-  }
-
-  [data-role='open-menu'] {
-    flex: 0 0 auto;
-  }
-
-  /* The count moves under the heading, so neither of them wraps. */
-  [data-role='list-head'] {
-    display: block;
-    margin-top: 36px;
-  }
-
-  [data-role='count'] {
-    display: block;
-    margin: 6px 0 0;
-  }
-
-  /* A phone shows the domain alone: the title carries the story, and the
-     description would cut a sentence in the middle of a narrow row. */
-  [data-role='result-description'] {
-    display: none;
-  }
-
-  [data-role='list'] > li > a > img {
-    display: none;
-  }
-
-  [data-role='list'] > li[data-variant='hero'] > a {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* The image takes the first row and the text follows in the order it has. */
-  [data-role='list'] > li[data-variant='hero'] > a > img,
-  [data-role='list'] > li[data-variant='hero'] > a > [data-role='result-title'],
-  [data-role='list'] > li[data-variant='hero'] > a > [data-role='result-meta'] {
-    grid-column: 1;
-    grid-row: auto;
-  }
-
-  [data-role='list'] > li[data-variant='hero'] > a > img {
-    display: block;
-    width: 100%;
-    height: 180px;
-    margin-bottom: 14px;
-  }
-
-  /* The foot stacks: the report link leaves the note for its own line. */
-  [data-role='actions'] {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
-  }
-
-  /* The block page's footer alone. The popup carries a report link too, and
-     this breakpoint always matches the 340 pixel popup, where a link of the
-     whole row would push its neighbour out of the frame. */
-  [data-role='actions'] [data-role='report'] {
-    margin: 12px 0 0;
-    padding-left: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition: none !important;
-  }
 }

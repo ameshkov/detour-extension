@@ -3,6 +3,7 @@ import { MESSAGE } from './constants';
 import {
   ALLOWED_SITES,
   ALLOWED_SITES_INTRO,
+  APPEARANCE_HEADING,
   AUTO_OPEN_SETTING_DETAIL,
   AUTO_OPEN_SETTING_LABEL,
   COLUMN_ADDED,
@@ -15,6 +16,9 @@ import {
   READING_HEADING,
   REMOVE_LABEL,
   SCOPE_LABEL,
+  THEME_CHOICES,
+  THEME_SETTING_DETAIL,
+  THEME_SETTING_LABEL,
   removeAllowanceLabel,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
@@ -22,6 +26,8 @@ import type { RevokeMessage } from './messages';
 import { createPageSender } from './page-send';
 import type { Settings } from './storage';
 import { readAllowances, readSettings } from './storage';
+import { applyTheme } from './theme';
+import type { ThemeChoice } from './theme';
 import { renderCache } from './options-cache';
 import { renderWalls } from './options-walls';
 
@@ -149,11 +155,50 @@ function renderSetting(setting: (typeof READING_SETTINGS)[number], view: Options
   };
 }
 
+const THEME_ROLE: Record<ThemeChoice, string> = {
+  system: 'theme-system',
+  light: 'theme-light',
+  dark: 'theme-dark',
+};
+
+/**
+ * The theme is one choice of three, so each choice is a segment and the stored
+ * one is pressed. A press paints the page at once, then stores the choice; the
+ * reload renders what the worker kept.
+ */
+function renderTheme(view: OptionsView): void {
+  setText('theme-label', THEME_SETTING_LABEL);
+  setText('theme-detail', THEME_SETTING_DETAIL);
+
+  const group = roleElement('theme-choices');
+
+  group?.setAttribute('aria-label', THEME_SETTING_LABEL);
+
+  for (const choice of ['system', 'light', 'dark'] as const) {
+    const button = roleElement(THEME_ROLE[choice]);
+
+    if (button === null) {
+      continue;
+    }
+
+    button.textContent = THEME_CHOICES[choice];
+    button.setAttribute('aria-pressed', String(view.settings.theme === choice));
+    button.onclick = (): void => {
+      const settings: Settings = { ...view.settings, theme: choice };
+
+      applyTheme(choice);
+      sender.send({ type: MESSAGE.setSettings, settings }, view.reload);
+    };
+  }
+}
+
 export function renderOptions(view: OptionsView): void {
+  applyTheme(view.settings.theme);
   setText('options-heading', OPTIONS_HEADING);
   setText('allowed-heading', ALLOWED_SITES);
   setText('allowed-intro', ALLOWED_SITES_INTRO);
   setText('allowed-empty', NO_ALLOWANCES);
+  setText('appearance-heading', APPEARANCE_HEADING);
   setText('reading-heading', READING_HEADING);
   setText('th-site', COLUMN_SITE);
   setText('th-scope', COLUMN_SCOPE);
@@ -166,6 +211,7 @@ export function renderOptions(view: OptionsView): void {
     renderSetting(setting, view);
   }
 
+  renderTheme(view);
   renderCache();
 }
 

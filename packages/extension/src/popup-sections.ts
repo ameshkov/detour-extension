@@ -1,240 +1,225 @@
-import { MESSAGE, PRIVACY_URL, SITE_URL } from './constants';
 import {
-  ENABLED_SWITCH_LABEL,
-  HOW_IT_WORKS_LABEL,
-  PAUSE_DURATION_LABELS,
-  PAUSE_MENU_LABEL,
-  PAUSE_ROW_LABEL,
-  PAUSE_TODAY_NOTE,
-  POPUP_OFF,
-  POPUP_ON,
-  POPUP_PAUSED,
-  PRIVACY_LABEL,
-  RESUME_LABEL,
-  SETTINGS_LABEL,
-  LISTED_BADGE,
-  SHOW_ALTERNATIVES_LABEL,
-  SITE_LISTED,
+  ALTERNATIVES_HEADING,
+  FALLBACK_HEADING,
+  NO_SITE_NOTICE,
+  SEARCH_CARD_POPUP_DETAIL,
+  SITE_NOT_LISTED,
   SITE_REPORT_HINT,
-  SITE_UNLISTED,
-  pausedRowLabel,
+  headline,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
-import type { PauseKind } from './pause';
-import { PAUSE_KINDS, pauseUntilFor } from './pause';
-import { createPageSender } from './page-send';
-import type { PopupView } from './popup';
+import { renderAlternatives } from './block-results';
+import type { PopupDeps } from './popup';
+import { openRoute } from './popup-data';
 import { reportUrl } from './report';
-import type { Settings } from './storage';
+import { renderSearchFallback, selectEngine } from './search-fallback';
+import type { PopupSite, PopupState, PopupView } from './state-view';
+import { tileColor, tileLetter } from './tile-color';
 import { currentVersion } from './version';
-import { renderWalls } from './wall-chips';
+import { bindWallDetails, renderWalls } from './wall-chips';
 
-type Tone = 'on' | 'off' | 'paused';
+/** The card names the page: the domain, and one sentence that says why it is here. */
+function renderCard(domain: string, description: string): void {
+  setHidden('source', false);
 
-const sender = createPageSender('popup');
+  const tile = roleElement('source-tile');
 
-/** The header state: the list is off, or paused, or on. The sheet tones each one. */
-export function renderState(view: PopupView): void {
-  const tone: Tone = !view.settings.enabled ? 'off' : view.paused ? 'paused' : 'on';
-  const text: Record<Tone, string> = { off: POPUP_OFF, paused: POPUP_PAUSED, on: POPUP_ON };
-  const element = roleElement('state');
-
-  if (element === null) {
-    return;
+  if (tile !== null) {
+    tile.replaceChildren();
+    tile.textContent = tileLetter(domain);
+    tile.style.backgroundColor = tileColor(domain);
   }
 
-  element.textContent = text[tone];
-  element.dataset.state = tone;
+  setText('source-domain', domain);
+  setText('source-description', description);
+}
+
+/** The pills of a listed site, and the one detail that serves them all. */
+function renderSiteWalls(site: PopupSite): void {
+  renderWalls('walls', site.walls, { interactive: true });
+  setHidden('walls-row', site.walls.length === 0);
+  bindWallDetails(site.walls, { verified: site.verified, note: site.note });
 }
 
 /**
- * One press writes all three settings, so the two reading settings keep the
- * values the reader left. The service worker stores them, and the reload renders
- * what it stored.
+ * The wall detail's report link copies the address of the page's own report. It
+ * is one hidden anchor, so the detail and the footnote never drift apart.
  */
-export function renderSwitch(view: PopupView): void {
-  const element = roleElement('enabled');
+function setReportHref(view: PopupView): void {
+  const anchor = roleElement('report');
+  const version = currentVersion();
+  const report = 'report' in view ? view.report : null;
 
-  if (!(element instanceof HTMLInputElement)) {
+  if (!(anchor instanceof HTMLAnchorElement)) {
     return;
   }
 
-  element.checked = view.settings.enabled;
-  element.setAttribute('aria-label', ENABLED_SWITCH_LABEL);
-  element.onchange = (event: Event): void => {
-    const checked = (event.currentTarget as HTMLInputElement).checked;
-    const settings: Settings = { ...view.settings, enabled: checked };
+  if (report === null || version === null) {
+    anchor.removeAttribute('href');
 
-    sender.send({ type: MESSAGE.setSettings, settings }, view.reload);
+    return;
+  }
+
+  anchor.setAttribute('href', reportUrl({ ...report, extensionVersion: version }));
+}
+
+/**
+ * The report row closes the unlisted card. It is a row of the search card's
+ * family, so no surface in the popup is a bare line of text.
+ */
+function renderReportRow(report: { url: string; listId: string }, key: number): void {
+  const row = roleElement('site-report');
+  const version = currentVersion();
+
+  if (!(row instanceof HTMLAnchorElement) || version === null) {
+    setHidden('site-report', true);
+
+    return;
+  }
+
+  row.setAttribute('href', reportUrl({ ...report, extensionVersion: version }));
+  setText('report-title', SITE_REPORT_HINT);
+  setText('report-key', String(key));
+  setHidden('site-report', false);
+}
+
+/** The search card of the unlisted page: a press swaps it for the engines. */
+function renderUnlistedSearch(query: string, key: number): void {
+  const card = roleElement('search');
+
+  setText('search-title', FALLBACK_HEADING);
+  setText('search-detail', SEARCH_CARD_POPUP_DETAIL);
+  setText('search-key', String(key));
+  setHidden('search', false);
+
+  if (card === null) {
+    return;
+  }
+
+  card.onclick = (): void => {
+    setHidden('search', true);
+    renderSearchFallback(query);
+    selectEngine(0);
   };
 }
 
-/**
- * The block answers for the page in front of the reader, so both states say
- * something and each carries one action: the alternatives when the list knows
- * the site, and the report sentence when it does not.
- */
-export function renderSite(view: PopupView): void {
-  const site = view.site;
+/** Every row opens in the tab the popup was opened from, through the worker. */
+function wireRouteRows(deps: PopupDeps): void {
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-role="list"] > li > a');
 
-  setHidden('site', site === null);
+  for (const link of links) {
+    link.onclick = (event: MouseEvent): void => {
+      event.preventDefault();
 
-  if (site === null) {
+      const href = link.getAttribute('href') ?? '';
+
+      void openRoute(deps.send, href).finally(deps.close);
+    };
+  }
+}
+
+/** The list area: the rows of a search, or the engines when it found nothing. */
+function renderList(
+  view: Extract<PopupView, { kind: 'results' | 'empty' | 'error' }>,
+  state: PopupState,
+  deps: PopupDeps,
+): void {
+  const section = roleElement('alternatives');
+
+  if (section !== null) {
+    section.dataset.state = view.kind;
+  }
+
+  renderAlternatives({
+    state: view.kind,
+    routes: view.kind === 'results' ? view.routes : [],
+    imagesEnabled: state.settings.imagesEnabled,
+    query: view.query,
+    // The popup has no keyboard line, so it carries no story of its own.
+    topic: null,
+    searchDetail: SEARCH_CARD_POPUP_DETAIL,
+  });
+
+  setHidden('status', view.kind === 'results');
+  setHidden('list-head', false);
+  setText('alternatives-heading', ALTERNATIVES_HEADING);
+
+  if (view.kind === 'results') {
+    wireRouteRows(deps);
+
     return;
   }
 
-  setText('site-text', `${site.host} ${site.listed ? SITE_LISTED : SITE_UNLISTED}`);
-  setText('site-badge', LISTED_BADGE);
-  setHidden('site-badge', !site.listed);
-  renderWalls('site-walls', site.listed ? site.walls : []);
+  const retry = roleElement('retry');
 
-  const row = roleElement('site-row');
-
-  if (row !== null) {
-    row.dataset.listed = String(site.listed);
-  }
-
-  setHidden('site-alternatives', !site.listed);
-  setText('site-alternatives-label', SHOW_ALTERNATIVES_LABEL);
-
-  const alternatives = roleElement('site-alternatives');
-
-  if (alternatives !== null) {
-    alternatives.onclick = (): void => {
-      sender.send(
-        { type: MESSAGE.showAlternatives, tabId: site.tabId, url: site.url },
-        view.reload,
-      );
-    };
-  }
-
-  // The report names the page, the list, and the build. A context that cannot
-  // name its build hides the link rather than open a form that omits the version.
-  const version = currentVersion();
-  const report = roleElement('site-report');
-  const showReport = !site.listed && version !== null;
-
-  setHidden('site-report', !showReport);
-
-  if (report instanceof HTMLAnchorElement && version !== null) {
-    report.textContent = SITE_REPORT_HINT;
-    report.setAttribute(
-      'href',
-      reportUrl({ url: site.url, listId: view.listId, extensionVersion: version }),
-    );
+  if (retry !== null) {
+    retry.onclick = (): void => deps.reload();
   }
 }
 
-function setDurationsOpen(open: boolean): void {
-  setHidden('durations', !open);
+/** One branch per state, and every branch paints the whole window. */
+export function renderMain(state: PopupState, deps: PopupDeps): void {
+  clearMain();
+  setReportHref(state.view);
 
-  const pause = roleElement('pause');
+  switch (state.view.kind) {
+    case 'no-site': {
+      setText('status', NO_SITE_NOTICE);
+      setHidden('status', false);
 
-  if (pause !== null) {
-    pause.setAttribute('aria-expanded', String(open));
-  }
-}
+      const section = roleElement('alternatives');
 
-/**
- * The row is the whole control at rest, and the durations unfold under it. A
- * paused row states the remainder, and the resume sits beside the label so the
- * countdown never becomes a row of its own.
- */
-export function renderPause(view: PopupView): void {
-  const label = view.paused ? pausedRowLabel(view.remaining) : PAUSE_ROW_LABEL;
-  const pause = roleElement('pause');
+      if (section !== null) {
+        section.dataset.state = 'no-site';
+      }
 
-  setText('pause-label', label);
-  setText('resume', RESUME_LABEL);
-
-  const labelElement = roleElement('pause-label');
-
-  if (labelElement !== null) {
-    labelElement.dataset.until = view.paused ? String(view.until) : '';
-  }
-
-  setHidden('resume', !view.paused);
-  setDurationsOpen(false);
-
-  if (pause !== null) {
-    pause.setAttribute(
-      'aria-label',
-      view.paused ? `${label}. ${PAUSE_MENU_LABEL}` : PAUSE_ROW_LABEL,
-    );
-    pause.onclick = (): void => {
-      const list = roleElement('durations');
-
-      setDurationsOpen(list?.hidden !== false);
-    };
-  }
-
-  const resume = roleElement('resume');
-
-  if (resume !== null) {
-    resume.onclick = (): void => {
-      sender.send({ type: MESSAGE.pause, until: 0, session: false }, view.reload);
-    };
-  }
-
-  renderDurations(view);
-}
-
-/** One row per duration, and the chosen one replaces whatever pause was running. */
-function renderDurations(view: PopupView): void {
-  for (const kind of PAUSE_KINDS) {
-    const role = `duration-${kind}`;
-    const button = roleElement(role);
-
-    if (button === null) {
-      continue;
+      return;
     }
+    case 'off': {
+      if (state.view.site !== null) {
+        renderCard(
+          state.view.site.domain,
+          headline(state.view.site.name, state.view.site.walls.length),
+        );
+        renderSiteWalls(state.view.site);
+      }
 
-    if (kind === 'today') {
-      setText('duration-today-label', PAUSE_DURATION_LABELS.today);
-      setText('duration-today-note', PAUSE_TODAY_NOTE);
-    } else {
-      button.textContent = PAUSE_DURATION_LABELS[kind as PauseKind];
+      return;
     }
+    case 'unlisted':
+      renderCard(state.view.domain, SITE_NOT_LISTED);
+      renderReportRow(state.view.report, 1);
+      renderUnlistedSearch(state.view.query, 2);
 
-    button.onclick = (): void => {
-      sender.send(
-        {
-          type: MESSAGE.pause,
-          until: pauseUntilFor(kind, view.now),
-          session: kind === 'session',
-        },
-        view.reload,
-      );
-      setDurationsOpen(false);
-    };
+      return;
+    case 'results':
+    case 'empty':
+    case 'error': {
+      const site = state.view.site;
+
+      renderCard(site.domain, headline(site.name, site.walls.length));
+      renderSiteWalls(site);
+      renderList(state.view, state, deps);
+
+      return;
+    }
   }
 }
 
-export function renderSettings(): void {
-  const settings = roleElement('settings');
+export function clearMain(): void {
+  setHidden('source', true);
+  setHidden('site-report', true);
+  setHidden('walls-row', true);
+  setHidden('walls-detail', true);
+  setHidden('status', true);
+  setHidden('list-head', true);
+  setHidden('search', true);
+  setHidden('fallback', true);
+  setHidden('retry-row', true);
+  setText('status', '');
+  setText('alternatives-heading', '');
 
-  setText('settings-label', SETTINGS_LABEL);
+  const list = roleElement('list');
 
-  if (settings !== null) {
-    settings.onclick = (): void => {
-      sender.guard(() => chrome.runtime.openOptionsPage());
-    };
-  }
-}
-
-function setLink(role: string, href: string, text: string): void {
-  const element = roleElement(role);
-
-  if (!(element instanceof HTMLAnchorElement)) {
-    return;
-  }
-
-  element.textContent = text;
-  element.setAttribute('href', href);
-}
-
-/** The two links leave the extension for the public site. */
-export function renderLinks(): void {
-  setLink('how-it-works', SITE_URL, HOW_IT_WORKS_LABEL);
-  setLink('privacy', PRIVACY_URL, PRIVACY_LABEL);
+  list?.replaceChildren();
 }

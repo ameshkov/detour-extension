@@ -41,6 +41,16 @@ export function hostOf(url: string | null): string | null {
 }
 
 /**
+ * The address that the worker stamped into a block page, or null when the page
+ * carries none. The toolbar answers for that page, not for the block page.
+ */
+export function originalUrl(search: string): string | null {
+  const value = new URLSearchParams(search).get('u');
+
+  return value === null || value === '' ? null : value;
+}
+
+/**
  * The address as a narrow card shows it: the host without `www.` and the path,
  * with no scheme, query, or fragment. The full address stays in the link and in
  * its title, and a value that is not a web address stays as it is.

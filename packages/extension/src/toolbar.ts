@@ -1,30 +1,38 @@
 import type { ListedSite } from '@detour/shared';
 import { findListedSite } from '@detour/shared';
 
-import {
-  LISTED_BADGE,
-  TOOLBAR_OFF_TITLE,
-  TOOLBAR_PAUSED_TITLE,
-  TOOLBAR_TITLE,
-  listedTitle,
-} from './copy';
-import { isPaused, readList, readPause, readSettings } from './storage';
+import type { AllowanceState } from './allowances';
+import { allowsHost, allowsTab } from './allowances';
+import { hasCapability } from './capabilities';
+import { TOOLBAR_OFF_TITLE, TOOLBAR_TITLE, loadTitle, stopTitle } from './copy';
+import { originalUrl } from './page-url';
+import { readAllowances, readList, readSettings } from './storage';
+import type { WallSettings } from './walls';
+import { anyWallStops } from './walls';
 
-/** The icon, the badge, and the tooltip that one state puts on the toolbar. */
+/** The icon and the tooltip that one state puts on the toolbar. */
 export type ToolbarView = {
   icons: Readonly<Record<number, string>>;
-  badge: string;
   title: string;
 };
 
-const ON_ICONS: Readonly<Record<number, string>> = {
+/** The coloured route: the page in front of the reader has a detour. */
+const DETOUR_ICONS: Readonly<Record<number, string>> = {
   16: 'icon-16.png',
   32: 'icon-32.png',
   48: 'icon-48.png',
   128: 'icon-128.png',
 };
 
-/** The same mark with the tile in the muted tone, for a Detour that stops nothing. */
+/** The faint route: Detour will not stop this page, so it points nowhere. */
+const PLAIN_ICONS: Readonly<Record<number, string>> = {
+  16: 'icon-plain-16.png',
+  32: 'icon-plain-32.png',
+  48: 'icon-plain-48.png',
+  128: 'icon-plain-128.png',
+};
+
+/** The muted tile: Detour stops nothing while it is off. */
 const OFF_ICONS: Readonly<Record<number, string>> = {
   16: 'icon-off-16.png',
   32: 'icon-off-32.png',
@@ -32,49 +40,87 @@ const OFF_ICONS: Readonly<Record<number, string>> = {
   128: 'icon-off-128.png',
 };
 
-/** A badge takes the accent of the mark. */
-export const BADGE_COLOR = '#0b6b57';
-export const BADGE_TEXT_COLOR = '#ffffff';
-
 /**
- * The toolbar follows two questions: does Detour stop pages now, and does the
- * page in front of the reader carry a wall? A switched-off or paused Detour
- * takes the gray mark and no badge, because the badge would promise a stop that
- * will not come.
+ * What the guard will do with the page in front of the reader, as the list, the
+ * settings, and the allowances answer it. The toolbar shows a detour only when
+ * the guard will stop the page, so an allowed site and a page whose walls are
+ * all switched off carry no colour.
  */
-export function toolbarView(input: {
+export type ToolbarFacts = {
   enabled: boolean;
-  paused: boolean;
-  site: Pick<ListedSite, 'domain'> | null;
-}): ToolbarView {
-  if (!input.enabled) {
-    return { icons: OFF_ICONS, badge: '', title: TOOLBAR_OFF_TITLE };
+  listEnabled: boolean;
+  walls: WallSettings;
+  site: Pick<ListedSite, 'domain' | 'walls'> | null;
+  allowed: boolean;
+};
+
+export function toolbarView(facts: ToolbarFacts): ToolbarView {
+  if (!facts.enabled) {
+    return { icons: OFF_ICONS, title: TOOLBAR_OFF_TITLE };
   }
 
-  if (input.paused) {
-    return { icons: OFF_ICONS, badge: '', title: TOOLBAR_PAUSED_TITLE };
-  }
-
-  const site = input.site;
+  const site = facts.site;
 
   if (site === null) {
-    return { icons: ON_ICONS, badge: '', title: TOOLBAR_TITLE };
+    return { icons: PLAIN_ICONS, title: TOOLBAR_TITLE };
   }
 
-  return {
-    icons: ON_ICONS,
-    badge: LISTED_BADGE,
-    title: listedTitle(site.domain),
-  };
+  const stops = facts.listEnabled && anyWallStops(facts.walls, site.walls) && !facts.allowed;
+
+  return stops
+    ? { icons: DETOUR_ICONS, title: stopTitle(site.domain) }
+    : { icons: PLAIN_ICONS, title: loadTitle(site.domain) };
 }
 
-/** Writes one view to the toolbar. The calls answer nothing that a caller waits for. */
+/** Writes one view to the toolbar. A badge of an older build is cleared here. */
 export async function applyToolbar(view: ToolbarView): Promise<void> {
   await chrome.action.setIcon({ path: { ...view.icons } });
-  await chrome.action.setBadgeText({ text: view.badge });
-  await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
-  await chrome.action.setBadgeTextColor({ color: BADGE_TEXT_COLOR });
+  await chrome.action.setBadgeText({ text: '' });
   await chrome.action.setTitle({ title: view.title });
+}
+
+/** Whether an allowance of any scope covers the site in this tab. */
+function covered(
+  allowances: AllowanceState,
+  site: Pick<ListedSite, 'domain'>,
+  tab: { id?: number; openerTabId?: number },
+): boolean {
+  if (allowsHost(allowances.allowAlways, site.domain)) {
+    return true;
+  }
+
+  if (allowsHost(allowances.allowSession, site.domain)) {
+    return true;
+  }
+
+  return (
+    tab.id !== undefined && allowsTab(allowances.allowTabs, site.domain, tab.id, tab.openerTabId)
+  );
+}
+
+/**
+ * The page that the action answers for. A block page answers for the page that
+ * it stopped, and only while the tab still holds the record of that stop, so the
+ * detour stays on the toolbar when the block page replaces the article.
+ */
+async function actionPage(tab: { id?: number; url?: string }): Promise<string | null> {
+  const url = tab.url;
+
+  if (url === undefined) {
+    return null;
+  }
+
+  if (!url.startsWith(chrome.runtime.getURL('block.html'))) {
+    return url;
+  }
+
+  const stopped = originalUrl(new URL(url).search);
+
+  if (stopped === null || !(await hasCapability(tab.id, stopped))) {
+    return null;
+  }
+
+  return stopped;
 }
 
 /**
@@ -84,30 +130,37 @@ export async function applyToolbar(view: ToolbarView): Promise<void> {
 let latest = 0;
 
 /**
- * Reads the settings, the pause, the list, and the page in front of the reader,
- * then paints the toolbar. Every failure leaves the last state in place: the
- * toolbar is a hint and never a reason to drop an event.
+ * Reads the settings, the list, the allowances, and the page in front of the
+ * reader, then paints the toolbar. Every failure leaves the last state in place:
+ * the toolbar is a hint and never a reason to drop an event.
  */
-export async function refreshToolbar(now: () => number): Promise<void> {
+export async function refreshToolbar(): Promise<void> {
   const token = (latest += 1);
 
   try {
-    const [settings, pause, list, tabs] = await Promise.all([
+    const [settings, list, allowances, tabs] = await Promise.all([
       readSettings(),
-      readPause(),
       readList(),
+      readAllowances(),
       chrome.tabs.query({ active: true, lastFocusedWindow: true }),
     ]);
+    const tab = tabs[0];
+    const page = tab === undefined ? null : await actionPage(tab);
 
     if (token !== latest) {
       return;
     }
 
-    const url = tabs[0]?.url;
-    const site = url === undefined ? null : findListedSite(list, url);
+    const site = page === null ? null : findListedSite(list, page);
 
     await applyToolbar(
-      toolbarView({ enabled: settings.enabled, paused: isPaused(pause, now()), site }),
+      toolbarView({
+        enabled: settings.enabled,
+        listEnabled: !list.disabled,
+        walls: settings.walls,
+        site: site === null ? null : { domain: site.domain, walls: site.walls },
+        allowed: site !== null && tab !== undefined && covered(allowances, site, tab),
+      }),
     );
   } catch {
     // The last view stays. A read that fails is not a state of the toolbar.

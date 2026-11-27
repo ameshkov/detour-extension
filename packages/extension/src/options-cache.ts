@@ -4,6 +4,7 @@ import {
   CACHE_DETAIL,
   CACHE_HEADING,
   CLEAR_CACHE_LABEL,
+  CLEARING_LABEL,
   cacheCleared,
 } from './copy';
 import { roleElement, setHidden, setText } from './dom';
@@ -24,7 +25,7 @@ export function renderCache(): void {
 
   const button = roleElement('clear-cache');
 
-  if (button === null) {
+  if (!(button instanceof HTMLButtonElement)) {
     return;
   }
 
@@ -33,17 +34,32 @@ export function renderCache(): void {
       return;
     }
 
-    setHidden('cache-status', true);
+    let answered = false;
 
-    sender.guard(async () => {
-      const answer: unknown = await chrome.runtime.sendMessage({ type: MESSAGE.clearCache });
+    // The worker downloads the list again before it answers, so the press has a
+    // state of its own and a slow backend cannot take a second press.
+    button.disabled = true;
+    setText('cache-status', CLEARING_LABEL);
+    setHidden('cache-status', false);
 
-      if (!isClearCacheResponse(answer)) {
-        return;
-      }
+    sender.guard(
+      async () => {
+        const answer: unknown = await chrome.runtime.sendMessage({ type: MESSAGE.clearCache });
 
-      setText('cache-status', cacheCleared(answer.cleared));
-      setHidden('cache-status', false);
-    });
+        if (!isClearCacheResponse(answer)) {
+          return;
+        }
+
+        answered = true;
+        setText('cache-status', cacheCleared(answer.cleared));
+      },
+      () => {
+        button.disabled = false;
+
+        if (!answered) {
+          setHidden('cache-status', true);
+        }
+      },
+    );
   };
 }

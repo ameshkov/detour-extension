@@ -87,12 +87,16 @@ const FAIL_TITLE = 'A local story whose search fails';
 
 export const DUMMY_PROVIDER = 'dummy';
 
-/** The four saved results that a non-empty answer carries. */
+/** The story of the saved answer, which the block page shows under the routes. */
+export const DUMMY_TOPIC = 'Custom silicon for the biggest customers';
+
+/** The four saved results that a non-empty answer carries, with their matches. */
 export const DUMMY_RESULTS: ReadonlyArray<{
   url: string;
   title: string;
   description: string;
   domain: string;
+  match: 'same_story' | 'same_event' | 'same_topic' | 'different';
 }> = [
   {
     url: 'https://www.niemanlab.org/2026/09/the-ad-block-wall-is-now-the-default/',
@@ -100,12 +104,14 @@ export const DUMMY_RESULTS: ReadonlyArray<{
     description:
       'Publishers are trading a smaller advertising audience for subscription conversions.',
     domain: 'niemanlab.org',
+    match: 'same_story',
   },
   {
     url: 'https://www.poynter.org/business-work/2026/why-publishers-keep-asking-you-to-turn-off-your-ad-blocker/',
     title: 'Why publishers keep asking you to turn off your ad blocker',
     description: 'Detection scripts have become the first thing a reader meets on a news site.',
     domain: 'poynter.org',
+    match: 'same_event',
   },
   {
     url: 'https://digiday.com/media/publishers-ad-block-walls-2026/',
@@ -113,6 +119,7 @@ export const DUMMY_RESULTS: ReadonlyArray<{
     description:
       'A polite request reaches more readers than a hard stop, according to several media executives.',
     domain: 'digiday.com',
+    match: 'same_topic',
   },
   {
     url: 'https://pressgazette.co.uk/media-audience-and-business-data/ad-blocking-walls-2026/',
@@ -120,6 +127,7 @@ export const DUMMY_RESULTS: ReadonlyArray<{
     description:
       'Newer browsers ship stricter tracking protection, yet publishers say the share of blocked readers has barely moved.',
     domain: 'pressgazette.co.uk',
+    match: 'different',
   },
 ];
 
@@ -249,15 +257,22 @@ function answerFor(input: { url: string; title: string }, ctx: Ctx): Response {
     input.title.toLowerCase().includes('no alternatives');
 
   if (wantsEmpty) {
-    return json({ query, degraded: false, provider: DUMMY_PROVIDER, alternatives: [] });
+    return json({
+      query,
+      degraded: false,
+      provider: DUMMY_PROVIDER,
+      topic: DUMMY_TOPIC,
+      alternatives: [],
+    });
   }
 
   const alternatives = DUMMY_RESULTS.map((row, index) => {
-    const alternative: Record<string, string> = {
+    const alternative: Record<string, unknown> = {
       url: row.url,
       title: row.title,
       description: row.description,
       domain: row.domain,
+      match: row.match,
       // Every row carries a signed favicon, so the block page draws one per row
       // and the route behind it is the same proxy as the preview image.
       favicon: imageUrl(
@@ -268,15 +283,23 @@ function answerFor(input: { url: string; title: string }, ctx: Ctx): Response {
     };
 
     // The first row carries a signed image, so the block page and the image
-    // proxy get one real request in a local run.
+    // proxy get one real request in a local run. It is also the best match, so
+    // a local run reaches the mark that only the analysis can set.
     if (index === 0) {
       alternative.image = imageUrl(ctx.origin, `${ctx.origin}/images/preview.png`, ctx.signingKey);
+      alternative.best = true;
     }
 
     return alternative;
   });
 
-  return json({ query, degraded: false, provider: DUMMY_PROVIDER, alternatives });
+  return json({
+    query,
+    degraded: false,
+    provider: DUMMY_PROVIDER,
+    topic: DUMMY_TOPIC,
+    alternatives,
+  });
 }
 
 /**

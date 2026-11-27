@@ -5,7 +5,7 @@ import { registerBackground } from './background';
 import { STORAGE } from './constants';
 import type { FetchLike } from './net';
 import { BUNDLED_LIST } from './storage';
-import { LISTED_BADGE, TOOLBAR_OFF_TITLE, TOOLBAR_PAUSED_TITLE } from './copy';
+import { TOOLBAR_OFF_TITLE, stopTitle } from './copy';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 
@@ -79,15 +79,15 @@ describe('the toolbar', () => {
     expect(fake.storage.onChanged.listeners).toHaveLength(1);
   });
 
-  it('badges the site when a tab takes the focus', async () => {
+  it('colours the mark when a tab that Detour will stop takes the focus', async () => {
     const fake = registered();
 
     fake.tabs.onActivated.trigger({ tabId: 11, windowId: 1 });
 
     await vi.waitFor(() => {
-      expect(fake.calls.badges).toContain(LISTED_BADGE);
+      expect(fake.calls.icons.at(-1)?.[16]).toBe('icon-16.png');
     });
-    expect(fake.calls.titles.at(-1)).toContain('cnet.com');
+    expect(fake.calls.titles.at(-1)).toBe(stopTitle('cnet.com'));
   });
 
   it('repaints on a navigation and not on the other updates of a tab', async () => {
@@ -96,11 +96,11 @@ describe('the toolbar', () => {
     fake.tabs.onUpdated.trigger(11, { status: 'loading' }, {});
     await tick();
 
-    expect(fake.calls.badges).toEqual([]);
+    expect(fake.calls.icons).toEqual([]);
 
     fake.tabs.onUpdated.trigger(11, { url: 'https://www.cnet.com/tech/' }, {});
     await vi.waitFor(() => {
-      expect(fake.calls.badges).toContain(LISTED_BADGE);
+      expect(fake.calls.icons.at(-1)?.[16]).toBe('icon-16.png');
     });
   });
 
@@ -119,24 +119,13 @@ describe('the toolbar', () => {
     expect(fake.calls.icons.at(-1)?.[16]).toBe('icon-off-16.png');
   });
 
-  it('repaints when the session pause changes', async () => {
-    const fake = registered();
-
-    fake.storage.session.values[STORAGE.pauseSession] = true;
-    fake.storage.onChanged.trigger({ [STORAGE.pauseSession]: { newValue: true } }, 'session');
-
-    await vi.waitFor(() => {
-      expect(fake.calls.titles.at(-1)).toBe(TOOLBAR_PAUSED_TITLE);
-    });
-  });
-
   it('ignores a write that the toolbar does not read', async () => {
     const fake = registered();
 
     fake.storage.onChanged.trigger({ 'alt:abc': { newValue: {} } }, 'local');
     await tick();
 
-    expect(fake.calls.badges).toEqual([]);
+    expect(fake.calls.icons).toEqual([]);
   });
 });
 

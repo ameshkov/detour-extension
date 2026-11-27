@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { GUARD_TIMEOUT_MS } from './constants';
+import { GUARD_TIMEOUT_MS, META_HEAD_WAIT_MS } from './constants';
 import { GUARD_LINK_LABEL } from './copy';
+import { awaitHeadClose } from './guard';
 import type { FakeChrome } from './testing/fake-chrome';
 import { installFakeChrome, resetFakeChrome } from './testing/fake-chrome';
 
@@ -117,7 +118,11 @@ describe('the guard', () => {
     expect(order).toEqual(['stop', 'blocked']);
     expect(fake.calls.messages).toEqual([
       { type: 'isBlocked', url: LISTED_URL },
-      { type: 'blocked', url: LISTED_URL },
+      {
+        type: 'blocked',
+        url: LISTED_URL,
+        meta: { title: null, description: null, icon: 'https://www.cnet.com/favicon.ico' },
+      },
     ]);
   });
 
@@ -301,6 +306,24 @@ describe('the guard', () => {
     expect(visibility()).toBe('hidden');
   });
 
+  it('reads the head after the stop and sends it with the blocked message', async () => {
+    const runGuard = await loadGuard();
+
+    document.title = 'Before the stop';
+    stop.mockImplementation(() => {
+      document.title = 'After the stop';
+    });
+
+    answerIsBlocked(() => ({ ok: true, blocked: true, site: LISTED_SITE }));
+    answerBlocked(() => ({ ok: true, blockPageUrl: BLOCK_PAGE_URL }));
+
+    await runGuard(LISTED_URL);
+
+    const [, blocked] = fake.calls.messages;
+
+    expect(blocked).toMatchObject({ type: 'blocked', meta: { title: 'After the stop' } });
+  });
+
   it('sends the original url with its query', async () => {
     const runGuard = await loadGuard();
 
@@ -309,5 +332,80 @@ describe('the guard', () => {
     await runGuard(QUERY_URL);
 
     expect(fake.calls.messages).toEqual([{ type: 'isBlocked', url: QUERY_URL }]);
+  });
+});
+
+describe('the head wait', () => {
+  it('resolves at once when the head already closed', async () => {
+    const resolved = vi.fn();
+
+    void awaitHeadClose(document, 10_000).then(resolved);
+
+    await vi.waitFor(() => {
+      expect(resolved).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('resolves on the mutation that inserts the body', async () => {
+    vi.useFakeTimers();
+
+    const body = document.body;
+    const parent = body.parentNode as HTMLElement;
+
+    parent.removeChild(body);
+
+    const resolved = vi.fn();
+
+    void awaitHeadClose(document, META_HEAD_WAIT_MS).then(resolved);
+
+    // The timer has not run, so only the observer can settle this.
+    parent.append(body);
+
+    for (let tick = 0; tick < 5; tick += 1) {
+      await Promise.resolve();
+    }
+
+    expect(resolved).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('resolves at the cap when no body arrives', async () => {
+    vi.useFakeTimers();
+
+    const body = document.body;
+    const parent = body.parentNode as HTMLElement;
+
+    parent.removeChild(body);
+
+    const resolved = vi.fn();
+
+    void awaitHeadClose(document, META_HEAD_WAIT_MS).then(resolved);
+    vi.advanceTimersByTime(META_HEAD_WAIT_MS);
+    await Promise.resolve();
+
+    expect(resolved).toHaveBeenCalledTimes(1);
+
+    parent.append(body);
+    vi.useRealTimers();
+  });
+
+  it('disconnects the observer when it settles', async () => {
+    vi.useFakeTimers();
+
+    const body = document.body;
+    const parent = body.parentNode as HTMLElement;
+
+    parent.removeChild(body);
+
+    const disconnect = vi.spyOn(MutationObserver.prototype, 'disconnect');
+
+    void awaitHeadClose(document, META_HEAD_WAIT_MS);
+    vi.advanceTimersByTime(META_HEAD_WAIT_MS);
+    await Promise.resolve();
+
+    expect(disconnect).toHaveBeenCalled();
+    disconnect.mockRestore();
+    parent.append(body);
+    vi.useRealTimers();
   });
 });

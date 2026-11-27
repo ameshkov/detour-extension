@@ -26,7 +26,7 @@ describe('the cache', () => {
     const fake = installFakeChrome();
 
     fake.storage.local.values[STORAGE.settings] = SETTINGS;
-    fake.storage.local.values[STORAGE.pauseUntil] = 42;
+    fake.storage.local.values[STORAGE.scopeDefaults] = { 'forbes.com': 'always' };
     fake.storage.local.values[STORAGE.allowAlways] = [{ host: 'forbes.com', addedAt: 1 }];
     fake.storage.local.values[`${STORAGE.alt}aaa`] = { answer: {}, storedAt: 1 };
     fake.storage.session.values[`${STORAGE.capability}11`] = 'digest';
@@ -37,7 +37,7 @@ describe('the cache', () => {
     await expect(clearCache()).resolves.toBe(1);
 
     expect(fake.storage.local.values[STORAGE.settings]).toEqual(SETTINGS);
-    expect(fake.storage.local.values[STORAGE.pauseUntil]).toBe(42);
+    expect(fake.storage.local.values[STORAGE.scopeDefaults]).toEqual({ 'forbes.com': 'always' });
     expect(fake.storage.local.values[STORAGE.allowAlways]).toHaveLength(1);
     expect(fake.storage.session.values[`${STORAGE.capability}11`]).toBe('digest');
     expect(fake.storage.session.values[STORAGE.allowTabs]).toHaveLength(1);

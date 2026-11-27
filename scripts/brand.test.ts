@@ -19,7 +19,7 @@ const MANIFEST = 'packages/extension/manifest.json';
 
 const MANIFESTS = [MANIFEST];
 
-const PALETTE = ['#FBFAF8', '#FFFFFF', '#16161A', '#6E6C67', '#E8E4DD', '#0B6B57', '#C0513F'];
+const PALETTE = ['#F8FAFC', '#FFFFFF', '#0F172A', '#64748B', '#E2E8F0', '#2563EB', '#E11D48'];
 
 function read(path: string): string {
   return readFileSync(join(ROOT, path), 'utf8');
@@ -65,7 +65,7 @@ describe('the brand page', () => {
   const brand = read(BRAND_DOC);
 
   it('records the mark, the palette, and the sizes', () => {
-    expect(brand).toContain('qUNTz1twfA8O');
+    expect(brand).toContain('scripts/icons.ts');
     expect(brand).toContain(PAGE_MARK);
 
     for (const value of PALETTE) {
@@ -111,7 +111,15 @@ describe('the brand page', () => {
     const sheet = read(SHEET);
     const site = read(SITE_SHEET);
 
-    for (const name of ['--paper', '--surface', '--ink', '--muted', '--line', '--accent']) {
+    for (const name of [
+      '--paper',
+      '--surface',
+      '--ink',
+      '--muted',
+      '--line',
+      '--accent',
+      '--mark',
+    ]) {
       expect(property(site, name), name).toBe(property(sheet, name));
     }
 
@@ -120,24 +128,26 @@ describe('the brand page', () => {
     }
 
     // An empty read would compare two empty stacks and pass, so the sheet's
-    // own stacks are named first.
-    expect(families(property(sheet, '--serif'))[0]).toBe('Iowan Old Style');
-    expect(families(property(sheet, '--sans'))[0]).toBe('-apple-system');
-    expect(families(property(site, '--display'))).toEqual(families(property(sheet, '--serif')));
+    // own stack is named first. The product carries one family and no display
+    // face, so the site cannot grow a serif of its own.
+    expect(families(property(sheet, '--sans'))[0]).toBe('Inter');
     expect(families(property(site, '--sans'))).toEqual(families(property(sheet, '--sans')));
+    expect(sheet).not.toContain('--serif');
+    expect(site).not.toContain('--display');
   });
 
   it('keeps the wordmark tracking in step with the sheet', () => {
-    expect(wordmarkTrackingOfDoc(brand)).toBe('-0.01em');
-    expect(wordmarkTrackingOfSheet(read(SHEET))).toBe('-0.01em');
+    expect(wordmarkTrackingOfDoc(brand)).toBe('-0.025em');
+    expect(wordmarkTrackingOfSheet(read(SHEET))).toBe('-0.025em');
     expect(wordmarkTrackingOfDoc(brand)).toBe(wordmarkTrackingOfSheet(read(SHEET)));
   });
 
-  it('records the purchase date of the licence', () => {
+  it('records the licence of the mark', () => {
     const licence = section(brand, 'License');
 
-    expect(licence).toContain('The mark requires a paid icons8 licence, which the project holds.');
-    expect(licence).toContain('- **Purchase date**: 2026-11-25');
+    expect(licence).toContain('drawn for the project');
+    expect(licence).toContain('no third-party licence');
+    expect(licence).toContain('- **Drawn**: 2026-11-27');
     expect(licence).not.toContain('pending');
     expect(licence).not.toContain('cannot be prepared');
   });
@@ -146,5 +156,27 @@ describe('the brand page', () => {
     for (const path of [BRAND_DOC, ...MANIFESTS, ...PAGES]) {
       expect(read(path)).not.toContain('icons8.com');
     }
+  });
+
+  it('paints the mark tile with the mark colour and not a white silhouette', () => {
+    const sheet = read(SHEET);
+    const tile = /\[data-role='mark'\]\s*\{([^}]*)\}/.exec(sheet)?.[1] ?? '';
+
+    expect(property(sheet, '--mark')).toBe('#0f172a');
+    expect(tile).toContain('background: var(--mark)');
+    expect(sheet).not.toContain('invert(1)');
+    expect(read(SITE_SHEET)).toContain('background: var(--mark)');
+  });
+
+  it('draws the mark and the toolbar icons from one geometry', () => {
+    const icons = read('scripts/icons.ts');
+
+    expect(icons).toContain('M8 18.5V14.2C8 12.1 9.7 10.4 11.8 10.4H17.8');
+    expect(icons).toContain('M15 7.6L18.2 10.4L15 13.2');
+
+    const scripts = (JSON.parse(read('package.json')) as { scripts?: Record<string, string> })
+      .scripts as Record<string, string>;
+
+    expect(scripts.icons).toBe('tsx scripts/icons.ts');
   });
 });
