@@ -35,6 +35,18 @@ function pngOf(name: string): Buffer {
 const names = [...REQUIRED_FILES];
 
 describe('the release build check', () => {
+  it('carries the font, its licence, and the three icon sets', () => {
+    for (const name of [
+      'inter.woff2',
+      'inter-OFL.txt',
+      'icon-16.png',
+      'icon-off-16.png',
+      'icon-plain-16.png',
+    ]) {
+      expect(REQUIRED_FILES).toContain(name);
+    }
+  });
+
   it('accepts the files and the manifest of a release build', () => {
     expect(problemsOf(names, manifest(), pngOf)).toEqual([]);
   });
